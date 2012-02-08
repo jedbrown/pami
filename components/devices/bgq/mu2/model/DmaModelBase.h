@@ -750,13 +750,15 @@ namespace PAMI
         uint16_t              rfifo; // not needed for direct put ?
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
+        uint32_t              routingIndex;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
                                         map,
-					paceRgetsToThisDest);
+					paceRgetsToThisDest,
+                                        routingIndex );
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
@@ -1004,9 +1006,10 @@ namespace PAMI
 							   local_dst_pa,
 							   remote_src_pa,
 							   bytes,
-							   map);
+							   map,
+                                                           routingIndex);
 
-                /* MUSPI_DescriptorDumpHex((char *)"DPut (DPut)", (MUHWI_Descriptor_t*)dput); */
+                /* MUSPI_DescriptorDumpHex((char *)"Pacing DPut (DPut)", (MUHWI_Descriptor_t*)dput); */
 
 		// 7. Set the uniqueID into the request so this request and the next (see below)
 		//    are tied together and processed sequentially.
@@ -1118,7 +1121,8 @@ namespace PAMI
                                                             map,
                                                             MUHWI_PACKET_HINT_E_NONE,
                                                             local_fn,
-                                                            cookie);
+                                                            cookie,
+                                                            routingIndex);
 
                 rget->setPayload (paddr, pbytes);
                             /* MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
@@ -1223,13 +1227,15 @@ namespace PAMI
         uint16_t              rfifo;
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
+        uint32_t              routingIndex;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
                                         dest,
                                         rfifo,
                                         map,
-					paceRgetsToThisDest);
+					paceRgetsToThisDest,
+                                        routingIndex);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 

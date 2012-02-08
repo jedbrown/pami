@@ -350,57 +350,32 @@ namespace PAMI
 /// deterministically routed.  Dynamic routing can be faster than deterministic
 /// routing.  However, dynamically routed messages require more storage to
 /// track their progress, hence the reason for this option.  This number
-/// should be specified in increments of 64.  A value of 0 forces all messages
-/// to be deterministically routed.
-/// \default 0
-////////////////////////////////////////////////////////////////////////////////
-            
-////////////////////////////////////////////////////////////////////////////////
-/// \env{bgq,PAMI_DYNAMICROUTINGZONE}
-/// The zone routing to be used for dynamically routed messages.  There are
-/// four zones: 0, 1, 2, and 3.
-/// \default 3
+/// should be specified in increments of 64 (for example, 64, 128, 192, 256, ...).
+/// - Default 64.
 ////////////////////////////////////////////////////////////////////////////////
 
-            unsigned long numDynamicRouting = 0;
+            unsigned long numDynamicRouting = 64;
             char *env;
             if ((env = getenv("PAMI_NUMDYNAMICROUTING"))) 
             {
               numDynamicRouting = strtoul(env, NULL, 0);
             }
 
-            unsigned long dynamicRoutingZone = 3;
-            if ((env = getenv("PAMI_DYNAMICROUTINGZONE"))) 
-            {
-              dynamicRoutingZone = strtoul(env, NULL, 0);
-            }
-            PAMI_assertf( dynamicRoutingZone < 4, "PAMI_DYNAMICROUTINGZONE is %zu. Must be 0, 1, 2, or 3.\n", dynamicRoutingZone);
-            _dynamicRoutingZone = (dynamicRoutingZone==0) ? MUHWI_PACKET_ZONE_ROUTING_0 :
-                                  (dynamicRoutingZone==1) ? MUHWI_PACKET_ZONE_ROUTING_1 :
-                                  (dynamicRoutingZone==2) ? MUHWI_PACKET_ZONE_ROUTING_2 :
-                                  MUHWI_PACKET_ZONE_ROUTING_3;
+            PAMI_assert_alwaysf( numDynamicRouting >= 64,"Incorrect PAMI_NUMDYNAMICROUTING env var");
 
-            if ( numDynamicRouting == 0 )
+            _numCounterPools = numDynamicRouting / 64;
+            if ( _numCounterPools == 0 ) _numCounterPools = 1;
+            
+            mmrc = __global.heap_mm->memalign((void **) & _counterPool, 
+                                              8, 
+                                              _numCounterPools*sizeof(CounterPool));
+            PAMI_assert_alwaysf(mmrc == PAMI_SUCCESS, "memalign failed for mu counter pool, rc=%d\n", mmrc);
+            
+            uint64_t poolID;
+            for ( poolID=0; poolID<_numCounterPools; poolID++ )
             {
-              _numCounterPools = 0;
-              _counterPool     = NULL;
-            }
-            else
-            {
-              _numCounterPools = numDynamicRouting / 64;
-              if ( _numCounterPools == 0 ) _numCounterPools = 1;
-              
-              mmrc = __global.heap_mm->memalign((void **) & _counterPool, 
-                                                8, 
-                                                _numCounterPools*sizeof(CounterPool));
-              PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for mu counter pool, rc=%d\n", mmrc);
-              
-              uint64_t poolID;
-              for ( poolID=0; poolID<_numCounterPools; poolID++ )
-              {
-                new ( &_counterPool[poolID] ) CounterPool( (pami_context_t)mu_context_cookie,
-                                                           _progressDevice );
-              }
+              new ( &_counterPool[poolID] ) CounterPool( (pami_context_t)mu_context_cookie,
+                                                         _progressDevice );
             }
 
             TRACE_FN_EXIT();
@@ -803,6 +778,9 @@ namespace PAMI
           /// \param[out] map     Pinned MUSPI torus injection fifo map
           /// \param[out] paceRgetsToThisDest True if rget pacing should
           ///                     be considered to this destination.
+          /// \param[out] routingIndex The routing index (0 or 1) indicating
+          ///                          which of two possible routings to
+          ///                          use.
           ///
           /// \return Context-relative injection fifo number pinned to the
           ///         task+offset destination
@@ -813,7 +791,8 @@ namespace PAMI
                                  MUHWI_Destination_t & dest,
                                  uint16_t            & rfifo,
                                  uint64_t            & map,
-				 uint32_t            & paceRgetsToThisDest)
+				 uint32_t            & paceRgetsToThisDest,
+                                 uint32_t            & routingIndex)
           {
             TRACE_FN_ENTER();
 
@@ -822,7 +801,7 @@ namespace PAMI
             // multi-context support.
             size_t tcoord = 0;
             uint32_t fifoPin = 0;
-            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin, paceRgetsToThisDest );
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin, paceRgetsToThisDest, routingIndex );
 
 	    // Get the recFifo to use for this client, and the destination's
 	    // context and T coord.
@@ -1023,11 +1002,6 @@ namespace PAMI
           inline uint64_t getNumCounterPools ()
           {
             return _numCounterPools;
-          }
-
-          inline uint8_t getDynamicRoutingZone ()
-          {
-            return _dynamicRoutingZone;
           }
 
           inline uint32_t getGlobalBatId ()
@@ -1287,7 +1261,6 @@ namespace PAMI
 	
         CounterPool *_counterPool;
         size_t       _numCounterPools;
-        uint8_t      _dynamicRoutingZone;
 
       }; // class     PAMI::Device::MU::Context
     };   // namespace PAMI::Device::MU

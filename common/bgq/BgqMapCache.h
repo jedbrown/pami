@@ -48,6 +48,11 @@ namespace PAMI
   /// 3.  The next highest-order bit of the D coordinate is used for rget
   ///     pacing.  When set, it indicates that rgets should be paced
   ///     to this destination.
+  /// 4.  The next highest-order bit of the C coordinate is used to specify
+  ///     the routing to be used for rgets.  There are 2 routings, based on
+  ///     the flexability metric.  __global.getFlexabilityMetricRoutingOptions()
+  ///     returns a 2 element array containing the routings.  This bit is used
+  ///     as an index into that array.
   ///
   /// Here's a picture of the bits:
   ///
@@ -60,7 +65,8 @@ namespace PAMI
   /// 8        Second bit of the pinFifo value
   /// 9-13     B coordinate
   /// 14       Third bit of the pinFifo value
-  /// 15-19    C coordinate
+  /// 15       Routing bit.  0=Use routing 0.  1=Use routing 1.  See above.
+  /// 16-19    C coordinate
   /// 20       Fourth bit of the pinFifo value
   /// 21       0=rgets should not be paced to this dest
   ///          1=rgets should be paced to this dest

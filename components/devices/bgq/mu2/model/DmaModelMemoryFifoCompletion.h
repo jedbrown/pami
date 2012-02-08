@@ -54,6 +54,21 @@ namespace PAMI
               _isDD2 = false;
             else
               _isDD2 = true;
+            
+            unsigned int *routingOptions;
+            routingOptions = __global.getFlexabilityMetricRoutingOptions();
+            _flexabilityMetricRoutingOptions[0] = 
+              ( (routingOptions[0] == 0) ? MUHWI_PACKET_ZONE_ROUTING_0 :
+                (routingOptions[0] == 1) ? MUHWI_PACKET_ZONE_ROUTING_1 :
+                (routingOptions[0] == 2) ? MUHWI_PACKET_ZONE_ROUTING_2 :
+                (routingOptions[0] == 3) ? MUHWI_PACKET_ZONE_ROUTING_3 :
+                0xFF /*deterministic */  );
+            _flexabilityMetricRoutingOptions[1] = 
+              ( (routingOptions[1] == 0) ? MUHWI_PACKET_ZONE_ROUTING_0 :
+                (routingOptions[1] == 1) ? MUHWI_PACKET_ZONE_ROUTING_1 :
+                (routingOptions[1] == 2) ? MUHWI_PACKET_ZONE_ROUTING_2 :
+                (routingOptions[1] == 3) ? MUHWI_PACKET_ZONE_ROUTING_3 :
+                0xFF /*deterministic */  );
 
             COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::immediate_payload_size);
           };
@@ -142,7 +157,8 @@ namespace PAMI
           ///
           /// 1. If this is DD2 hardware and there is an MU counter available, 
           ///    the remote get payload contains one descriptor:  a direct put
-          ///    that is dynamically routed.
+          ///    that is routed according to the routing configured for this system
+          ///    size (dynamic zone 0,1,2,or 3, or deterministic).
           ///
           /// 2. If this is DD1 hardware (dynamic routing not supported), or no
           ///    MU counter is available, the remote get payload contains two
@@ -159,7 +175,8 @@ namespace PAMI
                                                           uint64_t              map,
                                                           uint8_t               hintsE,
                                                           pami_event_function   local_fn,
-                                                          void                * cookie)
+                                                          void                * cookie,
+                                                          uint32_t              routingIndex)
           {
             TRACE_FN_ENTER();
 
@@ -212,11 +229,34 @@ namespace PAMI
 		desc[0].setRecPayloadBaseAddressInfo ( _context.getGlobalBatId(), 
 						       local_dst_pa);
 
-		// When not a local transfer, set the pinned fifo/map information to use
-		// all 10 directional fifos to maximize performance when using dynamic routing.
-		if ( ( map &
-		       ( MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0 |
-			 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 ) ) == 0 )
+                // Set the torus injection fifo map.  Only 1 bit is set so the hardware
+                // uses 1 fifo.  This eliminates disturbances of packets using the other
+                // fifos.
+                desc[0].setTorusInjectionFIFOMap ( map );
+		
+		// Set routing and zone.
+                // The routing index is used to find the routing value to be used.
+                // The routing value is bit mask to be set into the descriptor for the dynamic
+                // routing zone, or 0xFF for deterministic routing.  Deterministic routing
+                // is already set into the descriptor.
+                uint32_t routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+                if ( routingValue != 0xFF ) // Not deterministic routing?
+                {
+                  desc[0].setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
+                  desc[0].setPt2PtVirtualChannel ( MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC );
+                  desc[0].setZoneRouting ( routingValue );
+#if 0
+                  // When the following code is enabled to set all torus fifo map bits,
+                  // the linktest benchmark that sends from 1 node to 10 others that are
+                  // 1 hop away in all 10 directions degrades significantly.
+                  // Turning this off for now.
+                  
+                  // When not a local transfer, set the pinned fifo/map information to use
+                  // all 10 directional fifos to maximize performance when using dynamic routing.
+                  
+                  if ( ( map &
+                         ( MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0 |
+                           MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 ) ) == 0 )
 		  {
 		    desc[0].setTorusInjectionFIFOMap ( MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM |
 						       MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP |
@@ -229,16 +269,9 @@ namespace PAMI
 						       MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM |
 						       MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP );
 		  }
-		else // Use local mapping.
-		  {
-		    desc[0].setTorusInjectionFIFOMap ( map );
-		  }
-		
-		// Set dynamic routing and use zone.
-		desc[0].setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
-		desc[0].setPt2PtVirtualChannel ( MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC );
-		desc[0].setZoneRouting ( _context.getDynamicRoutingZone() );
-		
+#endif
+		}
+
 		// Set the reception counter atomic address
 		desc[0].setRecCounterBaseAddressInfo ( _context.getGlobalBatId(),
 						       _context.getCounterAtomicOffset( poolID,
@@ -273,7 +306,8 @@ namespace PAMI
 							       uint64_t              local_dst_pa,
 							       uint64_t              remote_src_pa,
 							       size_t                bytes,
-							       uint64_t              map)
+							       uint64_t              map,
+                                                               uint32_t              routingIndex)
           {
             TRACE_FN_ENTER();
 
@@ -297,6 +331,44 @@ namespace PAMI
 
             // Set the pinned fifo/map information
             desc->setTorusInjectionFIFOMap (map);
+
+            // Set routing and zone.
+            // The routing index is used to find the routing value to be used.
+            // The routing value is bit mask to be set into the descriptor for the dynamic
+            // routing zone, or 0xFF for deterministic routing.  Deterministic routing
+            // is already set into the descriptor.
+            uint32_t routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+            if ( routingValue != 0xFF ) // Not deterministic routing?
+            {
+              desc->setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
+              desc->setPt2PtVirtualChannel ( MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC );
+              desc->setZoneRouting ( routingValue );
+#if 0
+              // When the following code is enabled to set all torus fifo map bits,
+              // the linktest benchmark that sends from 1 node to 10 others that are
+              // 1 hop away in all 10 directions degrades significantly.
+              // Turning this off for now.
+              
+              // When not a local transfer, set the pinned fifo/map information to use
+              // all 10 directional fifos to maximize performance when using dynamic routing.
+              
+              if ( ( map &
+                     ( MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL0 |
+                       MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_LOCAL1 ) ) == 0 )
+              {
+                desc->setTorusInjectionFIFOMap ( MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AM |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_AP |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BM |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_BP |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CM |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_CP |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DM |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_DP |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EM |
+                                                 MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP );
+              }
+#endif
+            }
           };
 
 	  // This builds a memfifo descriptor targeted for our node.
@@ -345,6 +417,19 @@ namespace PAMI
 
           MemoryFifoCompletion _completion;
           bool                 _isDD2;
+
+          // Routing options based on the flexability metric.
+          // The constructor converts the 0,1,2,3,4 values from __global
+          // into the actual values passed into the setZoneRouting() descriptor
+          // setter as follows:
+          // __global value    _flexabilityMetricRoutingOptions Value
+          // --------------    --------------------------------------
+          //       0                MUHWI_PACKET_ZONE_ROUTING_0
+          //       1                MUHWI_PACKET_ZONE_ROUTING_1
+          //       2                MUHWI_PACKET_ZONE_ROUTING_2
+          //       3                MUHWI_PACKET_ZONE_ROUTING_3
+          //       4                0xFF (Deterministic Routing)
+          uint8_t _flexabilityMetricRoutingOptions[2];
 
       }; // PAMI::Device::MU::DmaModelMemoryFifoCompletion class
     };   // PAMI::Device::MU namespace

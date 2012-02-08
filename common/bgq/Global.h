@@ -56,6 +56,10 @@
 #undef TRACE_ERR
 #define TRACE_ERR(x) //fprintf x
 
+#ifndef abs_x
+#define abs_x(x) ((x^(x>>31)) - (x>>31))
+#endif
+
 ///
 /// \brief dump hex data to stderr
 ///  \param s : an informational text string to print
@@ -264,6 +268,21 @@ namespace PAMI
       {
         return _isCommAgentRunning;
       }
+
+      /// \brief Get Flexability Metric Routing Options
+      ///
+      /// Returns a 2 element array containing the routing options when
+      /// the flexability metric between 2 nodes is within the flexability metric
+      /// range, and outside of it.
+      /// 
+      /// The routing options are values 0,1,2,3, or 4 for the 4 dynamic
+      /// routing zones (0,1,2,3) and deterministic routing (4).
+      ///
+      inline unsigned int *getFlexabilityMetricRoutingOptions ()
+      {
+        return _flexabilityMetricRangeRouting;
+      }
+
     private:
 
       inline size_t initializeMapCache (BgqJobPersonality  & personality,
@@ -312,7 +331,7 @@ namespace PAMI
       /// Messages between nodes that are more than this
       /// many hops apart on the network will be considered for pacing.
       ///
-      /// \default 8
+      /// \default 4
       ///
       /// \env{rgetpacing,PAMI_RGETPACINGDIMS}
       /// Messages between nodes whose coordinates differ
@@ -321,7 +340,7 @@ namespace PAMI
       /// (3,2,1,0).  They differ in 3 dimensions (A, B, and C).  Specifying 2 
       /// means that messages between these nodes will be considered for pacing.
       ///
-      /// \default 2
+      /// \default 1
       ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -371,14 +390,66 @@ namespace PAMI
       inline bool paceRgets( bool   doRgetPacing,
 			     size_t hops,
 			     size_t dims,
-			     size_t aCoord,
-			     size_t bCoord,
-			     size_t cCoord,
-			     size_t dCoord,
-			     size_t a,
-			     size_t b,
-			     size_t c,
-			     size_t d );
+			     size_t aSource,
+			     size_t bSource,
+			     size_t cSource,
+			     size_t dSource,
+			     size_t aDest,
+			     size_t bDest,
+			     size_t cDest,
+			     size_t dDest,
+                             size_t aSize,
+                             size_t bSize,
+                             size_t cSize,
+                             size_t dSize );
+      
+      /// \brief Calculate Number of Hops Along a Line, Assuming a Torus
+      inline size_t getHops ( size_t source, size_t dest, size_t dimSize )
+      {
+        ssize_t signedHops;
+        size_t  unsignedHops;
+        size_t  dimSizeHalved;
+
+        dimSizeHalved = dimSize >> 1;
+        signedHops = (ssize_t)dest - (ssize_t)source;
+        unsignedHops = abs_x ( signedHops );
+        if ( unsignedHops > dimSizeHalved ) unsignedHops = dimSize - unsignedHops;
+
+        return unsignedHops;
+      }
+
+      /// \brief Initialize Values Associated with the Flexability Metric.
+      /// 
+      /// This processes the PAMI_ROUTING env var and stores the result.
+      ///
+      inline void initializeFlexabilityMetric ( BgqJobPersonality  & personality );
+      
+
+      /// \brief Determine The Routing Between Two Nodes Using Flexability Metric
+      ///
+      /// Our node's ABCD coords are compared with the dest node's abcd coords
+      /// to compute the flexability metric.  Then, the flexabilty metric thresholds
+      /// are applied to determine which of two types of routing to use for
+      /// rendezvous messages between these two nodes.
+      ///
+      /// \retval  0  Use routing option 0.
+      /// \retval  1  Use routing option 1.
+      ///
+      /// The actual routing option for 0 or 1 is determined by the PAMI_ROUTING
+      /// env var (or its defaults).
+      ///
+      inline unsigned int getFlexability ( size_t srcAcoord,
+                                           size_t srcBcoord,
+                                           size_t srcCcoord,
+                                           size_t srcDcoord,
+                                           size_t destAcoord,
+                                           size_t destBcoord,
+                                           size_t destCcoord,
+                                           size_t destDcoord,
+                                           size_t Asize,
+                                           size_t Bsize,
+                                           size_t Csize,
+                                           size_t Dsize );
 
       bgq_mapcache_t   _mapcache;
       size_t           _size;
@@ -386,6 +457,8 @@ namespace PAMI
       bool _useMU;
       bool _isCommAgentRunning;
       CommAgent_Control_t _commAgentControl;       // Comm Agent control struct.
+      float        _flexabilityMetricRange[2];        // Flexability Metric low/high range values.
+      unsigned int _flexabilityMetricRangeRouting[2]; // Routing (0,1,2,3,4) when in and out of range.
   }; // PAMI::Global
 };     // PAMI
 
@@ -408,7 +481,7 @@ void PAMI::Global::initializeCommAgent()
     // Verify version number.
     CommAgent_State_t version;
     version = CommAgent_GetVersion ( _commAgentControl );
-    PAMI_assertf(version >= COMM_AGENT_STATE_INITIALIZED_VERSION_2, "The Messaging App Agent (Comm Agent) has version %d, but version %d or later is required.  Upgrade to the latest agent.\n",version,COMM_AGENT_STATE_INITIALIZED_VERSION_2);
+    PAMI_assert_alwaysf(version >= COMM_AGENT_STATE_INITIALIZED_VERSION_2, "The Messaging App Agent (Comm Agent) has version %d, but version %d or later is required.  Upgrade to the latest agent.\n",version,COMM_AGENT_STATE_INITIALIZED_VERSION_2);
     _isCommAgentRunning = true;
   }
   else
@@ -417,7 +490,7 @@ void PAMI::Global::initializeCommAgent()
     {
       printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  Redirecting the mmcs console output for the block (redirect_block on) and re-running may show error messages.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
     }
-    else PAMI_assertf(rc==0, "Messaging App Agent (Comm Agent) failed to initialize, rc=%d\n",rc);
+    else PAMI_assert_alwaysf(rc==0, "Messaging App Agent (Comm Agent) failed to initialize, rc=%d\n",rc);
   }
 }
 
@@ -435,8 +508,8 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
   // pacing=OFF.  If PAMI_RGETPACING is specified, then the
   // value of that flag determines whether or not pacing is ON.
   doRgetPacing = (blockSize > 1024) ? true : false;
-  hops         = 8;
-  dims         = 2;
+  hops         = 4;
+  dims         = 1;
 
   s = getenv( "PAMI_RGETPACING" );
   if ( s )
@@ -468,43 +541,397 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
 bool PAMI::Global::paceRgets( bool   doRgetPacing,
 			      size_t hops,
 			      size_t dims,
-			      size_t aCoord,
-			      size_t bCoord,
-			      size_t cCoord,
-			      size_t dCoord,
-			      size_t a,
-			      size_t b,
-			      size_t c,
-			      size_t d )
+			      size_t aSource, // source coords
+			      size_t bSource,
+			      size_t cSource,
+			      size_t dSource,
+			      size_t aDest,      // dest coords
+			      size_t bDest,
+			      size_t cDest,
+			      size_t dDest,
+                              size_t aSize,
+                              size_t bSize,
+                              size_t cSize,
+                              size_t dSize )
 {
-  TRACE_ERR((stderr,"paceRgets: myCoords=(%zu,%zu,%zu,%zu), Dest=(%zu,%zu,%zu,%zu)\n",aCoord,bCoord,cCoord,dCoord,a,b,c,d));
+  TRACE_ERR((stderr,"paceRgets: myCoords=(%zu,%zu,%zu,%zu), Dest=(%zu,%zu,%zu,%zu)\n",aSource,bSource,cSource,dSource,aDest,bDest,cDest,dDest));
   // If the caller does not want rget pacing, return false.
   if ( doRgetPacing == false ) return false;
 
   // If the number of hops between our node and the dest node exceeds "hops", return true.
-  size_t actualHops = 0;
-  if ( aCoord > a ) actualHops += aCoord - a;
-  else              actualHops += a - aCoord;
-  if ( bCoord > b ) actualHops += bCoord - b;
-  else              actualHops += b - bCoord;
-  if ( cCoord > c ) actualHops += cCoord - c;
-  else              actualHops += c - cCoord;
-  if ( dCoord > d ) actualHops += dCoord - d;
-  else              actualHops += d - dCoord;
+  size_t actualHops;
+  actualHops = 0;
+  actualHops += getHops ( aSource, aDest, aSize );
+  actualHops += getHops ( bSource, bDest, bSize );
+  actualHops += getHops ( cSource, cDest, cSize );
+  actualHops += getHops ( dSource, dDest, dSize );
   TRACE_ERR((stderr,"paceRgets: actualHops=%zu\n",actualHops));
   if ( actualHops > hops ) return true;
 
   // If the number of dimensions in ABCD that differ between our node and the dest node
   // exceeds "dims", return true.
-  size_t actualDims = 0;
-  if ( aCoord != a ) actualDims++;
-  if ( bCoord != b ) actualDims++;
-  if ( cCoord != c ) actualDims++;
-  if ( dCoord != d ) actualDims++;
+  size_t actualDims;
+  actualDims = 0;
+  if ( aSource != aDest ) actualDims++;
+  if ( bSource != bDest ) actualDims++;
+  if ( cSource != cDest ) actualDims++;
+  if ( dSource != dDest ) actualDims++;
   TRACE_ERR((stderr,"paceRgets: actualDims=%zu\n",actualDims));
   if ( actualDims > dims ) return true;
 
   return false;
+}
+
+            
+////////////////////////////////////////////////////////////////////////////////
+/// \env{bgq,PAMI_ROUTING}
+/// Specifies PAMI network routing options.
+/// The complete syntax is <tt> [low:high][,[in][,out]] </tt>
+///
+/// <tt>low:high</tt> is the "flexability metric" range.  The flexability metric
+/// guages the routing flexability between a given source node and destination
+/// node.  Values for "low" and "high" are each floating point numbers ranging
+/// from 0.0 through 4.0.  "low" must be less than or equal to "high".  PAMI
+/// computes the flexability metric between the source node and destination node
+/// of a messaging transfer as the sum of the flexability of dimensions A, B, C,
+/// and D between those nodes.  The flexability of a particular dimension is
+/// the ratio of the number of hops between the source and the destination in
+/// that dimension and the size of that dimension, and can range from 0.0
+/// through 1.0.
+///
+/// <tt>in</tt> is the network routing to be used for a message transfer
+/// between two nodes when their flexability metric is between "low" and
+/// "high", and <tt>out</tt> is the network routing otherwise.  The values for
+/// "in" and "out" may each be one of the following values:
+/// - 0: Dynamic routing zone 0.
+/// - 1: Dynamic routing zone 1.
+/// - 2: Dynamic routing zone 2.
+/// - 3: Dynamic routing zone 3.
+/// - 4: Deterministic routing.
+///
+/// - Defaults depend on the number of nodes in the block.  Refer to
+///   /bgsys/drivers/ppcfloor/comm/README for a table showing
+///   the defaults for various block sizes.
+////////////////////////////////////////////////////////////////////////////////
+
+/// \brief Initialize Values Associated with the Flexability Metric.
+/// 
+/// This processes the PAMI_ROUTING env var and stores the result.
+///
+void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personality )
+{
+  // Default flexability metric range, based upon system size, in racks:
+  //
+  // Routing 0,1,2,3 are dynamic routing zones
+  // Routine 4 is deterministic
+  //
+  // BLOCK SIZE           Flexability Metric Range   Routing when   Routing when 
+  //                                                 in Range       out of range
+  // ------------------   ------------------------   ------------   ------------
+  // 32 <= Nodes <   64      1.5 - 3.5                    3              3
+  // 64 <= Nodes <  128      1.5 - 3.5                    3              3
+  //128 <= Nodes <  256      1.5 - 3.5                    3              3
+  //256 <= Nodes <  512      1.5 - 3.5                    1              3
+  //512 <= Nodes < 1024      1.5 - 3.5                    3              3
+  //  1 <= Racks <  2        1.5 - 3.5                    1              3
+  //  2 <= Racks <  4        1.0 - 3.5                    2              0
+  //  4 <= Racks <  8        1.0 - 3.5                    3              0
+  //  8 <= Racks < 16        1.0 - 3.5                    3              0
+  // 16 <= Racks < 32        1.0 - 3.5                    3              0
+  // 32 <= Racks < 48        1.0 - 3.5                    3              0
+  // 48 <= Racks < 64        1.0 - 3.5                    3              0
+  // 64 <= Racks < 80        1.0 - 3.5                    3              0
+  // 80 <= Racks < 96        1.0 - 3.5                    3              0
+  // 96 <= Racks             1.0 - 3.5                    3              0
+  //
+  // NOTE:  If you change these tables, please update comm/README so users
+  //        know what the defaults are.
+  float defaultFlexabilityMetricRange[15][2] = { { 1.5, 3.5 },   /*    32    */
+                                                 { 1.5, 3.5 },   /*    64    */
+                                                 { 1.5, 3.5 },   /*   128    */
+                                                 { 1.5, 3.5 },   /*   256    */
+                                                 { 1.5, 3.5 },   /*   512    */
+                                                 { 1.5, 3.5 },   /*  1 rack  */
+                                                 { 1.0, 3.5 },   /*  2 racks */
+                                                 { 1.0, 3.5 },   /*  4 racks */
+                                                 { 1.0, 3.5 },   /*  8 racks */
+                                                 { 1.0, 3.5 },   /* 16 racks */
+                                                 { 1.0, 3.5 },   /* 32 racks */
+                                                 { 1.0, 3.5 },   /* 48 racks */
+                                                 { 1.0, 3.5 },   /* 64 racks */
+                                                 { 1.0, 3.5 },   /* 80 racks */
+                                                 { 1.0, 3.5 } }; /* 96 racks */
+  unsigned int defaultRouting[15][2] = { { 3, 3 },   /*    32    */
+                                         { 3, 3 },   /*    64    */
+                                         { 3, 3 },   /*   128    */
+                                         { 1, 3 },   /*   256    */
+                                         { 3, 3 },   /*   512    */
+                                         { 1, 3 },   /*  1 rack  */
+                                         { 2, 0 },   /*  2 racks */
+                                         { 3, 0 },   /*  4 racks */
+                                         { 3, 0 },   /*  8 racks */
+                                         { 3, 0 },   /* 16 racks */
+                                         { 3, 0 },   /* 32 racks */
+                                         { 3, 0 },   /* 48 racks */
+                                         { 3, 0 },   /* 64 racks */
+                                         { 3, 0 },   /* 80 racks */
+                                         { 3, 0 } }; /* 96 racks */
+
+  // Compute block size
+  size_t blockSize;
+  blockSize =
+    personality.aSize() *
+    personality.bSize() *
+    personality.cSize() *
+    personality.dSize() *
+    personality.eSize();
+
+  // Establish defaults based on system size.
+  size_t index;
+  index = 14; /* Set for largest system size */
+  if ( blockSize < 96*1024 ) index = 13;
+  if ( blockSize < 80*1024 ) index = 12;
+  if ( blockSize < 64*1024 ) index = 11;
+  if ( blockSize < 48*1024 ) index = 10;
+  if ( blockSize < 32*1024 ) index = 9;
+  if ( blockSize < 16*1024 ) index = 8;
+  if ( blockSize <  8*1024 ) index = 7;
+  if ( blockSize <  4*1024 ) index = 6;
+  if ( blockSize <  2*1024 ) index = 5;
+  if ( blockSize <  1*1024 ) index = 4;
+  if ( blockSize <  512    ) index = 3;
+  if ( blockSize <  256    ) index = 2;
+  if ( blockSize <  128    ) index = 1;
+  if ( blockSize <   64    ) index = 0;
+  _flexabilityMetricRange[0] = defaultFlexabilityMetricRange[index][0]; // Flexability Metric low  range value.
+  _flexabilityMetricRange[1] = defaultFlexabilityMetricRange[index][1]; // Flexability Metric high range value.
+  _flexabilityMetricRangeRouting[0] = defaultRouting[index][0]; // Routing (0,1,2,3,4) when in range.
+  _flexabilityMetricRangeRouting[1] = defaultRouting[index][1]; // Routing (0,1,2,3,4) when in range.
+
+  TRACE_ERR((stderr,"Default flexability range = %g - %g, routing = %u - %u\n",_flexabilityMetricRange[0],_flexabilityMetricRange[1],_flexabilityMetricRangeRouting[0],_flexabilityMetricRangeRouting[1]));
+
+  // Get the PAMI_ROUTING env var.
+  char *envVar;
+  envVar = getenv ( "PAMI_ROUTING" );
+
+  // If the PAMI_ROUTING env var is not specified, return with default values set.
+  if ( envVar == NULL ) 
+  {
+    return;
+  }
+
+  // Find out how long the env var string is, so we can make a copy of it
+  unsigned int envVarLen = 0;
+  while ( envVar[envVarLen++] != '\0' );
+
+  // Allocate space for a copy of the colon and comma-delimited list of values
+  pami_result_t prc;
+  char *envVarCopy;
+  prc = heap_mm->memalign((void **)&envVarCopy, 0, envVarLen);
+  PAMI_assertf(prc == PAMI_SUCCESS, "alloc of PAMI_ROUTINE env var copy failed");
+
+  // Copy the env var string into our writeable copy
+  unsigned int i;
+  for ( i=0; i<envVarLen; i++ )
+    envVarCopy[i] = envVar[i];
+
+  char *currentChar = envVarCopy;
+
+  // Parse the env var:  range,unsigned,unsigned
+  //
+  // First, handle the Flexability Metric range in this format: float:float
+
+  char *v;           // "v" for "value"
+  unsigned int vLen; // Length of value
+  v = currentChar;   // Point to first character of the range
+  vLen = 0;
+  while ( ( *currentChar != ','  ) &&
+          ( *currentChar != ':'  ) &&
+          ( *currentChar != '\0' ) )
+  {
+    currentChar++;
+    vLen++;
+  }
+
+  // If there is no range value...
+  if ( vLen == 0 )
+  {
+    // If entire env var is empty, return with defaults set.
+    if ( *currentChar == '\0' )
+    {
+      return;
+    }
+
+    // If start of range is empty, report error.
+    PAMI_assert_alwaysf( *currentChar != ':',"Incorrect PAMI_ROUTING env var");
+
+    // Range is empty and we hit a comma.  Use defaults for range.
+    currentChar++;
+  }
+  else
+  {
+    // Range is not empty.  Extract the start of the range.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _flexabilityMetricRange[0] = strtof( v, NULL );
+    PAMI_assert_alwaysf( (errno==0) && (_flexabilityMetricRange[0] >= 0.0) && (_flexabilityMetricRange[0] <= 4.0),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Flexability start of range overridden to %g\n",_flexabilityMetricRange[0]));
+
+    // Get the value that ends the range.
+    currentChar++;
+    v = currentChar;   // Point to first character of the second range value
+    vLen = 0;
+    while ( ( *currentChar != ','  ) &&
+            ( *currentChar != '\0' ) )
+    {
+      currentChar++;
+      vLen++;
+    }
+    PAMI_assert_alwaysf( vLen > 0,"Incorrect PAMI_ROUTING env var");
+
+    // 2nd half of Range is not empty.  Extract the end of the range.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _flexabilityMetricRange[1] = strtof( v, NULL );
+    PAMI_assert_alwaysf( (errno==0) && (_flexabilityMetricRange[1] >= 0.0) && (_flexabilityMetricRange[1] <= 4.0) && (_flexabilityMetricRange[0] <= _flexabilityMetricRange[1]),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Flexability end of range overridden to %g\n",_flexabilityMetricRange[1]));
+
+    currentChar++;
+  }
+
+  // Second, handle the "in" routing value.
+  v = currentChar;   // Point to first character of the "in" routing value.
+  vLen = 0;
+  while ( ( *currentChar != ','  ) &&
+          ( *currentChar != '\0' ) )
+  {
+    currentChar++;
+    vLen++;
+  }
+
+  // If there is no "in" value...
+  if ( vLen == 0 )
+  {
+    // If remainder of env var is empty, return with defaults set.
+    if ( *currentChar == '\0' )
+    {
+      return;
+    }
+
+    // "in" routing value is empty and we hit a comma.  Use defaults for "in" routing value.
+    currentChar++;
+  }
+  else
+  {
+    // "in" routing value is not empty.  Extract it.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _flexabilityMetricRangeRouting[0] = strtoul( v, NULL, 10 );
+    PAMI_assert_alwaysf( (errno==0) && (_flexabilityMetricRangeRouting[0] >= 0) && (_flexabilityMetricRangeRouting[0] <=4),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Flexability Routing[0] overridden to %u\n",_flexabilityMetricRangeRouting[0]));
+
+    currentChar++;
+  }
+
+  // Third, handle the "out" routing value.
+  v = currentChar;   // Point to first character of the "out" routing value.
+  vLen = 0;
+  while ( ( *currentChar != ','  ) &&
+          ( *currentChar != '\0' ) )
+  {
+    currentChar++;
+    vLen++;
+  }
+
+  // If there is no "out" value...
+  if ( vLen == 0 )
+  {
+    // If remainder of env var is empty, return with defaults set.
+    if ( ( *currentChar == '\0' ) || (*currentChar == ',') )
+    {
+      return;
+    }
+  }
+  else
+  {
+    // "out" routing value is not empty.  Extract it.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _flexabilityMetricRangeRouting[1] = strtoul( v, NULL, 10 );
+    PAMI_assert_alwaysf( (errno==0) && (_flexabilityMetricRangeRouting[1] >= 0) && (_flexabilityMetricRangeRouting[1] <=4),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Flexability Routing[1] overridden to %u\n",_flexabilityMetricRangeRouting[1]));
+  }
+}
+
+
+/// \brief Determine The Routing Between Two Nodes Using Flexability Metric
+///
+/// Our node's ABCD coords are compared with the dest node's abcd coords
+/// to compute the flexability metric.  Then, the flexabilty metric thresholds
+/// are applied to determine which of two types of routing to use for
+/// rendezvous messages between these two nodes.
+///
+/// \retval  0  Use routing option 0.
+/// \retval  1  Use routing option 1.
+///
+/// The actual routing option for 0 or 1 is determined by the PAMI_ROUTING
+/// env var (or its defaults).
+///
+/// The flexibility metric (for a torus in each dimension) is calculated as follows:
+///
+/// flex = 0;
+/// for each dimension i, except E {
+///     flex += dist(src, dest) / max_dist(i);
+/// }
+/// if (flex > Tlow and flex < Thigh) { use routing option 0} else { use routing option 1}
+///
+/// Tlow and Thigh correspond to _flexabilityMetricRange[0] and _flexabilityMetricRange[1].
+///
+unsigned int PAMI::Global::getFlexability ( size_t srcAcoord,
+                                            size_t srcBcoord,
+                                            size_t srcCcoord,
+                                            size_t srcDcoord,
+                                            size_t destAcoord,
+                                            size_t destBcoord,
+                                            size_t destCcoord,
+                                            size_t destDcoord,
+                                            size_t Asize,
+                                            size_t Bsize,
+                                            size_t Csize,
+                                            size_t Dsize )
+{
+  float flex, Adist, Bdist, Cdist, Ddist, Amax, Bmax, Cmax, Dmax;
+
+  flex = 0;
+
+  // Compute for A dimension
+  Adist = (float) getHops ( srcAcoord, destAcoord, Asize );
+  Amax  = (float) (Asize >> 1);
+  flex += Adist / Amax;
+  // Compute for B dimension
+  Bdist = (float) getHops ( srcBcoord, destBcoord, Bsize );
+  Bmax  = (float) (Bsize >> 1);
+  flex += Bdist / Bmax;
+  // Compute for C dimension
+  Cdist = (float) getHops ( srcCcoord, destCcoord, Csize );
+  Cmax  = (float) (Csize >> 1);
+  flex += Cdist / Cmax;
+  // Compute for D dimension
+  Ddist = (float) getHops ( srcDcoord, destDcoord, Dsize );
+  Dmax  = (float) (Dsize >> 1);
+  flex += Ddist / Dmax;
+
+  TRACE_ERR((stderr,"Flexability metric between %zu,%zu,%zu,%zu and %zu,%zu,%zu,%zu, Adist=%g, Amax=%g, Aflex=%g,, Bdist=%g, Bmax=%g, Bflex=%g, Cdist=%g, Cmax=%g, Cflex=%g, Ddist=%g, Dmax=%g, Dflex=%g, totalFlex=%g\n",srcAcoord,srcBcoord,srcCcoord,srcDcoord,destAcoord,destBcoord,destCcoord,destDcoord,Adist,Amax,Adist/Amax,Bdist,Bmax,Bdist/Bmax,Cdist,Cmax,Cdist/Cmax,Ddist,Dmax,Ddist/Dmax,flex));
+
+  if ( ( flex > _flexabilityMetricRange[0] ) &&
+       ( flex < _flexabilityMetricRange[1] ) )
+    return 0;
+  else
+    return 1;
 }
 
 
@@ -558,6 +985,7 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
   size_t tSize  = personality.tSize ();
 
   initializeCommAgent();
+  initializeFlexabilityMetric ( personality );
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. myCoords{%zu %zu %zu %zu %zu %zu} size{%zu %zu %zu %zu %zu %zu}\n", aCoord, bCoord, cCoord, dCoord, eCoord, tCoord, aSize, bSize, cSize, dSize, eSize, tSize));
 
@@ -734,14 +1162,24 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
 	      else
 		{
 		  // The task is not local to our node.
+
 		  // Determine whether remote gets to this task should be paced.
 		  // If so, set the 2nd highest bit of the D coordinate.
 		  if ( paceRgets( doRgetPacing, rgetPacingHops, rgetPacingDims, 
-				  aCoord, bCoord, cCoord, dCoord, a, b, c, d ) )
+				  aCoord, bCoord, cCoord, dCoord, a, b, c, d, aSize, bSize, cSize, dSize ) )
 		    {
 		      TRACE_ERR((stderr,"Global::initializeMapCache(): Pacing rgets is true to this dest\n"));
 		      mapcache->torus.task2coords[i].raw |= 0x00000400;
 		    }
+
+                  // Determine the routing to use between our task and the dest task.
+                  unsigned int routing;
+                  routing = getFlexability ( aCoord,bCoord,cCoord,dCoord,
+                                             a,b,c,d,
+                                             aSize,bSize,cSize,dSize );
+                  if ( routing )
+                    mapcache->torus.task2coords[i].raw |= 0x00010000;
+                  TRACE_ERR((stderr,"Routing based on flex = %u\n",routing));
 		}
 
               // Set the bit corresponding to the physical node of this rank,

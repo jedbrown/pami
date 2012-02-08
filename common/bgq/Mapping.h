@@ -228,11 +228,12 @@ namespace PAMI
 
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
 
-      // raw & 0x1f7df3c0 turns off the e, reserved, and t coordinate bits, AND
+      // raw & 0x1f7cf3c0 turns off the e, reserved, and t coordinate bits, AND
       // the high bit of A, B, C, and D which are used for the fifoPin AND
-      // the next highest bit of D which is used for rget pacing.
+      // the next highest bit of D which is used for rget pacing AND
+      // the next highest bit of C which is used for routing.
       // OR in the e coord at the LSB.
-      dest.Destination.Destination = (raw & 0x1f7df3c0) | (raw >> 31);
+      dest.Destination.Destination = (raw & 0x1f7cf3c0) | (raw >> 31);
 
       // Extract the MSB from each of A, B, C, and D, and construct the
       // number used for fifo pinning.  Should be a number between 0 and 9,
@@ -255,18 +256,20 @@ namespace PAMI
                                       MUHWI_Destination_t &dest,
                                       size_t              &tcoord,
                                       uint32_t            &fifoPin,
-				      uint32_t            &paceRgetsToThisDest)
+				      uint32_t            &paceRgetsToThisDest,
+                                      uint32_t            &routingIndex)
     {
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
       raw += _jobLLcoords.raw; // Add block origin to obtain MU coords.
 
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
 
-      // raw & 0x1f7df3c0 turns off the e, reserved, and t coordinate bits, AND
+      // raw & 0x1f7cf3c0 turns off the e, reserved, and t coordinate bits, AND
       // the high bit of A, B, C, and D which are used for the fifoPin AND
-      // the next highest bit of D which is used for rget pacing.
+      // the next highest bit of D which is used for rget pacing AND
+      // the next highest bit of C which is used for routing.
       // OR in the e coord at the LSB.
-      dest.Destination.Destination = (raw & 0x1f7df3c0) | (raw >> 31);
+      dest.Destination.Destination = (raw & 0x1f7cf3c0) | (raw >> 31);
 
       // Extract the MSB from each of A, B, C, and D, and construct the
       // number used for fifo pinning.  Should be a number between 0 and 9,
@@ -278,9 +281,12 @@ namespace PAMI
 
       // Extract the rget pacing indicator from the map cache.
       paceRgetsToThisDest = raw & 0x00000400;
+
+      // Extract the routing index from the map cache.
+      routingIndex = ( raw & 0x00010000 ) >> 16;
     };
 
-        ///
+    ///
     /// \brief Retrieve mu destination structure for a specific task
     ///
     /// The intent here is to provide access to a mu destination structure
@@ -298,10 +304,12 @@ namespace PAMI
 
       tcoord       = (size_t) raw & 0x0000003f; // 't' coordinate
 
-      // raw & 0x1f7df3c0 turns off the e, reserved, and t coordinate bits, AND
-      // the high bit of A, B, C, and D which are used for the fifoPin.
+      // raw & 0x1f7cf3c0 turns off the e, reserved, and t coordinate bits, AND
+      // the high bit of A, B, C, and D which are used for the fifoPin AND
+      // the next highest bit of D which is used for rget pacing AND
+      // the next highest bit of C which is used for routing.
       // OR in the e coord at the LSB.
-      dest = (raw & 0x1f7df7c0) | (raw >> 31);
+      dest = (raw & 0x1f7cf3c0) | (raw >> 31);
 
       // Extract the MSB from each of A, B, C, and D, and construct the
       // number used for fifo pinning.  Should be a number between 0 and 9,
@@ -319,11 +327,12 @@ namespace PAMI
       uint32_t raw = _mapcache.torus.task2coords[task].raw;
       raw += _jobLLcoords.raw; // Add block origin to obtain MU coords.
 
-      // raw & 0x1f7df7c0 turns off the e, reserved, and t coordinate bits, AND
+      // raw & 0x1f7cf3c0 turns off the e, reserved, and t coordinate bits, AND
       // the high bit of A, B, C, and D which are used for the fifoPin AND
-      // the next highest bit of D which is used for rget pacing.
+      // the next highest bit of D which is used for rget pacing AND
+      // the next highest bit of C which is used for routing.
       // OR in the e coord at the LSB.
-      dest.Destination.Destination = (raw & 0x1f7df3c0) | (raw >> 31);
+      dest.Destination.Destination = (raw & 0x1f7cf3c0) | (raw >> 31);
     };
 
     ///
@@ -432,10 +441,11 @@ namespace PAMI
       uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
 
       // Mask off the high bit of ABCD, since it is used for fifo pinning,
-      // and the next highest bit of D, since it is used for rget pacing.
+      // and the next highest bit of D, since it is used for rget pacing,
+      // and the next highest bit of C, since it is used for routing.
       addr[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
       addr[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
-      addr[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr[2] = (abcdet >> 12) & 0x00000000f; // 'c' coordinate
       addr[3] = (abcdet >>  6) & 0x00000000f; // 'd' coordinate
       addr[4] = (abcdet >> 31); // 'e' coordinate
 
@@ -455,10 +465,11 @@ namespace PAMI
       TRACE_ERR((stderr, "Mapping::task2global(%zu, ...),  _mapcache.torus.task2coords[%zu].raw = 0x%08x\n", task, task, abcdet));
 
       // Mask off the high bit of ABCD since it is used for fifo pinning,
-      // and the next highest bit of D, since it is used for rget pacing.
+      // and the next highest bit of D, since it is used for rget pacing,
+      // and the next highest bit of C, since it is used for routing.
       addr[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
       addr[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
-      addr[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr[2] = (abcdet >> 12) & 0x00000000f; // 'c' coordinate
       addr[3] = (abcdet >>  6) & 0x00000000f; // 'd' coordinate
       addr[4] = (abcdet >> 31)              ; // 'e' coordinate
       addr[5] = (abcdet)       & 0x00000003f; // 't' coordinate
@@ -530,10 +541,11 @@ namespace PAMI
       uint32_t abcdet = _mapcache.torus.task2coords[task].raw;
       addr->network = PAMI_N_TORUS_NETWORK;
       // Mask off the high bit of ABCD since it is used for fifo pinning,
-      // and the next highest bit of D, since it is used for rget pacing.
+      // and the next highest bit of D, since it is used for rget pacing,
+      // and the next highest bit of C, since it is used for routing.
       addr->u.n_torus.coords[0] = (abcdet >> 24) & 0x00000001f; // 'a' coordinate
       addr->u.n_torus.coords[1] = (abcdet >> 18) & 0x00000001f; // 'b' coordinate
-      addr->u.n_torus.coords[2] = (abcdet >> 12) & 0x00000001f; // 'c' coordinate
+      addr->u.n_torus.coords[2] = (abcdet >> 12) & 0x00000000f; // 'c' coordinate
       addr->u.n_torus.coords[3] = (abcdet >>  6) & 0x00000000f; // 'd' coordinate
       addr->u.n_torus.coords[4] = (abcdet >> 31)              ; // 'e' coordinate
       addr->u.n_torus.coords[5] = (abcdet)       & 0x00000003f; // 't' coordinate
@@ -629,11 +641,12 @@ namespace PAMI
       uint32_t coord1 = _mapcache.torus.task2coords[task1].raw;
       uint32_t coord2 = _mapcache.torus.task2coords[task2].raw;
 
-      return ((coord1 & 0x9f7df3c0) == (coord2 & 0x9f7df3c0));
+      return ((coord1 & 0x9f7cf3c0) == (coord2 & 0x9f7cf3c0));
       // The above bit masks take the following into account:
       // - Ignore the reserved bit
       // - Ignore the high order bit of ABCD - it is used to store the fifo pin value
       // - Ignore the next highest bit of D - it is used to store the rget pacing flag
+      // - Ignore the next highest bit of C - it is used to store the routing flag
       // - Ignore the t coord
     }
 
@@ -659,9 +672,10 @@ namespace PAMI
       // We shift the coords by 5 to eliminate the tcoord and to
       // leave room to insert the ecoord in the bottom bit.
       // We also mask off the high bit of ABCD which is used for
-      // fifo pinning and the next highest bit of D which is used
-      // for rget pacing.
-      address.global = ((coords >> 5) & 0xfbef9e) | (coords >> 31);
+      // fifo pinning, and the next highest bit of D which is used
+      // for rget pacing, and the next highest bit of C which is
+      // used for routing.
+      address.global = ((coords >> 5) & 0xfbe79e) | (coords >> 31);
 
       // local coordinate is the thread id (t) in the most significant
       // position followed by the core id (p) in the least significant

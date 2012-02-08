@@ -1696,10 +1696,17 @@ fprintf(stderr, "%s\n", buf);
 	  { return _globalRgetInjFifoIds; }
 
       private:
+        inline uint16_t chooseFifo (uint64_t dimMinusCutoff,
+                                    uint64_t dimPlusCutoff,
+                                    size_t   sourceCoordInDim,
+                                    size_t   destCoordInDim,
+                                    bool     isTorus);
+#if 0
 	inline uint16_t chooseFifo (size_t  sourceDim,
 				    ssize_t hops,
 				    ssize_t sizeHalved,
 				    bool    isTorus);
+#endif
 	inline uint16_t pinFifo( size_t task );
 	inline void initFifoPin();
 	inline void calculatePerCoreMUResourcesBasedOnAvailability();
@@ -1806,11 +1813,13 @@ fprintf(stderr, "%s\n", buf);
 
 	size_t  _tSize;
 	size_t  _myT;
+#if 0
 	ssize_t _aSizeHalved;
 	ssize_t _bSizeHalved;
 	ssize_t _cSizeHalved;
 	ssize_t _dSizeHalved;
 	ssize_t _eSizeHalved;
+#endif
 	bool    _isTorusA;
 	bool    _isTorusB;
 	bool    _isTorusC;
@@ -1861,6 +1870,18 @@ fprintf(stderr, "%s\n", buf);
 	// Process-wide resources
 	MUSPI_RecFifoSubGroup_t           *_globalRecSubGroups;     // Subgroups for cores 0..15.
 
+        // Cutoff registers for fifo pinning on a torus.
+        uint64_t                           _AminusCutoff;
+        uint64_t                           _AplusCutoff;
+        uint64_t                           _BminusCutoff;
+        uint64_t                           _BplusCutoff;
+        uint64_t                           _CminusCutoff;
+        uint64_t                           _CplusCutoff;
+        uint64_t                           _DminusCutoff;
+        uint64_t                           _DplusCutoff;
+        uint64_t                           _EminusCutoff;
+        uint64_t                           _EplusCutoff;
+
       }; // ResourceManager class
     }; // MU     namespace
   };   // Device namespace
@@ -1882,6 +1903,147 @@ void PAMI::Device::MU::ResourceManager::initClient( size_t RmClientId )
 }
 
 
+/// \brief Choose Fifo
+///
+/// Select an injection fifo (0..9) based on inputs.
+///
+uint16_t PAMI::Device::MU::ResourceManager::chooseFifo (uint64_t dimMinusCutoff,
+                                                        uint64_t dimPlusCutoff,
+                                                        size_t   sourceCoordInDim,
+                                                        size_t   destCoordInDim,
+							bool     isTorus)
+{
+  // If it is a torus, choose the direction that is within the number of hops
+  // allowed by the configuration set up for the hardware cutoffs.
+  if ( isTorus )
+  {
+    if ( sourceCoordInDim < destCoordInDim )
+    {
+      if ( destCoordInDim <= dimPlusCutoff )
+        return 0;  // Use +.
+      else
+        return 1;  // Use -.
+    }
+    if ( destCoordInDim < sourceCoordInDim )
+    {
+      if ( dimMinusCutoff <= destCoordInDim )
+        return 1;  // Use -.
+      else
+        return 0;  // Use +.
+    }
+    PAMI_assert_always(0);
+  }
+  // It is a mesh.  Go in natural direction.
+  else return ( destCoordInDim > sourceCoordInDim ) ? 0 : 1;
+
+} // End: chooseFifo()
+
+
+/// \brief Pin Fifo
+///
+/// For the specified task, determine the optimal injection fifo to use
+/// to communicate with that task.  This is based on there being an
+/// optimal number of injection fifos.
+///
+uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
+{
+  // Get our torus coords
+  size_t ourA = _mapping.a();
+  size_t ourB = _mapping.b();
+  size_t ourC = _mapping.c();
+  size_t ourD = _mapping.d();
+  size_t ourE = _mapping.e();
+
+  // Get the destination task's torus coords (addr[0..4]) and t coordinate (addr[5]).
+  size_t addr[BGQ_TDIMS + BGQ_LDIMS];
+  _mapping.task2global( task, addr );
+
+  TRACE((stderr,"MU ResourceManager: pinFifo: task=%zu,destA=%zu, B=%zu, C=%zu, D=%zu, E=%zu\n",task,addr[0],addr[1],addr[2],addr[3],addr[4]));
+
+  // Calculate the signed number of hops between our task and the destination task
+  // in each dimension
+  ssize_t dA = addr[0] - ourA;
+  ssize_t dB = addr[1] - ourB;
+  ssize_t dC = addr[2] - ourC;
+  ssize_t dD = addr[3] - ourD;
+  ssize_t dE = addr[4] - ourE;
+
+  TRACE((stderr,"MU ResourceManager: pinFifo: ourA=%zu,ourB=%zu,ourC=%zu,ourD=%zu,ourE=%zu, dA=%zd,dB=%zd,dC=%zd,dD=%zd,dE=%zd,t=%zd\n",ourA,ourB,ourC,ourD,ourE,dA,dB,dC,dD,dE,addr[5]));
+
+  // If local, select the fifo based on the T coordinate.
+  if ( dA == 0 && dB == 0 && dC == 0 && dD == 0 && dE == 0 )
+    {
+      return ( 10 + (addr[5] % 6) );
+    }
+
+  // If communicating only along the A dimension, select either the A- or A+ fifo
+  if ( dB == 0 && dC == 0 && dD == 0 && dE == 0 )
+  {
+    return ( chooseFifo (_AminusCutoff,
+                         _AplusCutoff,
+                         ourA,
+			 addr[0],
+			 _isTorusA) ? 0 : 1 ); // Return A- if chooseFifo
+                                               // returns 1, else return A+.
+  }
+
+  // If communicating only along the B dimension, select either the B- or B+ fifo
+  if ( dA == 0 && dC == 0 && dD == 0 && dE == 0 )
+  {
+    return ( chooseFifo (_BminusCutoff,
+                         _BplusCutoff,
+                         ourB,
+                         addr[1],
+                         _isTorusB) ? 2 : 3 ); // Return B- if chooseFifo
+                                               // returns 1, else return B+.
+  }
+
+  // If communicating only along the C dimension, select either the C- or C+ fifo
+  if ( dA == 0 && dB == 0 && dD == 0 && dE == 0 )
+  {
+    return ( chooseFifo (_CminusCutoff,
+                         _CplusCutoff,
+                         ourC,
+                         addr[2],
+			 _isTorusC) ? 4 : 5 ); // Return C- if chooseFifo
+                                               // returns 1, else return C+.
+  }
+
+  // If communicating only along the D dimension, select either the D- or D+ fifo
+  if ( dA == 0 && dB == 0 && dC == 0 && dE == 0 )
+  {
+    return ( chooseFifo (_DminusCutoff,
+                         _DplusCutoff,
+                         ourD,
+                         addr[3],
+			 _isTorusD) ? 6 : 7 ); // Return D- if chooseFifo
+                                               // returns 1, else return D+.
+  }
+
+  // If communicating only along the E dimension, select either the E- or E+ fifo
+  if ( dA == 0 && dB == 0 && dC == 0 && dD == 0 )
+  {
+    return ( chooseFifo (_EminusCutoff,
+                         _EplusCutoff,
+                         ourE,
+                         addr[4],
+			 _isTorusE) ? 8 : 9 ); // Return E- if chooseFifo
+                                               // returns 1, else return E+.
+  }
+
+  // Communicating along a diagonal or to ourself.
+  // Sum the distance between our node and the destination node, and map that
+  // number to one of the fifos.  This is essentially a random fifo that is
+  // chosen.
+  uint16_t loc = abs_x(dA) + abs_x(dB) + abs_x(dC) + abs_x(dD) + abs_x(dE);
+  return loc % numTorusDirections;
+
+} // End: pinFifo()
+
+
+#if 0
+// The following is the BG/P style of fifo pinning.
+//
 /// \brief Choose Fifo
 ///
 /// Select an injection fifo (0..9) based on inputs.
@@ -2035,6 +2197,7 @@ uint16_t PAMI::Device::MU::ResourceManager::pinFifo( size_t task )
   return loc % numTorusDirections;
 
 } // End: pinFifo()
+#endif
 
 
 /// \brief Init Fifo Pin
@@ -2063,11 +2226,35 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
   size_t task;
   size_t numFifos;
 
+  // Get the torus cutoff register containing the cutoffs for each 
+  // dimension and direction.  For example, A- cutoff is always >=0, 
+  // A+ cutoff is always <= sizeOfAdimension-1.  It contains the
+  // last dest coord in that direction to go.  If dest coord is
+  // outside that limit, go in the other direction.  The cutoffs are
+  // set such that ties are broken in the minus direction if the sum
+  // of the source coordinates is odd.
+  uint64_t dcr_value;
+  dcr_value = DCRReadUser(ND_500_DCR(CTRL_CUTOFFS));
+  _AminusCutoff = ND_500_DCR__CTRL_CUTOFFS__A_MINUS_get( dcr_value );
+  _AplusCutoff  = ND_500_DCR__CTRL_CUTOFFS__A_PLUS_get ( dcr_value );
+  _BminusCutoff = ND_500_DCR__CTRL_CUTOFFS__B_MINUS_get( dcr_value );
+  _BplusCutoff  = ND_500_DCR__CTRL_CUTOFFS__B_PLUS_get ( dcr_value );
+  _CminusCutoff = ND_500_DCR__CTRL_CUTOFFS__C_MINUS_get( dcr_value );
+  _CplusCutoff  = ND_500_DCR__CTRL_CUTOFFS__C_PLUS_get ( dcr_value );
+  _DminusCutoff = ND_500_DCR__CTRL_CUTOFFS__D_MINUS_get( dcr_value );
+  _DplusCutoff  = ND_500_DCR__CTRL_CUTOFFS__D_PLUS_get ( dcr_value );
+  _EminusCutoff = ND_500_DCR__CTRL_CUTOFFS__E_MINUS_get( dcr_value );
+  _EplusCutoff  = ND_500_DCR__CTRL_CUTOFFS__E_PLUS_get ( dcr_value );
+
+  TRACE((stderr,"Cutoffs: A: %zu %zu, B: %zu %zu, C: %zu %zu, D: %zu %zu, E: %zu %zu\n",_AminusCutoff,_AplusCutoff,_BminusCutoff,_BplusCutoff,_CminusCutoff,_CplusCutoff,_DminusCutoff,_DplusCutoff,_EminusCutoff,_EplusCutoff));
+
+#if 0
   _aSizeHalved = _pers.aSize()>>1;
   _bSizeHalved = _pers.bSize()>>1;
   _cSizeHalved = _pers.cSize()>>1;
   _dSizeHalved = _pers.dSize()>>1;
   _eSizeHalved = _pers.eSize()>>1;
+#endif
 
   _isTorusA    = _pers.isTorusA();
   _isTorusB    = _pers.isTorusB();
@@ -2075,13 +2262,16 @@ void PAMI::Device::MU::ResourceManager::initFifoPin()
   _isTorusD    = _pers.isTorusD();
   _isTorusE    = _pers.isTorusE();
 
+  TRACE((stderr,"MU ResourceManager:: initFifoPin:  aT=%d,bT=%d,cT=%d,dT=%d,eT=%d\n",_isTorusA,_isTorusB,_isTorusC,_isTorusD,_isTorusE));
+#if 0
   TRACE((stderr,"MU ResourceManager:: initFifoPin:  aH=%zd,bH=%zd,cH=%zd,dH=%zd,eH=%zd, aT=%d,bT=%d,cT=%d,dT=%d,eT=%d\n",_aSizeHalved,_bSizeHalved,_cSizeHalved,_dSizeHalved,_eSizeHalved,_isTorusA,_isTorusB,_isTorusC,_isTorusD,_isTorusE));
+#endif
 
   for ( task=0; task<numTasks; task++ )
     {
       uint16_t fifo = pinFifo( task );
       PAMI_assert( fifo < 16 );
-      TRACE((stderr,"MU ResourceManager: initFifoPin: task=%zu, fifo=%u\n",task,fifo));
+      TRACE((stderr,"MU ResourceManager: initFifoPin: s(%zu,%zu,%zu,%zu,%zu), task=%zu, fifo=%u\n",_pers.aCoord(),_pers.bCoord(),_pers.cCoord(),_pers.dCoord(),_pers.eCoord(),task,fifo));
 
       _mapping.setFifoPin( task, fifo );
     }
