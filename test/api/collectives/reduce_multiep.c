@@ -11,7 +11,7 @@
  * \brief Simple Reduce test on sub-geometries
  */
 
-#define COUNT     (524288)   /* see envvar TEST_COUNT for overrides */
+#define COUNT     (524288)   /* see envvar TEST_BYTES for overrides */
 
 #define MAX_THREADS 128
 #define NITERLAT   100
@@ -199,11 +199,11 @@ static void * reduce_test(void* p)
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, gMax_byte_count + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, gMax_byte_count + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -273,7 +273,7 @@ static void * reduce_test(void* p)
             if (my_ep == zero_ep)
               printf("Running Reduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
             int i;
-            for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;

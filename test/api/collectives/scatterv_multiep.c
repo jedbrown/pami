@@ -11,7 +11,7 @@
  * \brief Simple Scatterv test on sub-geometries
  */
 
-#define COUNT     (1048576*8)   /* see envvar TEST_COUNT for overrides */
+#define COUNT     (1048576*8)   /* see envvar TEST_BYTES for overrides */
 
 #define MAX_THREADS 128
 #define NITERLAT   100
@@ -231,12 +231,12 @@ static void * scatterv_test(void* p) {
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, (gMax_count * num_ep) + gBuffer_offset);
+  err = posix_memalign(&buf, 128, (gMax_byte_count * num_ep) + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, (gMax_count * num_ep) + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_byte_count * num_ep) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -311,7 +311,7 @@ static void * scatterv_test(void* p) {
 
       size_t i, j;
 
-      for (i = gMin_count; i <= gMax_count; i *= 2)
+      for (i = gMin_byte_count; i <= gMax_byte_count; i *= 2)
       {
         size_t  dataSent = i;
         int          niter;

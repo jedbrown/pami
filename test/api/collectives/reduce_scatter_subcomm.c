@@ -103,17 +103,6 @@ int main(int argc, char*argv[])
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
 
-  /*  Allocate buffer(s) */
-  int err = 0;
-  void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
-  assert(err == 0);
-  sbuf = (char*)sbuf + gBuffer_offset;
-  void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
-  assert(err == 0);
-  rbuf = (char*)rbuf + gBuffer_offset;
-
   /*  Initialize PAMI */
   int rc = pami_init(&client,        /* Client             */
                      context,        /* Context            */
@@ -125,6 +114,17 @@ int main(int argc, char*argv[])
                      &num_tasks);    /* number of tasks    */
   if (rc==1)
     return 1;
+
+  /*  Allocate buffer(s) */
+  int err = 0;
+  void* sbuf = NULL;
+  err = posix_memalign(&sbuf, 128, MAX(num_tasks*gMax_datatype_sz,gMax_byte_count) + gBuffer_offset);
+  assert(err == 0);
+  sbuf = (char*)sbuf + gBuffer_offset;
+  void* rbuf = NULL;
+  err = posix_memalign(&rbuf, 128, MAX(num_tasks*gMax_datatype_sz,gMax_byte_count) + gBuffer_offset);
+  assert(err == 0);
+  rbuf = (char*)rbuf + gBuffer_offset;
 
   rcounts = (size_t*)malloc(sizeof(size_t) * num_tasks);
 
@@ -272,11 +272,11 @@ int main(int argc, char*argv[])
             {
               if (gValidTable[op][dt])
               {
+                size_t sz=get_type_size(dt_array[dt]);
                 if (task_id == task_zero)
                   printf("Running Reduce_scatter: %s, %s\n",dt_array_str[dt], op_array_str[op]);
-                for (i = 4*num_tasks; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+                for (i = MAX(num_tasks,gMin_byte_count/sz); i <= MAX(num_tasks,gMax_byte_count/sz); i *= 2)
                 {
-                  size_t sz=get_type_size(dt_array[dt]);
                   size_t  dataSent = i * sz;
                   int niter;
 

@@ -62,11 +62,11 @@ int main(int argc, char*argv[])
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, gMax_byte_count + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, gMax_byte_count + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -174,7 +174,7 @@ int main(int argc, char*argv[])
             if (task_id == task_zero)
               printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-            for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;

@@ -594,6 +594,7 @@ static size_t get_type_size(pami_type_t intype)
   }
 
   size_t sz =(size_t)config.value.intval;
+  assert(sz <= gMax_datatype_sz); /* We alloc based on an assumed max sz so assert it now */
   return sz;
 }
 

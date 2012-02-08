@@ -1747,17 +1747,17 @@ namespace CCMI
 
         extern inline void ring_allgather_metadata(pami_metadata_t *m)
         {
-          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+          new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
         }
 
         extern inline void ring_allgatherv_int_metadata(pami_metadata_t *m)
         {
-          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+          new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
         }
 
         extern inline void ring_allgatherv_metadata(pami_metadata_t *m)
         {
-          new(m) PAMI::Geometry::Metadata("I0:Ring:P2P:P2P");
+          new(m) PAMI::Geometry::Metadata("X0:Ring:P2P:P2P");
         }
 
         typedef CCMI::Adaptor::Allgatherv::AsyncAllgathervT

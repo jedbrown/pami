@@ -11,7 +11,7 @@
  * \brief Simple Alltoall test on sub-geometries
  */
 
-#define COUNT     (524288)   /* see envvar TEST_COUNT for overrides */
+#define COUNT     (524288)   /* see envvar TEST_BYTES for overrides */
 
 #define MAX_THREADS 128
 #define NITERLAT   100
@@ -241,11 +241,11 @@ static void * alltoall_test(void* p)
 
   /*  Allocate buffer(s) */
   int err = 0;
-  err = posix_memalign((void*)&sbuf, 128, (gMax_count*num_ep)+gBuffer_offset);
+  err = posix_memalign((void*)&sbuf, 128, (gMax_byte_count*num_ep)+gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
 
-  err = posix_memalign((void*)&rbuf, 128, (gMax_count*num_ep)+gBuffer_offset);
+  err = posix_memalign((void*)&rbuf, 128, (gMax_byte_count*num_ep)+gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -303,7 +303,7 @@ static void * alltoall_test(void* p)
 
       alltoall.algorithm  = alltoall_always_works_algo[nalg];
 
-      for (i = gMin_count; i <= gMax_count; i *= 2)
+      for (i = gMin_byte_count; i <= gMax_byte_count; i *= 2)
       {
         size_t  dataSent = i;
         int          niter;

@@ -248,11 +248,11 @@ static void * reduce_scatter_test(void* p)
   /*  Allocate buffer(s) */
   int err = 0;
   void* sbuf = NULL;
-  err = posix_memalign(&sbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&sbuf, 128, MAX(num_tasks*gMax_datatype_sz,gMax_byte_count) + gBuffer_offset);
   assert(err == 0);
   sbuf = (char*)sbuf + gBuffer_offset;
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_count + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, MAX(num_tasks*gMax_datatype_sz,gMax_byte_count) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -320,12 +320,12 @@ static void * reduce_scatter_test(void* p)
         {
           if (gValidTable[op][dt])
           {
+            size_t sz=get_type_size(dt_array[dt]);
             if (my_ep == zero_ep)
               printf("Running Reduce_scatter: %s, %s\n",dt_array_str[dt], op_array_str[op]);
             int i;
-            for (i = 4*num_ep; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = MAX(num_ep,gMin_byte_count/sz); i <= MAX(num_ep,gMax_byte_count/sz); i *= 2)
             {
-              size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;
               int niter;
 

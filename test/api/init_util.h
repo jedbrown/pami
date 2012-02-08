@@ -292,15 +292,16 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 #ifndef CUTOFF
   #define CUTOFF     65536
 #endif
-
-#ifndef MAXBUFSIZE
-  #define MAXBUFSIZE        gMax_count*16
+          
+#ifndef MAX
+#define MAX(x, y)	(((x) > (y))?(x):(y))
 #endif
 
 unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
-unsigned gMax_count      = COUNT;
-unsigned gMin_count      = 1;
+unsigned gMax_datatype_sz= 16; /* Assumed max datatype size */
+unsigned gMax_byte_count = COUNT;
+unsigned gMin_byte_count = 1;
 unsigned gBuffer_offset  = OFFSET;
 unsigned gNiterlat       = NITERLAT;
 size_t   gNum_contexts   = 1;
@@ -353,17 +354,17 @@ void setup_env()
   /* Override Number of Roots */
   if (sNRoots) gNumRoots = atoi(sNRoots);
 
-  /* \note Test environment variable" TEST_COUNT=N max count     */
-  char* sCount = getenv("TEST_COUNT");
+  /* \note Test environment variable" TEST_BYTES=N max byte count     */
+  char* sCount = getenv("TEST_BYTES");
 
-  /* Override COUNT */
-  if (sCount) gMax_count = atoi(sCount);
+  /* Override max byte COUNT */
+  if (sCount) gMax_byte_count = atoi(sCount);
 
-  /* \note Test environment variable" TEST_COUNT_ONLY=N only count     */
-  char* sCountOnly = getenv("TEST_COUNT_ONLY");
+  /* \note Test environment variable" TEST_BYTES_ONLY=N only byte count     */
+  char* sCountOnly = getenv("TEST_BYTES_ONLY");
 
-  /* Override COUNT */
-  if (sCountOnly) gMin_count = gMax_count = atoi(sCountOnly);
+  /* Override byte COUNT with single count */
+  if (sCountOnly) gMin_byte_count = gMax_byte_count = atoi(sCountOnly);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
@@ -406,6 +407,9 @@ void setup_env()
 
 void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
 {
+
+  /* \todo We *could* change gMax_datatype_sz based on dt selected */
+
   int i,j;
   unsigned force = 0; /* don't force the dt/op selected */
 

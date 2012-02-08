@@ -241,12 +241,12 @@ int main (int argc, char ** argv)
   /*  Allocate buffer(s) */
   int err = 0;
   void* buf = NULL;
-  err = posix_memalign(&buf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&buf, 128, (gMax_byte_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, (gMax_count * num_tasks) + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_byte_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
@@ -325,10 +325,15 @@ int main (int argc, char ** argv)
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
 
-              for (i = gMin_count; i <= gMax_count/get_type_size(dt_array[dt]); i *= 2)
+              for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
             {
               long long dataSent = i;
-              unsigned  niter    = 100;
+              int          niter;
+
+              if (dataSent < CUTOFF)
+                niter = gNiterlat;
+              else
+                niter = NITERBW;
 
               for (k = 0; k < num_tasks; k++)lengths[k] = i;
               for (k = 0; k < num_tasks; k++)displs[k]  = k*i*get_type_size(dt_array[dt]);
@@ -384,11 +389,11 @@ int main (int argc, char ** argv)
 
               if (task_id == 0)
               {
-                 printf("  %11lld %16lld %14.1f %12.2f\n",
-                        dataSent,
-                        0LL,
-                        (double)1e6*(double)dataSent / (double)usec,
-                        usec);
+                printf("  %11lld %16d %14.1f %12.2f\n",
+                       (long long)dataSent,
+                       niter,
+                       (double)1e6*(double)dataSent / (double)usec,
+                       usec);
                  fflush(stdout);
               }
             }
