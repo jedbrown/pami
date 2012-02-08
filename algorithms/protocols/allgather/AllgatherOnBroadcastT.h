@@ -136,8 +136,8 @@ namespace CCMI
 	  }
 	  else {
 	    rtypecounts = _cmd.cmd.xfer_allgather.rtypecount;
-            *dst      = _cmd.cmd.xfer_allgather.rcvbuf + rtypecounts * index;
             *rtype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgather.rtype;
+            *dst      = _cmd.cmd.xfer_allgather.rcvbuf + rtypecounts * index * ((*rtype)->GetDataSize());
 	  }
         }
 
