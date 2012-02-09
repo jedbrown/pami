@@ -634,7 +634,7 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
   //256 <= Nodes <  512      1.5 - 3.5                    1              3
   //512 <= Nodes < 1024      1.5 - 3.5                    3              3
   //  1 <= Racks <  2        1.5 - 3.5                    1              3
-  //  2 <= Racks <  4        1.0 - 3.5                    2              0
+  //  2 <= Racks <  4        1.0 - 3.5                    3              0
   //  4 <= Racks <  8        1.0 - 3.5                    3              0
   //  8 <= Racks < 16        1.0 - 3.5                    3              0
   // 16 <= Racks < 32        1.0 - 3.5                    3              0
@@ -667,7 +667,7 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
                                          { 1, 3 },   /*   256    */
                                          { 3, 3 },   /*   512    */
                                          { 1, 3 },   /*  1 rack  */
-                                         { 2, 0 },   /*  2 racks */
+                                         { 3, 0 },   /*  2 racks */
                                          { 3, 0 },   /*  4 racks */
                                          { 3, 0 },   /*  8 racks */
                                          { 3, 0 },   /* 16 racks */
