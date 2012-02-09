@@ -280,11 +280,9 @@ int main (int argc, char ** argv)
       allgatherv.cookie     = (void*) & allgatherv_poll_flag;
       allgatherv.algorithm  = *next_algo;
       allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
-      allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.stypecount = 0;
       allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
-      allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.rtypecounts = 0;
+      allgatherv.cmd.xfer_allgatherv.rtypecounts = lengths;
+      allgatherv.cmd.xfer_allgatherv.rdispls     = displs;
 
       gProtocolName = next_md->name;
 
@@ -302,17 +300,6 @@ int main (int argc, char ** argv)
 
       unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
-
-      allgatherv.cb_done    = cb_done;
-      allgatherv.cookie     = (void*) & allgatherv_poll_flag;
-      allgatherv.algorithm  = allgatherv_always_works_algo[nalg];
-      allgatherv.cmd.xfer_allgatherv.sndbuf     = buf;
-      allgatherv.cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.stypecount = 0;
-      allgatherv.cmd.xfer_allgatherv.rcvbuf     = rbuf;
-      allgatherv.cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
-      allgatherv.cmd.xfer_allgatherv.rtypecounts = lengths;
-      allgatherv.cmd.xfer_allgatherv.rdispls     = displs;
 
       unsigned i, j, k;
 

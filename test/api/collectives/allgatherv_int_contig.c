@@ -280,11 +280,9 @@ int main (int argc, char ** argv)
       allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
       allgatherv_int.algorithm  = *next_algo;
       allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
-      allgatherv_int.cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
-      allgatherv_int.cmd.xfer_allgatherv_int.stypecount = 0;
       allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
-      allgatherv_int.cmd.xfer_allgatherv_int.rtype      = PAMI_TYPE_BYTE;
-      allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = 0;
+      allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = lengths;
+      allgatherv_int.cmd.xfer_allgatherv_int.rdispls     = displs;
 
       gProtocolName = next_md->name;
 
@@ -303,17 +301,6 @@ int main (int argc, char ** argv)
       unsigned checkrequired = next_md->check_correct.values.checkrequired; /*must query every time */
       assert(!checkrequired || next_md->check_fn); /* must have function if checkrequired. */
 
-      allgatherv_int.cb_done    = cb_done;
-      allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
-      allgatherv_int.algorithm  = allgatherv_int_always_works_algo[nalg];
-      allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
-      allgatherv_int.cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
-      allgatherv_int.cmd.xfer_allgatherv_int.stypecount = 0;
-      allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
-      allgatherv_int.cmd.xfer_allgatherv_int.rtype      = PAMI_TYPE_BYTE;
-      allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = lengths;
-      allgatherv_int.cmd.xfer_allgatherv_int.rdispls     = displs;
-
       unsigned i, j, k;
 
       int dt,op=4/*SUM*/;
@@ -325,7 +312,7 @@ int main (int argc, char ** argv)
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
 
-              for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
             {
               long long dataSent = i;
               int          niter;
