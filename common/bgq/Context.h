@@ -191,7 +191,9 @@ namespace PAMI
     {
         TRACE_FN_ENTER();
         if(T_Range_Hi) 
+        {  
           niName="-:ShortMU";
+        }
         else niName = "-:MU";
         TRACE_FORMAT("<%p>%s,%d",this,niName,T_Range_Hi);
         TRACE_FN_EXIT();
@@ -201,7 +203,10 @@ namespace PAMI
       T_Parent(client,context,context_id,client_id)
     {
         TRACE_FN_ENTER();
-        if(T_Range_Hi) niName = "-:ShortMU";
+        if(T_Range_Hi) 
+        {  
+          niName = "-:ShortMU";
+        }
         else niName = "-:MU";
         TRACE_FORMAT("<%p>%s,%d",this,niName,T_Range_Hi);
         TRACE_FN_EXIT();
@@ -236,6 +241,12 @@ namespace PAMI
       TRACE_FORMAT("<%p> %s",this,m->name);
       if(T_Range_Hi)
       {
+        s = strstr(m->name, "I0:Binomial:-:ShortMU");
+        if (s != NULL)
+        {  
+          name[s-m->name] = 'X';   //Make experimental 
+          /// \todo calculate range_hi based on geometry size?   
+        }
         m->check_correct.values.rangeminmax = 1;
         m->range_hi                         = T_Range_Hi;
       }
