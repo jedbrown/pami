@@ -184,14 +184,16 @@ namespace PAMI {
 			     &pwqptr,
 			     &cb_done);
 
-	  if (rcvlen == 0)
-	    return PAMI_SUCCESS;
+	  //if (rcvlen == 0)
+	  //  return PAMI_SUCCESS;
 	  
-	  PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
-	  char *buf = pwq->bufferToProduce();	  
-	  char *src = (char *)payload + amhdr->metasize*sizeof(pami_quad_t);
-	  memcpy(buf, src, rcvlen);
-	  pwq->produceBytes(rcvlen);
+	  if (rcvlen > 0) {
+	    PipeWorkQueue *pwq = (PipeWorkQueue *)pwqptr;
+	    char *buf = pwq->bufferToProduce();	  
+	    char *src = (char *)payload + amhdr->metasize*sizeof(pami_quad_t);
+	    memcpy(buf, src, rcvlen);
+	    pwq->produceBytes(rcvlen);
+	  }
 
 	  if (cb_done.function)
 	    cb_done.function(model->_ctxt, cb_done.clientdata, PAMI_SUCCESS);
@@ -244,28 +246,17 @@ namespace PAMI {
 						  pami_multicast_t    * mcast,
 						  void                * devinfo=NULL) 
 	{
-		TRACE_FN_ENTER();
+	  TRACE_FN_ENTER();
 
-		/// \todo stop using rank lists directly
-		pami_task_t rank_storage[SC_MAXRANKS];
+	  /// \todo stop using rank lists directly
+	  pami_task_t rank_storage[SC_MAXRANKS];
 	  pami_task_t *ranks = rank_storage;
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
-		TRACE_FORMAT("dst_topology %p",dst_topology);
+	  TRACE_FORMAT("dst_topology %p",dst_topology);
 	  size_t nranks = dst_topology->size();
-		dst_topology->list((void**)&ranks);	 // endpoint or ranks, don't care since always context 0
-		if(ranks==NULL)
-		{
-			size_t sranks;
-			PAMI_assert(SC_MAXRANKS>=nranks); /// \todo allocate when > SC_MAXRANKS?
-			dst_topology->getRankList(nranks,ranks,&sranks);
-			PAMI_assert(sranks==nranks);
-		}
-		TRACE_FORMAT("nranks %zu, ranks %p",nranks, ranks);
-		if (DO_TRACE_DEBUG)
-		for(size_t i=0;i<nranks;++i) {
-			TRACE_FORMAT( "%zu:rank[%zu]=%zu/%zu/%zu",nranks, i,(size_t) ranks? ranks[i]: (size_t)-1,(size_t)dst_topology->index2Endpoint(i),(size_t)dst_topology->index2Rank(i));
-		}
+	  dst_topology->list((void**)&ranks);	 // endpoint or ranks, don't care since always context 0
 
+	  CCMI_assert(ranks != NULL);
 	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
 	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 	  char *src = NULL;
@@ -279,6 +270,7 @@ namespace PAMI {
 	  pami_result_t rc = PAMI_ERROR;
 	  if (likely(sbytes == mcast->bytes && mcast->bytes <= immediate_bytes))
 	  {
+
 	    rc = postImmediate (ranks,
 				nranks,
 				src,
@@ -290,7 +282,7 @@ namespace PAMI {
 				mcast->connection_id);	     
 	  }
 
-		TRACE_FN_EXIT();
+	  TRACE_FN_EXIT();
 	  return rc;
 	}
 
@@ -300,11 +292,14 @@ namespace PAMI {
 					 pami_multicast_t    * mcast,
 					 void                * devinfo=NULL) 
 	{
-		/// \todo stop using rank lists directly
+	  /// \todo stop using rank lists directly
 	  Topology *dst_topology = (Topology *)mcast->dst_participants;
 	  //PAMI_assert(ranks[0] == __global.mapping.task());	  
 	  PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 	  
+	  //we can only send 512-16 bytes
+	  PAMI_assert(mcast->bytes <= 496);
+
 	  return postLong (state,
 			   dst_topology,
 			   spwq,
