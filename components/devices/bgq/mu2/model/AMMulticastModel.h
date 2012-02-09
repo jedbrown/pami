@@ -270,7 +270,6 @@ namespace PAMI {
 	  pami_result_t rc = PAMI_ERROR;
 	  if (likely(sbytes == mcast->bytes && mcast->bytes <= immediate_bytes))
 	  {
-
 	    rc = postImmediate (ranks,
 				nranks,
 				src,
