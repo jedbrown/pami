@@ -843,6 +843,8 @@ namespace PAMI
         if (r != PAMI_SUCCESS) rc = r;            
         _contextAlloc.returnObject((void *)(_contexts[i]));
         _contexts[i]     = NULL;
+        // nullify user's context handle after context destroy
+        context[i]       = NULL; 
       }
 	_ncontexts = 0;        
         return rc;
