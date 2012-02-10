@@ -127,6 +127,7 @@ namespace xlpgas
       AllreduceKind2,
       AlltoallKind,
       AlltoallvKind,
+      AlltoallvintKind,
       PermuteKind,
       PrefixKind,
       AllreducePPKind,//from here down we have point to point versions
@@ -499,6 +500,15 @@ namespace xlpgas
 	      new (b) alltoallv_type (_ctxt, comm, kind, nextID, 0, ni);
 	      break;
 	    }
+	  case AlltoallvintKind:
+	    {
+	      typedef typename CollDefs::alltoallvint_type alltoallvint_type;
+	      b = (Collective<T_NI> *)__global.heap_mm->malloc (sizeof(alltoallvint_type));
+	      assert (b != NULL);
+	      memset (b, 0, sizeof(alltoallvint_type));
+	      new (b) alltoallvint_type (_ctxt, comm, kind, nextID, 0, ni);
+	      break;
+	    }
 
 	  case GatherKind:
 	    {
@@ -643,6 +653,12 @@ namespace xlpgas
 	    {
               typedef typename CollDefs::alltoallv_type alltoallv_type;
               p2p_iface->setSendPWQDispatch(alltoallv_type::cb_incoming_v, this);
+	      break;
+	    }
+	  case AlltoallvintKind:
+	    {
+              typedef typename CollDefs::alltoallvint_type alltoallvint_type;
+              p2p_iface->setSendPWQDispatch(alltoallvint_type::cb_incoming_v, this);
 	      break;
 	    }
 

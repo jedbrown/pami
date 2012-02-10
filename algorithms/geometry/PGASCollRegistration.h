@@ -75,6 +75,7 @@ namespace PAMI
     static const char GatherString[]         = "I1:Gather:P2P:P2P";
     static const char AlltoallString[]       = "I1:Alltoall:P2P:P2P";
     static const char AlltoallvString[]      = "I1:Alltoallv:P2P:P2P";
+    static const char AlltoallvintString[]   = "I1:Alltoallv_int:P2P:P2P";
     static const char AllreduceString[]      = "I1:Allreduce:P2P:P2P";
     static const char ScanString[]           = "I1:Scan:P2P:P2P";
     static const char ShortAllreduceString[] = "I1:ShortAllreduce:P2P:P2P";
@@ -113,7 +114,8 @@ namespace PAMI
         typedef PGScatterExec<T_Geometry,xlpgas::Scatter<T_NI>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > ScatterExec;
         typedef PGGatherExec<T_Geometry,xlpgas::Gather<T_NI>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > GatherExec;
         typedef PGAlltoallExec<T_Geometry,xlpgas::Alltoall<T_NI>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > AlltoallExec;
-        typedef PGAlltoallvExec<T_Geometry,xlpgas::Alltoallv<T_NI>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > AlltoallvExec;
+        typedef PGAlltoallvExec<T_Geometry,xlpgas::Alltoallv<T_NI,size_t>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > AlltoallvExec;
+	typedef PGAlltoallvintExec<T_Geometry,xlpgas::Alltoallv<T_NI,int>, T_NI, T_Device_P2P,xlpgas::Barrier<T_NI> > AlltoallvintExec;
         typedef PGAllreduceExec<T_Geometry,xlpgas::Allreduce::Long<T_NI>, T_NI, T_Device_P2P> AllreduceExec;
         typedef PGScanExec<T_Geometry,xlpgas::PrefixSums<T_NI>, T_NI, T_Device_P2P> ScanExec;
         typedef PGAllreduceExec<T_Geometry,xlpgas::Allreduce::Short<T_NI>, T_NI, T_Device_P2P> ShortAllreduceExec;
@@ -129,7 +131,8 @@ namespace PAMI
         typedef PGFactory<xlpgas::Scatter<T_NI>,T_NI,T_Device_P2P,ScatterExec, xlpgas::Barrier<T_NI> > ScatterFactory;
         typedef PGFactory<xlpgas::Gather<T_NI>,T_NI,T_Device_P2P,GatherExec, xlpgas::Barrier<T_NI> > GatherFactory;
         typedef PGFactory<xlpgas::Alltoall<T_NI>,T_NI,T_Device_P2P,AlltoallExec, xlpgas::Barrier<T_NI> > AlltoallFactory;
-        typedef PGFactory<xlpgas::Alltoallv<T_NI>,T_NI,T_Device_P2P,AlltoallvExec, xlpgas::Barrier<T_NI> > AlltoallvFactory;
+        typedef PGFactory<xlpgas::Alltoallv<T_NI,size_t>,T_NI,T_Device_P2P,AlltoallvExec, xlpgas::Barrier<T_NI> > AlltoallvFactory;
+        typedef PGFactory<xlpgas::Alltoallv<T_NI,int>,T_NI,T_Device_P2P,AlltoallvintExec, xlpgas::Barrier<T_NI> > AlltoallvintFactory;
         typedef PGFactory<xlpgas::Allreduce::Long<T_NI>,T_NI,T_Device_P2P,AllreduceExec>  AllreduceFactory;
         typedef PGFactory<xlpgas::PrefixSums<T_NI>,T_NI,T_Device_P2P,ScanExec>  ScanFactory;
         typedef PGFactory<xlpgas::Allreduce::Short<T_NI>,T_NI,T_Device_P2P,ShortAllreduceExec> ShortAllreduceFactory;
@@ -148,6 +151,7 @@ namespace PAMI
           char gather_blob[sizeof(GatherFactory)];
           char alltoall_blob[sizeof(AlltoallFactory)];
           char alltoallv_blob[sizeof(AlltoallvFactory)];
+          char alltoallvint_blob[sizeof(AlltoallvintFactory)];
           char allreduce_blob[sizeof(AllreduceFactory)];
           char scan_blob[sizeof(ScanFactory)];
           char shortallreduce_blob[sizeof(ShortAllreduceFactory)];
@@ -224,7 +228,8 @@ namespace PAMI
         _alltoall_s(NULL),
         _alltoall_b(NULL),
         _alltoallv_s(NULL),
-        _alltoallv_b(NULL),
+        _alltoallv_b(NULL),	
+        _alltoallvint(NULL),  
         _allreduce(NULL),
         _shortallreduce(NULL),
         _barrier(NULL),
@@ -254,6 +259,7 @@ namespace PAMI
             SETUPNI_P2P(_alltoall_b);
             SETUPNI_P2P(_alltoallv_s);
             SETUPNI_P2P(_alltoallv_b);
+            SETUPNI_P2P(_alltoallvint);
             SETUPNI_P2P(_allreduce);
             SETUPNI_P2P(_scan);
             SETUPNI_P2P(_shortallreduce);
@@ -281,6 +287,7 @@ namespace PAMI
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallKind,       _alltoall_s);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BarrierKind,        _alltoall_b);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallvKind,      _alltoallv_s);
+            _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallvintKind,   _alltoallvint);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BarrierKind,        _alltoallv_b);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::LongAllreduceKind,  _allreduce);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::PrefixKind,         _scan);
@@ -346,6 +353,7 @@ namespace PAMI
         _alltoall_b(NULL),
         _alltoallv_s(NULL),
         _alltoallv_b(NULL),
+        _alltoallvint(NULL),
         _allreduce(NULL),
         _scan(NULL),
         _shortallreduce(NULL),
@@ -378,6 +386,7 @@ namespace PAMI
                 SETUPNI_P2P_SHMEM(_alltoall_b);
                 SETUPNI_P2P_SHMEM(_alltoallv_s);
                 SETUPNI_P2P_SHMEM(_alltoallv_b);
+		SETUPNI_P2P_SHMEM(_alltoallvint);
                 SETUPNI_P2P_SHMEM(_allreduce);
                 SETUPNI_P2P_SHMEM(_scan);
                 SETUPNI_P2P_SHMEM(_shortallreduce);
@@ -407,6 +416,7 @@ namespace PAMI
                 SETUPNI_P2P_P2P(_alltoall_b);
                 SETUPNI_P2P_P2P(_alltoallv_s);
                 SETUPNI_P2P_P2P(_alltoallv_b);
+                SETUPNI_P2P_P2P(_alltoallvint);
                 SETUPNI_P2P_P2P(_allreduce);
                 SETUPNI_P2P_P2P(_scan);
                 SETUPNI_P2P_P2P(_shortallreduce);
@@ -436,6 +446,7 @@ namespace PAMI
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallKind,       _alltoall_s);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BarrierKind,        _alltoall_b);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallvKind,      _alltoallv_s);
+            _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AlltoallvintKind,   _alltoallvint);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::BarrierKind,        _alltoallv_b);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::LongAllreduceKind,  _allreduce);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::PrefixKind,         _scan);
@@ -511,8 +522,8 @@ namespace PAMI
 	    _nb_scatter         = (xlpgas::Scatter<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::ScatterKind, geometry->comm(),NULL,_scatter_s);
 	    _nb_gather          = (xlpgas::Gather<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::GatherKind, geometry->comm(),NULL,_gather_s);
 	    _nb_alltoall        = (xlpgas::Alltoall<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::AlltoallKind, geometry->comm(),NULL,_alltoall_s);
-	    _nb_alltoallv       = (xlpgas::Alltoallv<T_NI>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::AlltoallvKind, geometry->comm(),NULL,_alltoallv_s);
-
+	    _nb_alltoallv       = (xlpgas::Alltoallv<T_NI,size_t>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::AlltoallvKind, geometry->comm(),NULL,_alltoallv_s);
+	    _nb_alltoallvint       = (xlpgas::Alltoallv<T_NI,int>*)_mgr.template allocate<xlpgas::base_coll_defs<T_NI, T_Device_P2P> > (_team, xlpgas::AlltoallvintKind, geometry->comm(),NULL,_alltoallvint);
 	    _gi->_nbcoll_list.push_back(_nb_barrier);
 	    _gi->_nbcoll_list.push_back(_nb_broadcast);
 	    _gi->_nbcoll_list.push_back(_nb_allgather);
@@ -524,6 +535,7 @@ namespace PAMI
 	    _gi->_nbcoll_list.push_back(_nb_gather);
 	    _gi->_nbcoll_list.push_back(_nb_alltoall);
 	    _gi->_nbcoll_list.push_back(_nb_alltoallv);
+	    _gi->_nbcoll_list.push_back(_nb_alltoallvint);
 
 	    // todo:  free these on geometry destroy, maybe use KVS
 	    BarrierFactory        *_barrier_reg        = (BarrierFactory*)_allocator.allocateObject();        _gi->_f_list.push_back((Factories*)_barrier_reg);
@@ -534,6 +546,7 @@ namespace PAMI
 	    GatherFactory         *_gather_reg         = (GatherFactory*)_allocator.allocateObject();         _gi->_f_list.push_back((Factories*)_gather_reg);
 	    AlltoallFactory       *_alltoall_reg       = (AlltoallFactory*)_allocator.allocateObject();       _gi->_f_list.push_back((Factories*)_alltoall_reg);
 	    AlltoallvFactory      *_alltoallv_reg      = (AlltoallvFactory*)_allocator.allocateObject();      _gi->_f_list.push_back((Factories*)_alltoallv_reg);
+	    AlltoallvintFactory   *_alltoallvint_reg   = (AlltoallvintFactory*)_allocator.allocateObject();   _gi->_f_list.push_back((Factories*)_alltoallvint_reg);
 	    AllreduceFactory      *_allreduce_reg      = (AllreduceFactory*)_allocator.allocateObject();      _gi->_f_list.push_back((Factories*)_allreduce_reg);
 	    ScanFactory           *_scan_reg           = (ScanFactory*)_allocator.allocateObject();           _gi->_f_list.push_back((Factories*)_scan_reg);
 	    ShortAllreduceFactory *_shortallreduce_reg = (ShortAllreduceFactory*)_allocator.allocateObject(); _gi->_f_list.push_back((Factories*)_shortallreduce_reg);
@@ -547,6 +560,7 @@ namespace PAMI
 	    new(_gather_reg)         GatherFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _gather_s, _nb_gather, GatherString, _nb_barrier, _gather_b);
 	    new(_alltoall_reg)       AlltoallFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _alltoall_s, _nb_alltoall, AlltoallString, _nb_barrier, _alltoall_b);
 	    new(_alltoallv_reg)      AlltoallvFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _alltoallv_s, _nb_alltoallv, AlltoallvString, _nb_barrier, _alltoallv_b);
+	    new(_alltoallvint_reg)   AlltoallvintFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _alltoallvint, _nb_alltoallvint, AlltoallvintString, _nb_barrier, _alltoallv_b); //  v_int
 	    new(_allreduce_reg)      AllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _allreduce, _nb_long_allreduce, AllreduceString);
 	    new(_scan_reg)           ScanFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _scan, _nb_scan, ScanString);
 	    new(_shortallreduce_reg) ShortAllreduceFactory(_context,_context_id,mapidtogeometry,&_dev_p2p, _shortallreduce,_nb_short_allreduce, ShortAllreduceString);
@@ -591,6 +605,11 @@ namespace PAMI
 
 	    geometry->addCollective(PAMI_XFER_ALLTOALLV,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoallv_reg,
+                                    _context,
+				    _context_id);
+
+	    geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoallvint_reg,
                                     _context,
 				    _context_id);
 
@@ -807,6 +826,7 @@ namespace PAMI
       T_NI                   *_alltoall_b;
       T_NI                   *_alltoallv_s;
       T_NI                   *_alltoallv_b;
+      T_NI                   *_alltoallvint;
       T_NI                   *_allreduce;
       T_NI                   *_scan;
       T_NI                   *_shortallreduce;
@@ -836,7 +856,8 @@ namespace PAMI
       xlpgas::Scatter<T_NI>                  *_nb_scatter;
       xlpgas::Gather<T_NI>                   *_nb_gather;
       xlpgas::Alltoall<T_NI>                 *_nb_alltoall;
-      xlpgas::Alltoallv<T_NI>                *_nb_alltoallv;
+      xlpgas::Alltoallv<T_NI,size_t>         *_nb_alltoallv;
+      xlpgas::Alltoallv<T_NI,int>            *_nb_alltoallvint;
 #ifdef XLPGAS_PAMI_CAU
       // for hybrid collectives;
       xlpgas::SHMReduce<T_NI>                *_nb_shm_short_reduce;

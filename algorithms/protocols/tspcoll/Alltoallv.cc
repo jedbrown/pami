@@ -8,24 +8,26 @@
 /* **************************************************************** */
 /*      start a new alltoallv. Old alltoallv has to be complete       */
 /* **************************************************************** */
-template<class T_NI>
-void xlpgas::Alltoallv<T_NI>::reset (const void * s, void * d,
+template<class T_NI, class CntType>
+void xlpgas::Alltoallv<T_NI,CntType>::reset (const void * s, void * d,
 			       TypeCode     *stype,
-			       const size_t *scnts,
-			       const size_t *sdispls,
+			       const CntType *scnts,
+			       const CntType *sdispls,
 			       TypeCode     *rtype,
-			       const size_t *rcnts,
-			       const size_t *rdispls)
+			       const CntType *rcnts,
+			       const CntType *rdispls)
 {
   MUTEX_LOCK(&this->_mutex);
   //alltoall common
   this->_odd = (!this->_odd);
   this->_sndcount[this->_odd] = 0;
+  this->_sndstartedcount[this->_odd] = 0;
   this->_rcvcount[this->_odd] = 0;
   this->_rbuf           = (char *)d;
   this->_sbuf           = (const char *)s;
   this->_stype          = stype;
   this->_rtype          = rtype;
+  this->_current        = this->ordinal();
   //altoallv specific
   this->_scnts          = scnts;
   this->_sdispls        = sdispls;
@@ -37,18 +39,26 @@ void xlpgas::Alltoallv<T_NI>::reset (const void * s, void * d,
 /* **************************************************************** */
 /*                   do all the sends in an alltoall                */
 /* **************************************************************** */
-template<class T_NI>
-void xlpgas::Alltoallv<T_NI>::kick    () {
+template<class T_NI, class CntType>
+void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
   MUTEX_LOCK(&this->_mutex);
   size_t datawidth = this->_stype->GetDataSize();
-  for (int i=0; i < (int)this->_comm->size(); i++)
-    if (i == (int)this->ordinal())
-      {
-	memcpy (this->_rbuf + this->_rdispls[i],
-		this->_sbuf + this->_sdispls[i],
-		this->_scnts[i]*datawidth);
+  int j = this->_sndstartedcount[this->_odd];
+  for (; j < (int)this->_comm->size(); j++) {
+    //if the buffer is full then we give the system some time to
+    //complete pending sends
+    if (this->buffer_full()) {
+      MUTEX_UNLOCK(&this->_mutex);
+      break;
+    }
+
+    if (this->_current == this->ordinal()) {
+	memcpy (this->_rbuf + this->_rdispls[this->_current],
+		this->_sbuf + this->_sdispls[this->_current],
+		this->_scnts[this->_current]*datawidth);
 
 	this->_sndcount[this->_odd]++;
+	this->_sndstartedcount[this->_odd]++;
 	this->_rcvcount[this->_odd]++;
 
 	/* UNLOCK */
@@ -57,34 +67,67 @@ void xlpgas::Alltoallv<T_NI>::kick    () {
 	    this->_rcvcount[this->_odd] >= (int)this->_comm->size())
 	  if (this->_cb_complete)
 	    this->_cb_complete (this->_pami_ctxt,this->_arg, PAMI_SUCCESS);
-      }
+    }
     else {
       MUTEX_UNLOCK(&this->_mutex);
-      //      _header.dest_ctxt = _comm->index2Endpoint(i).ctxt;
+      this->_sndstartedcount[this->_odd]++;
       pami_send_t p_send;
       pami_send_event_t   events;
       p_send.send.header.iov_base  = &(this->_header);
       p_send.send.header.iov_len   = sizeof(this->_header);
-      p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[i];
-      p_send.send.data.iov_len     = this->_scnts[i] * datawidth;
+      p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[this->_current];
+      p_send.send.data.iov_len     = this->_scnts[this->_current] * datawidth;
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
-      p_send.send.dest             = this->_comm->index2Endpoint (i);
+      p_send.send.dest             = this->_comm->index2Endpoint (this->_current);
       events.cookie         = this;
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
-      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[i], this->_scnts[i] * datawidth, this->_scnts[i] * datawidth, this->_stype, this->_rtype);
+      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[this->_current], this->_scnts[this->_current] * datawidth, this->_scnts[this->_current] * datawidth, this->_stype, this->_rtype);
       this->_pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(this->_header),&this->_header,this->_scnts[i] * datawidth, &this->_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), sizeof(this->_header),&this->_header,this->_scnts[this->_current] * datawidth, &this->_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
+
+    // increment current wrapping arround
+    this->_current += 1;
+    if(this->_current == this->_comm->size())
+      this->_current = 0;
+
+  }
 }
+
+/*
+  Alltoall pushes a certain number of messages and waits
+ */
+template<class T_NI, class CntType>
+pami_result_t repost_all2allv_function (pami_context_t context, void *cookie) {
+  xlpgas::Alltoallv<T_NI,CntType>* coll = (xlpgas::Alltoallv<T_NI,CntType>*)cookie;
+  coll->kick_internal();
+  if( coll->all_sent() ) {
+    return PAMI_SUCCESS;
+  }
+  else {
+    return PAMI_EAGAIN;
+  }
+}
+
+template<class T_NI, class CntType>
+void xlpgas::Alltoallv<T_NI,CntType>::kick    () {
+  this->kick_internal();
+  if( ! this->all_sent() ) {
+    //repost if not all messages sent due to buffer full
+    PAMI::Device::Generic::GenericThread *work = new ((void*)(&(this->_work_pami))) PAMI::Device::Generic::GenericThread(repost_all2allv_function<T_NI, CntType>, (void*)this);
+    this->_dev[0].postThread(work);
+  }
+}
+
 
 /* **************************************************************** */
 /*               reception header handler                           */
 /* **************************************************************** */
-template<class T_NI>
-inline void xlpgas::Alltoallv<T_NI>::cb_incoming_v(pami_context_t    context,
+template<class T_NI, class CntType>
+inline void xlpgas::Alltoallv<T_NI,CntType>::cb_incoming_v(pami_context_t    context,
                                                    void            * cookie,
                                                    const void      * hdr,
                                                    size_t            header_size,
@@ -101,7 +144,7 @@ inline void xlpgas::Alltoallv<T_NI>::cb_incoming_v(pami_context_t    context,
   if (base0 == NULL)
     xlpgas_fatalerror (-1, "%d: Alltoallv<T_NI>/v: <%d,%d> is undefined",
                          XLPGAS_MYNODE, header->tag, header->kind);
-  Alltoallv<T_NI> * s = (Alltoallv<T_NI> * ) ((char *)base0 + header->offset);
+  Alltoallv<T_NI,CntType> * s = (Alltoallv<T_NI,CntType> * ) ((char *)base0 + header->offset);
   TRACE((stderr, "%d: ALLTOALL: <%d,%d> INCOMING base=%p ptr=%p len=%d\n",
          XLPGAS_MYNODE, header->tag, header->kind, base0, s, s->_len));
 
@@ -111,7 +154,7 @@ inline void xlpgas::Alltoallv<T_NI>::cb_incoming_v(pami_context_t    context,
   else if (recv)
   {
     recv->cookie        = s;
-    recv->local_fn      = Alltoallv<T_NI>::cb_recvcomplete;
+    recv->local_fn      = Alltoallv<T_NI,CntType>::cb_recvcomplete;
     recv->addr          = rbuf;
     recv->type          = PAMI_TYPE_BYTE;
     recv->offset        = 0;

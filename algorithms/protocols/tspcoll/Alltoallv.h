@@ -16,7 +16,7 @@
 
 namespace xlpgas
 {
-  template <class T_NI>
+  template <class T_NI, class CntType>
   class Alltoallv : public Alltoall<T_NI>
   {
   public:
@@ -30,13 +30,14 @@ namespace xlpgas
     virtual void reset (const void   *sbuf,
 			void *        dbuf,
 			TypeCode     *stype,
-			const size_t *scnts,
-			const size_t *sdispls,
+			const CntType *scnts,
+			const CntType *sdispls,
 			TypeCode     *rtype,
-			const size_t *rcnts,
-			const size_t *rdispls);
+			const CntType *rcnts,
+			const CntType *rdispls);
 
     virtual void kick    ();
+    void kick_internal   ();
 
     static  void  amsend_reg       (xlpgas_AMHeaderReg_t amsend_regnum) {
       xlpgas_tsp_amsend_reg (amsend_regnum, Alltoallv::cb_incoming_v);
@@ -52,10 +53,10 @@ namespace xlpgas
                                      pami_recv_t     * recv);
 
   private:
-    const size_t    * _scnts;      /* send counts    */
-    const size_t    * _sdispls;    /* send displacements */
-    const size_t    * _rcnts;      /* recv counts    */
-    const size_t    * _rdispls;    /* recv displacements */
+    const CntType    * _scnts;      /* send counts    */
+    const CntType    * _sdispls;    /* send displacements */
+    const CntType    * _rcnts;      /* recv counts    */
+    const CntType    * _rdispls;    /* recv displacements */
 
   }; /* Alltoallv */
 } /* Xlpgas */

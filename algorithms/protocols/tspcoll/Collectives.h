@@ -36,7 +36,8 @@ struct base_coll_defs{
   typedef xlpgas::Allgather<T_NI>  allgather_type;
   typedef xlpgas::Allgatherv<T_NI> allgatherv_type;
   typedef xlpgas::Alltoall<T_NI>   alltoall_type;
-  typedef xlpgas::Alltoallv<T_NI>  alltoallv_type;
+  typedef xlpgas::Alltoallv<T_NI,size_t>  alltoallv_type;
+  typedef xlpgas::Alltoallv<T_NI,int>  alltoallvint_type;
   typedef xlpgas::Gather<T_NI>     gather_type;
   typedef xlpgas::Scatter<T_NI>    scatter_type;
   typedef xlpgas::Permute<T_NI>    permute_type;

@@ -335,6 +335,36 @@ namespace PAMI
         }
     };
 
+    // --------------  PGAS Alltoallv_int wrapper classes -------------
+    //provided for interoperability with MPI where counts/displacements are integer
+    template <class T_Geometry, class T_TSPColl, class T_P2P_NI, class T_Device, class T_TSPCollBarrier >
+    class PGAlltoallvintExec:public PGExec<T_Geometry,T_TSPColl,T_P2P_NI,T_Device,T_TSPCollBarrier>
+    {
+    public:
+      virtual void start()
+        {
+          if (!this->_collexch->isdone()) this->_dev->advance();
+		  PAMI::Type::TypeCode * sndType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoallv.stype;
+		  PAMI::Type::TypeCode * rcvType = (PAMI::Type::TypeCode *)this->_cmd->cmd.xfer_alltoallv.rtype;
+          this->_collexch->reset (this->_cmd->cmd.xfer_alltoallv_int.sndbuf,
+                                  this->_cmd->cmd.xfer_alltoallv_int.rcvbuf,
+                                  sndType,
+                                  this->_cmd->cmd.xfer_alltoallv_int.stypecounts,
+                                  this->_cmd->cmd.xfer_alltoallv_int.sdispls,
+                                  rcvType,
+                                  this->_cmd->cmd.xfer_alltoallv_int.rtypecounts,
+                                  this->_cmd->cmd.xfer_alltoallv_int.rdispls);
+          this->_collexch->setContext(this->_context);
+          this->_collexch->setComplete(this->_cmd->cb_done, this->_cmd->cookie);
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collbarrier->reset();
+          this->_collbarrier->setContext(this->_context);
+          this->_collbarrier->setComplete(NULL, NULL);
+          this->_collbarrier->kick();
+          while(!this->_collbarrier->isdone()) this->_dev->advance();
+          this->_collexch->kick();
+        }
+    };
 
 
     // --------------  PGAS Scatterv wrapper classes -------------

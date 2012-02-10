@@ -21,6 +21,7 @@ namespace xlpgas
   class Alltoall : public Collective<T_NI>
   {
   public:
+    static const size_t MAX_PENDING=1024;
     void * operator new (size_t, void * addr) { return addr; }
 
     Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :
@@ -37,7 +38,6 @@ namespace xlpgas
 	_header.tag           = this->_tag;
 	_header.offset        = _offset;
 	_header.senderID      = this->ordinal();
-
       }
 
     ~Alltoall()
@@ -58,8 +58,11 @@ namespace xlpgas
     static void cb_senddone (void * ctxt, void * arg, pami_result_t result);
 
     virtual void kick    ();
+    void kick_internal   ();
+    void print_info(char*) const ;
     virtual bool isdone  (void) const;
-
+    bool buffer_full  (void) const;
+    bool all_sent  (void) const;
     static inline void cb_incoming(pami_context_t    context,
                                    void            * cookie,
                                    const void      * header_addr,
@@ -78,9 +81,9 @@ namespace xlpgas
     TypeCode            * _stype;        /* Single datatype of the send buffer */
     TypeCode            * _rtype;        /* Single datatype of the recv buffer */
     PAMI::PipeWorkQueue   _pwq;
-
-    int             _sndcount[2], _rcvcount[2], _odd, _offset;
-
+    pami_work_t           _work_pami;     /* work to be reposted if not finished */
+    int                   _sndcount[2], _sndstartedcount[2], _rcvcount[2], _odd, _offset;
+    size_t                _current;
     struct AMHeader
     {
       xlpgas_AMHeader_t    hdr;

@@ -19,12 +19,14 @@ void xlpgas::Alltoall<T_NI>::reset (const void        * s,
   MUTEX_LOCK(&this->_mutex);
   _odd            = (!_odd);
   _sndcount[_odd] = 0;
+  _sndstartedcount[_odd] = 0;
   _rcvcount[_odd] = 0;
   _rbuf           = (char *)d;
   _sbuf           = (const char *)s;
   _len            = stype->GetDataSize() * stypecount;
   _stype          = stype;
   _rtype          = rtype;
+  _current        = this->ordinal();
   MUTEX_UNLOCK(&this->_mutex);
 }
 
@@ -32,45 +34,84 @@ void xlpgas::Alltoall<T_NI>::reset (const void        * s,
 /*                   do all the sends in an alltoall                */
 /* **************************************************************** */
 template<class T_NI>
-void xlpgas::Alltoall<T_NI>::kick    () {
+void xlpgas::Alltoall<T_NI>::kick_internal    () {
   MUTEX_LOCK(&this->_mutex);
-  for (int i=0; i < (int)this->_comm->size(); i++)
-    if (i == (int)this->ordinal())
-      {
-	memcpy (_rbuf + i * _len,
-		_sbuf + i* _len,
-		_len);
+  // send a message to all members of the geometry; this can be
+  // potentially expensive in terms of run time and resources
+  // allocated
+  int j = _sndstartedcount[_odd];
+  for (; j < (int)this->_comm->size(); j++) {
+    if (buffer_full()) {
+      MUTEX_UNLOCK(&this->_mutex);
+      break;
+    }
 
-	_sndcount[_odd]++;
-	_rcvcount[_odd]++;
+    if (_current == this->ordinal()) {
+      memcpy (_rbuf + _current * _len,
+	      _sbuf + _current * _len,
+	      _len);
 
-	/* UNLOCK */
-	MUTEX_UNLOCK(&this->_mutex);
-	if (this->_sndcount[this->_odd] >= (int)this->_comm->size() &&
-	    this->_rcvcount[this->_odd] >= (int)this->_comm->size())
-	  if (this->_cb_complete)
-	    this->_cb_complete (this->_pami_ctxt,this->_arg,PAMI_SUCCESS);
-      }
+      _sndcount[_odd]++;
+      _sndstartedcount[_odd]++;
+      _rcvcount[_odd]++;
+
+      /* UNLOCK */
+      MUTEX_UNLOCK(&this->_mutex);
+      if (this->isdone())
+	if (this->_cb_complete)
+	  this->_cb_complete (this->_pami_ctxt,this->_arg,PAMI_SUCCESS);
+    }
     else {
       MUTEX_UNLOCK(&this->_mutex);
-      //      _headers[i].dest_ctxt = _comm->index2Endpoint(i).ctxt;// not used anymore; if this would be the case multiple headers would be required
+      _sndstartedcount[_odd]++;
       pami_send_t p_send;/*This should go once we make sure sendPWQ works*/
       pami_send_event_t   events;
       p_send.send.header.iov_base  = &(_header);
       p_send.send.header.iov_len   = sizeof(_header);
-      p_send.send.data.iov_base    = (char*) _sbuf + i * _len;
+      p_send.send.data.iov_base    = (char*) _sbuf + _current * _len;
       p_send.send.data.iov_len     = this->_len;
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
-      p_send.send.dest             = this->_comm->index2Endpoint (i);
+      p_send.send.dest             = this->_comm->index2Endpoint (_current);
       events.cookie         = this;
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
-      _pwq.configure((char *)_sbuf + i * _len, this->_len, this->_len, _stype, _rtype);
+      _pwq.configure((char *)_sbuf + _current * _len, this->_len, this->_len, _stype, _rtype);
       _pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (i), sizeof(_header),&_header,this->_len, &_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (_current), sizeof(_header),&_header,this->_len, &_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
+
+    // increment current wrapping arround
+    _current += 1;
+    if(_current == this->_comm->size())
+      _current = 0;
+  }
+}
+
+/*
+  Alltoall pushes a certain number of messages and waits
+ */
+template<class T_NI>
+pami_result_t repost_all2all_function (pami_context_t context, void *cookie) {
+  xlpgas::Alltoall<T_NI>* coll = (xlpgas::Alltoall<T_NI>*)cookie;
+  coll->kick_internal();
+  if( coll->all_sent() ) {
+    return PAMI_SUCCESS;
+  }
+  else {
+    return PAMI_EAGAIN;
+  }
+}
+
+template<class T_NI>
+void xlpgas::Alltoall<T_NI>::kick    () {
+  this->kick_internal();
+  if( ! this->all_sent() ) {
+    //repost if not all messages sent due to buffer full
+    PAMI::Device::Generic::GenericThread *work = new ((void*)(&_work_pami)) PAMI::Device::Generic::GenericThread(repost_all2all_function<T_NI>, (void*)this);
+    this->_dev[0].postThread(work);
+  }
 }
 
 /* **************************************************************** */
@@ -79,10 +120,22 @@ void xlpgas::Alltoall<T_NI>::kick    () {
 template<class T_NI>
 bool xlpgas::Alltoall<T_NI>::isdone () const
 {
-  return (this->_sndcount[this->_odd] >= (int)this->_comm->size() &&
+  return (this->_sndcount[this->_odd] == this->_sndstartedcount[this->_odd] &&
+	  this->_sndcount[this->_odd] >= (int)this->_comm->size() &&
           this->_rcvcount[this->_odd] >= (int)this->_comm->size());
 }
 
+template<class T_NI>
+bool xlpgas::Alltoall<T_NI>::buffer_full () const
+{
+  return ( (size_t)(this->_sndstartedcount[this->_odd] - this->_sndcount[this->_odd]) >= MAX_PENDING);
+}
+
+template<class T_NI>
+bool xlpgas::Alltoall<T_NI>::all_sent () const
+{
+  return ( this->_sndstartedcount[this->_odd] >= (int)this->_comm->size());
+}
 /* **************************************************************** */
 /*               send completion in alltoall                        */
 /* **************************************************************** */
@@ -100,8 +153,7 @@ void xlpgas::Alltoall<T_NI>::cb_senddone (void * ctxt, void * arg, pami_result_t
 
   /* UNLOCK */
   MUTEX_UNLOCK(&self->_mutex);
-  if (self->_sndcount[self->_odd] >= (int)self->_comm->size() &&
-      self->_rcvcount[self->_odd] >= (int)self->_comm->size())
+  if (self->isdone())
     if (self->_cb_complete)
       self->_cb_complete (self->_pami_ctxt, self->_arg, res);
 }
@@ -164,8 +216,7 @@ void xlpgas::Alltoall<T_NI>::cb_recvcomplete (void * unused, void * arg, pami_re
   TRACE((stderr, "%d: ALLTOALL: <%d,%d> RECVDONE\n",
          XLPGAS_MYNODE, self->_header.tag, self->_header.id));
 
-  if (self->_sndcount[self->_odd] >= (int)self->_comm->size() &&
-      self->_rcvcount[self->_odd] >= (int)self->_comm->size())
+  if (self->isdone())
     if (self->_cb_complete)
       self->_cb_complete (self->_pami_ctxt, self->_arg, res);
 }
