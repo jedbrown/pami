@@ -517,7 +517,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RectangleBroadcastComposite,
         rectangle_broadcast_metadata,
-        CCMI::ConnectionManager::ColorConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr,
+        PAMI_XFER_BROADCAST >
       RectangleBroadcastFactory;
 
       extern inline void rectangle_1color_broadcast_metadata(pami_metadata_t *m)
@@ -536,7 +537,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RectangleBroadcastComposite1Color,
         rectangle_1color_broadcast_metadata,
-        CCMI::ConnectionManager::ColorConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr,
+        PAMI_XFER_BROADCAST >
       Rectangle1ColorBroadcastFactory;
 #endif
 
@@ -560,7 +562,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < BinomialBroadcastComposite,
         binomial_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr>
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        PAMI_XFER_BROADCAST >
       BinomialBroadcastFactory;
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -573,7 +576,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RingBroadcastComposite,
         ring_broadcast_metadata,
-        CCMI::ConnectionManager::ColorGeometryConnMgr>
+        CCMI::ConnectionManager::ColorGeometryConnMgr,
+        PAMI_XFER_BROADCAST >
         RingBroadcastFactory;
       
       extern inline void binomial_broadcast_metadata_singleth(pami_metadata_t *m)
@@ -596,7 +600,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < BinomialBroadcastSingleThComposite,
         binomial_broadcast_metadata_singleth,
-        CCMI::ConnectionManager::ColorConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr,
+        PAMI_XFER_BROADCAST >
       BinomialBroadcastSingleThFactory;
 
       typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -609,7 +614,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < RingBroadcastSingleThComposite,
         ring_broadcast_metadata_singleth,
-        CCMI::ConnectionManager::ColorConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr,
+        PAMI_XFER_BROADCAST >
       RingBroadcastSingleThFactory;
 
       extern inline void am_rb_broadcast_metadata(pami_metadata_t *m)
@@ -859,7 +865,8 @@ namespace CCMI
       typedef CCMI::Adaptor::CollectiveProtocolFactoryT
       < TwoNaryBroadcastComposite,
         sync_2nary_broadcast_metadata,
-        CCMI::ConnectionManager::ColorConnMgr>
+        CCMI::ConnectionManager::ColorConnMgr,
+        PAMI_XFER_BROADCAST >
       TwoNaryBroadcastFactory;
 
       // Generic tree 3-nary broadcast
@@ -1019,7 +1026,8 @@ namespace CCMI
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
 	  < Composite,
           binomial_allreduce_metadata,
-          CCMI::ConnectionManager::RankBasedConnMgr>
+          CCMI::ConnectionManager::RankBasedConnMgr,
+          PAMI_XFER_ALLREDUCE >
 	  Factory;
 
         extern inline void binomial4_allreduce_metadata(pami_metadata_t *m)
@@ -1035,7 +1043,8 @@ namespace CCMI
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
 	< Composite4,
           binomial4_allreduce_metadata,
-          CCMI::ConnectionManager::RankBasedConnMgr>
+          CCMI::ConnectionManager::RankBasedConnMgr,
+          PAMI_XFER_ALLREDUCE >
         Factory4;
 
         extern inline void binomial8_allreduce_metadata(pami_metadata_t *m)
@@ -1051,7 +1060,8 @@ namespace CCMI
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
         < Composite8,
           binomial8_allreduce_metadata,
-          CCMI::ConnectionManager::RankBasedConnMgr>
+          CCMI::ConnectionManager::RankBasedConnMgr,
+          PAMI_XFER_ALLREDUCE >
         Factory8;
 
        extern inline unsigned getKey(unsigned                                   root,
@@ -1117,7 +1127,8 @@ namespace CCMI
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
           < Composite,
           ring_allreduce_metadata,
-          CCMI::ConnectionManager::SimpleConnMgr>
+          CCMI::ConnectionManager::SimpleConnMgr,
+          PAMI_XFER_ALLREDUCE >
           Factory;
       }; //Ring
 

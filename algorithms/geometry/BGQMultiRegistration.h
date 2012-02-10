@@ -320,7 +320,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
     ShmemMcombMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiCombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > ShmemMultiCombineFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' Shmem allsided multicast
@@ -332,7 +332,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<>,
     ShmemMcastMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > ShmemMultiCastFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > ShmemMultiCastFactory;
 
 
     //----------------------------------------------------------------------------
@@ -348,7 +348,7 @@ namespace PAMI
     // so we use the CollectiveProtocolFactoryT instead of the AllSidedCollectiveProtocolFactoryT
     typedef CCMI::Adaptor::CollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite<>,
     MUMcastMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUMultiCastFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUMultiCastFactory;
 
 
     //----------------------------------------------------------------------------
@@ -395,7 +395,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
     MUMcombMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUMultiCombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MUMultiCombineFactory;
 
     //----------------------------------------------------------------------------
     // 'Pure' SHMEM/MU allsided dput multicast over multicombine OR
@@ -417,14 +417,14 @@ namespace PAMI
       MUGlobalDputNI,
       PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
       MUMcastCollectiveDputMetaData,
-      CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMultiCastFactory;
+      CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUCollectiveDputMultiCastFactory;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
       CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
       MUShmemGlobalDputNI,
       PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
       MUMcastShmemCollectiveDputMetaData,
-      CCMI::ConnectionManager::SimpleConnMgr > MUShmemCollectiveDputMultiCastFactory;
+      CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUShmemCollectiveDputMultiCastFactory;
 
     struct  MUCollDputMcastStorage {
       union {
@@ -446,7 +446,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,
     MUMcombCollectiveDputMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUCollectiveDputMulticombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MUCollectiveDputMulticombineFactory;
 
     //----------------------------------------------------------------------------
     // MU+Shmem allsided dput multicombine
@@ -479,7 +479,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUShmemGlobalDputNI>,
     MUShmemMcombCollectiveDputMetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUShmemCollectiveDputMulticombineFactory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MUShmemCollectiveDputMulticombineFactory;
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
     //----------------------------------------------------------------------------
@@ -496,7 +496,7 @@ namespace PAMI
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite3,
     MUMcast3MetaData,
-    CCMI::ConnectionManager::SimpleConnMgr > MUMultiCast3Factory;
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUMultiCast3Factory;
 #endif
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
@@ -508,7 +508,7 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryNCOT < CCMI::Adaptor::Barrier::MultiSyncComposite2Device<>,
-    Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >  MultiSync2DeviceFactory;
+    Msync2DMetaData, CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BARRIER>  MultiSync2DeviceFactory;
 
     //----------------------------------------------------------------------------
     // 'Composite' Shmem/MU allsided 2 device multisync
@@ -647,7 +647,7 @@ namespace PAMI
 #endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
-    Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceFactoryNP;
+    Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MultiCombine2DeviceFactoryNP;
 #endif
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
     //----------------------------------------------------------------------------
@@ -679,7 +679,7 @@ namespace PAMI
 #endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
-    Mcomb2DDputMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr > MultiCombine2DeviceDputFactoryNP;
+    Mcomb2DDputMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MultiCombine2DeviceDputFactoryNP;
 #endif
     //----------------------------------------------------------------------------
     // Rectangle broadcast
@@ -752,14 +752,16 @@ namespace PAMI
     < RectangleDput1ColorBroadcastComposite,
     rectangle_dput_1color_broadcast_metadata,
     CCMI::ConnectionManager::ColorConnMgr,
-    PAMI::Geometry::CKEY_BCASTCOMPOSITE2 >
+    PAMI::Geometry::CKEY_BCASTCOMPOSITE2,
+    PAMI_XFER_BROADCAST >
     RectangleDput1ColorBroadcastFactory;
 
     typedef CCMI::Adaptor::CachedAllSidedFactoryT
     < RectangleDput1ColorBroadcastComposite,
     mu_rectangle_dput_1color_broadcast_metadata,
     CCMI::ConnectionManager::ColorConnMgr,
-    PAMI::Geometry::CKEY_BCASTCOMPOSITE3 >
+    PAMI::Geometry::CKEY_BCASTCOMPOSITE3,
+    PAMI_XFER_BROADCAST >
     MURectangleDput1ColorBroadcastFactory;
 
     extern inline void rectangle_dput_broadcast_metadata(pami_metadata_t *m)
@@ -789,14 +791,16 @@ namespace PAMI
     < RectangleDputBroadcastComposite,
     rectangle_dput_broadcast_metadata,
     CCMI::ConnectionManager::ColorConnMgr,
-    PAMI::Geometry::CKEY_BCASTCOMPOSITE0 >
+    PAMI::Geometry::CKEY_BCASTCOMPOSITE0,
+    PAMI_XFER_BROADCAST >
     RectangleDputBroadcastFactory;
 
     typedef CCMI::Adaptor::CachedAllSidedFactoryT
     < RectangleDputBroadcastComposite,
     mu_rectangle_dput_broadcast_metadata,
     CCMI::ConnectionManager::ColorConnMgr,
-    PAMI::Geometry::CKEY_BCASTCOMPOSITE1 >
+    PAMI::Geometry::CKEY_BCASTCOMPOSITE1,
+    PAMI_XFER_BROADCAST >
     MURectangleDputBroadcastFactory;
 
     extern inline void rectangle_dput_allgather_metadata(pami_metadata_t *m)
@@ -848,7 +852,8 @@ namespace PAMI
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgather,
       rectangle_dput_allgather_metadata,
-      CCMI::ConnectionManager::ColorMapConnMgr >
+      CCMI::ConnectionManager::ColorMapConnMgr,
+      PAMI_XFER_ALLGATHER >
       RectangleDputAllgatherFactory;
 
     typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
@@ -865,7 +870,8 @@ namespace PAMI
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgatherV,
       rectangle_dput_allgather_metadata,
-      CCMI::ConnectionManager::ColorMapConnMgr >
+      CCMI::ConnectionManager::ColorMapConnMgr,
+      PAMI_XFER_ALLGATHERV_INT >
       RectangleDputAllgatherVFactory;
 
     //----------------------------------------------------------------------------

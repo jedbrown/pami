@@ -35,7 +35,7 @@ namespace CCMI
 {
   namespace Adaptor
   {
-    template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
+    template <class T_Composite, MetaDataFn get_metadata, class T_Conn, pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT>
     class AllSidedCollectiveProtocolFactoryNCOT: public CollectiveProtocolFactory
     {
 
@@ -114,8 +114,7 @@ namespace CCMI
         TRACE_FORMAT("<%p>",this);
         DO_DEBUG((templateName<MetaDataFn>()));
         get_metadata(mdata);
-        // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
-        if(_native) _native->metadata(mdata,PAMI_XFER_COUNT);
+        if(_native) _native->metadata(mdata,T_XFER_TYPE);
         TRACE_FN_EXIT();
       }
     private:

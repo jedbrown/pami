@@ -15,7 +15,7 @@ namespace CCMI
   namespace Adaptor
   {
 
-    template <class T, MetaDataFn get_metadata>
+    template <class T, MetaDataFn get_metadata,pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT>
     class AllSidedCSProtocolFactoryT: public CollectiveProtocolFactory
     {
       class collObj
@@ -90,8 +90,7 @@ namespace CCMI
       virtual void metadata(pami_metadata_t *mdata)
       {
         get_metadata(mdata);
-        // We don't know the xfter so use arbitrary PAMI_XFER_COUNT. \todo something better
-        CollectiveProtocolFactory::metadata(mdata,PAMI_XFER_COUNT);
+        CollectiveProtocolFactory::metadata(mdata,T_XFER_TYPE);
       }
     private:
       PAMI::MemoryAllocator<sizeof(collObj), 16>   _alloc;

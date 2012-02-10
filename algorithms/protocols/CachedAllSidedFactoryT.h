@@ -34,8 +34,8 @@ namespace Adaptor
 /// geometry and later retrieves the object. The reset method upates
 /// composite with new parameters
 ///
-template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key >
-class CachedAllSidedFactoryT : public AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
+template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key, pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT >
+class CachedAllSidedFactoryT : public AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >
 {
 protected:
 public:
@@ -44,7 +44,7 @@ public:
                          pami_mapidtogeometry_fn cb_geometry,
                          T_Conn                      *cmgr,
                            Interfaces::NativeInterface *native):
-    AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
+    AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -62,7 +62,7 @@ public:
 
         if (!composite)
         {
-            composite = (T_Composite *) AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            composite = (T_Composite *) AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::generate(geometry, cmd);
             TRACE_FORMAT( "<%p>composite %p",this,composite);
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,

@@ -55,7 +55,7 @@ typedef bool (*AnalyzeFn) (PAMI_GEOMETRY_CLASS *g);
 // generate
 //
 template < class T_Composite, MetaDataFn get_metadata, class T_Conn, bool T_Unexp, PAMI::Geometry::ckeys_t T_Key >
-class BarrierFactoryT : public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
+class BarrierFactoryT : public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >
 {
 public:
     BarrierFactoryT(pami_context_t               ctxt,
@@ -64,7 +64,7 @@ public:
                     T_Conn                      *cmgr,
                     Interfaces::NativeInterface *native,
                     pami_dispatch_multicast_function cb_head = NULL):
-        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native, cb_head),
+        CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >(ctxt,ctxt_id,cb_geometry,cmgr, native, cb_head),
         _cached_id((unsigned) -1),
         _cached_object(NULL)
     {
@@ -92,7 +92,7 @@ public:
         TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u\n",this,composite, geometry, T_Key));
         if (!composite)
         {
-            composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>::generate(geometry, cmd);
             TRACE_FORMAT( "<%p> composite %p",this,composite);
             g->setKey(this->_context_id,
                       T_Key,
@@ -114,7 +114,7 @@ public:
     {
       TRACE_FN_ENTER();
       T_Composite *obj = (T_Composite *)clientdata;
-      typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::collObj *)obj->getCollObj();
+      typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >::collObj *)obj->getCollObj();
       cobj->~collObj();
       cobj->_factory->_alloc.returnObject(cobj);
       TRACE_FN_EXIT();
@@ -211,7 +211,7 @@ protected:
 /// Barrier Factory All Sided for generate routine
 ///
 template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key >
-class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>
+class BarrierFactoryAllSidedT : public AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>
 {
 public:
     BarrierFactoryAllSidedT(pami_context_t               ctxt,
@@ -219,7 +219,7 @@ public:
                             pami_mapidtogeometry_fn      cb_geometry,
                             T_Conn                      *cmgr,
                             Interfaces::NativeInterface *native):
-      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
+      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -230,7 +230,7 @@ public:
                             pami_mapidtogeometry_fn      cb_geometry,
                             T_Conn                       *cmgr,
                             Interfaces::NativeInterface **native):
-      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,cmgr, native)
+      AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>(ctxt,ctxt_id,cb_geometry,cmgr, native)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT( "%p",this);
@@ -250,7 +250,7 @@ public:
 
         if (!composite)
         {
-            composite = AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn>::generate(geometry, cmd);
+            composite = AllSidedCollectiveProtocolFactoryNCOT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>::generate(geometry, cmd);
             g->setKey(this->_context_id,
                       T_Key,
                       (void*)composite);

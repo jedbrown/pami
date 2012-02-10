@@ -31,8 +31,8 @@ namespace Adaptor
 {
 namespace Allreduce
 {
-template <class T_Composite, MetaDataFn get_metadata, class T_Conn>
-class ProtocolFactoryT: public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>
+template <class T_Composite, MetaDataFn get_metadata, class T_Conn, pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT>
+class ProtocolFactoryT: public CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >
 {
   T_Conn                           *_bcmgr;
   bool                              _isAsync;
@@ -45,7 +45,7 @@ public:
                       Interfaces::NativeInterface *native,
                       pami_dispatch_multicast_function cb_head = NULL,
 		      T_Conn                      *bcmgr=NULL):
-      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>(ctxt,ctxt_id,cb_geometry,rcmgr, native, cb_head)
+      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >(ctxt,ctxt_id,cb_geometry,rcmgr, native, cb_head)
     {
         TRACE_FN_ENTER();
         TRACE_FORMAT("%p", this);
@@ -58,7 +58,7 @@ public:
 
     Interfaces::NativeInterface * native()
     {
-      return CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native;
+      return CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_native;
     }
     void setAsync () { _isAsync = true; }
 
@@ -82,7 +82,7 @@ public:
         PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
 	
 	unsigned iteration = 0;
-        size_t contextid = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native->contextid();
+        size_t contextid = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_native->contextid();
 	if (_isAsync)
           iteration = geometry->getAllreduceIteration(contextid);
 
@@ -117,16 +117,16 @@ public:
         {
 	  geometry->setAllreduceComposite(contextid,NULL, iteration);
 	  arcomposite->cleanup(); //Call destructor
-	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.returnObject(arcomposite);
+	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.returnObject(arcomposite);
         }
 
-        T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_alloc.allocateObject();
+        T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.allocateObject();
         TRACE_FORMAT("%p composite %p", this,arcomposite);
         geometry->setAllreduceComposite(contextid,obj, iteration);
         new (obj) T_Composite(this->_context,
                               this->_context_id,
-			      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_native,  // Native interface
-                              CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn>::_cmgr,    // Connection Manager
+			      CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_native,  // Native interface
+                              CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_cmgr,    // Connection Manager
 			      _bcmgr,
                               this,
                               geometry,          // Geometry Object
