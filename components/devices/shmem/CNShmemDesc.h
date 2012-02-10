@@ -133,7 +133,8 @@ namespace PAMI
 
           inline void* get_buffer(unsigned index)
           {
-            return (void*)(_shared->buffer + index*VERY_SHORT_MSG_CUTOFF);
+            return (void*)(_shared->buffer + index*(SHORT_MSG_CUTOFF/_shared->num_consumers));
+            //return (void*)(_shared->buffer + index*VERY_SHORT_MSG_CUTOFF);
           }
 
           inline void* get_buffer()

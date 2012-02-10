@@ -24,6 +24,7 @@
 //#include "../a2qpx_nway_sum.h"
 //#include "../a2qpx_nway_max.h"
 #include "../a2qpx_nway_math.h"
+#include "../bgq_math.h"
 #include "components/devices/shmem/CNShmemDesc.h"
 
 #include "Memory.h"
@@ -48,6 +49,7 @@ namespace PAMI
 #define G_Dsts(x) 	((double*)(_controlB->GAT.dstbufs[x]))
 #define P_Dsts(x) 	((double*)(_controlB->phybufs[x]))
 #define S_Bufs(x)       ((double*)(my_desc->get_buffer(x)))
+#define C_Bufs(x)       ((char*)(my_desc->get_buffer(x)))
 #define G_Counter 	((uint64_t*)(_controlB->GAT.counter_addr))
 #define MinChunkSize  64
 #define ShmBufSize  SHORT_MSG_CUTOFF
@@ -441,7 +443,7 @@ namespace PAMI
             }
 
             // Combining very short messages..the messages are fit into L2 cachelines to minimise the number of L2 loads
-            inline static pami_result_t very_short_msg_combine(CNShmemDesc *my_desc, unsigned total_bytes, pami_op opcode, unsigned npeers, unsigned local_rank,
+            inline static pami_result_t very_short_msg_combine(CNShmemDesc *my_desc, unsigned total_bytes, pami_op opcode, pami_dt dt,  unsigned npeers, unsigned local_rank,
                                                               bool& done_flag)
             {
 
@@ -451,47 +453,46 @@ namespace PAMI
 
               if (local_rank == 0)
               {
-                unsigned  count = total_bytes/sizeof(double);
             
                 if (total_bytes <= 32)
                 {
-                  double* shm_buf = (double*)(my_desc->get_buffer());
+                  char* shm_buf = (char*)(my_desc->get_buffer());
 
                   if (npeers == 4)
                   {
-                    quad_double_math_4way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count, count,opcode); 
+                    bgq_math_4way( shm_buf, shm_buf, shm_buf+total_bytes, shm_buf+2*total_bytes, shm_buf+3*total_bytes, total_bytes,opcode, dt); 
                   }
                   else if (npeers == 8)
                   {
-                    quad_double_math_8way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count,
-                        shm_buf+4*count,  shm_buf+5*count,shm_buf+6*count,shm_buf+7*count, count, opcode); 
+                    bgq_math_8way( shm_buf, shm_buf, shm_buf+total_bytes, shm_buf+2*total_bytes, shm_buf+3*total_bytes,
+                        shm_buf+4*total_bytes,  shm_buf+5*total_bytes,shm_buf+6*total_bytes,shm_buf+7*total_bytes, total_bytes, opcode, dt); 
                   }
                   else if (npeers == 16)
                   {
-                    quad_double_math_16way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count,
-                        shm_buf+4*count,  shm_buf+5*count,shm_buf+6*count,shm_buf+7*count, shm_buf+8*count,
-                        shm_buf+9*count,shm_buf+10*count,  shm_buf+11*count, shm_buf+12*count,  
-                        shm_buf+13*count, shm_buf+14*count, shm_buf+15*count, count, opcode); 
+                    bgq_math_16way( shm_buf, shm_buf, shm_buf+total_bytes, shm_buf+2*total_bytes, shm_buf+3*total_bytes,
+                        shm_buf+4*total_bytes,  shm_buf+5*total_bytes,shm_buf+6*total_bytes,shm_buf+7*total_bytes, shm_buf+8*total_bytes,
+                        shm_buf+9*total_bytes,shm_buf+10*total_bytes,  shm_buf+11*total_bytes, shm_buf+12*total_bytes,  
+                        shm_buf+13*total_bytes, shm_buf+14*total_bytes, shm_buf+15*total_bytes, total_bytes, opcode, dt); 
                   }
                   else if (npeers == 64)
                   {
-                    quad_double_math_16way( shm_buf, shm_buf, shm_buf+count, shm_buf+2*count, shm_buf+3*count,
-                        shm_buf+4*count,  shm_buf+5*count,shm_buf+6*count,shm_buf+7*count, shm_buf+8*count,
-                        shm_buf+9*count,shm_buf+10*count,  shm_buf+11*count, shm_buf+12*count,  
-                        shm_buf+13*count, shm_buf+14*count, shm_buf+15*count, count, opcode); 
-                    quad_double_math_16way( shm_buf+16*count, shm_buf+16*count, shm_buf+17*count, shm_buf+18*count, shm_buf+19*count,
-                        shm_buf+20*count,  shm_buf+21*count,shm_buf+22*count,shm_buf+23*count, shm_buf+24*count,
-                        shm_buf+25*count,shm_buf+26*count,  shm_buf+27*count, shm_buf+28*count,  
-                        shm_buf+29*count, shm_buf+30*count, shm_buf+31*count, count, opcode); 
-                    quad_double_math_16way( shm_buf+32*count, shm_buf+32*count, shm_buf+33*count, shm_buf+34*count, shm_buf+35*count,
-                        shm_buf+36*count,  shm_buf+37*count,shm_buf+38*count,shm_buf+39*count, shm_buf+40*count,
-                        shm_buf+41*count,shm_buf+42*count,  shm_buf+43*count, shm_buf+44*count,  
-                        shm_buf+45*count, shm_buf+46*count, shm_buf+47*count, count, opcode); 
-                    quad_double_math_16way( shm_buf+48*count, shm_buf+48*count, shm_buf+49*count, shm_buf+50*count, shm_buf+51*count,
-                        shm_buf+52*count,  shm_buf+53*count,shm_buf+54*count,shm_buf+55*count, shm_buf+56*count,
-                        shm_buf+57*count,shm_buf+58*count,  shm_buf+59*count, shm_buf+60*count,  
-                        shm_buf+61*count, shm_buf+62*count, shm_buf+63*count, count, opcode); 
-                    quad_double_math_4way( shm_buf, shm_buf, shm_buf+16*count, shm_buf+32*count, shm_buf+48*count, count,opcode); 
+                    bgq_math_16way( shm_buf, shm_buf, shm_buf+total_bytes, shm_buf+2*total_bytes, shm_buf+3*total_bytes,
+                        shm_buf+4*total_bytes,  shm_buf+5*total_bytes,shm_buf+6*total_bytes,shm_buf+7*total_bytes, shm_buf+8*total_bytes,
+                        shm_buf+9*total_bytes,shm_buf+10*total_bytes,  shm_buf+11*total_bytes, shm_buf+12*total_bytes,  
+                        shm_buf+13*total_bytes, shm_buf+14*total_bytes, shm_buf+15*total_bytes, total_bytes, opcode, dt); 
+                    bgq_math_16way( shm_buf+16*total_bytes, shm_buf+16*total_bytes, shm_buf+17*total_bytes, shm_buf+18*total_bytes, shm_buf+19*total_bytes,
+                        shm_buf+20*total_bytes,  shm_buf+21*total_bytes,shm_buf+22*total_bytes,shm_buf+23*total_bytes, shm_buf+24*total_bytes,
+                        shm_buf+25*total_bytes,shm_buf+26*total_bytes,  shm_buf+27*total_bytes, shm_buf+28*total_bytes,  
+                        shm_buf+29*total_bytes, shm_buf+30*total_bytes, shm_buf+31*total_bytes, total_bytes, opcode, dt); 
+                    bgq_math_16way( shm_buf+32*total_bytes, shm_buf+32*total_bytes, shm_buf+33*total_bytes, shm_buf+34*total_bytes, shm_buf+35*total_bytes,
+                        shm_buf+36*total_bytes,  shm_buf+37*total_bytes,shm_buf+38*total_bytes,shm_buf+39*total_bytes, shm_buf+40*total_bytes,
+                        shm_buf+41*total_bytes,shm_buf+42*total_bytes,  shm_buf+43*total_bytes, shm_buf+44*total_bytes,  
+                        shm_buf+45*total_bytes, shm_buf+46*total_bytes, shm_buf+47*total_bytes, total_bytes, opcode, dt); 
+                    bgq_math_16way( shm_buf+48*total_bytes, shm_buf+48*total_bytes, shm_buf+49*total_bytes, shm_buf+50*total_bytes, shm_buf+51*total_bytes,
+                        shm_buf+52*total_bytes,  shm_buf+53*total_bytes,shm_buf+54*total_bytes,shm_buf+55*total_bytes, shm_buf+56*total_bytes,
+                        shm_buf+57*total_bytes,shm_buf+58*total_bytes,  shm_buf+59*total_bytes, shm_buf+60*total_bytes,  
+                        shm_buf+61*total_bytes, shm_buf+62*total_bytes, shm_buf+63*total_bytes, total_bytes, opcode, dt); 
+                    bgq_math_4way( shm_buf, shm_buf, shm_buf+16*total_bytes, shm_buf+32*total_bytes, shm_buf+48*total_bytes, total_bytes,opcode, dt); 
                   }
                   else
                   {
@@ -502,23 +503,23 @@ namespace PAMI
                 {
                   if (npeers == 4)
                   {
-                    quad_double_math_4way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), count, opcode); 
+                    bgq_math_4way( C_Bufs(0), C_Bufs(0), C_Bufs(1), C_Bufs(2), C_Bufs(3), total_bytes, opcode, dt); 
                   }
                   else if (npeers == 8)
                   {
-                    quad_double_math_8way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7),  count, opcode); 
+                    bgq_math_8way( C_Bufs(0), C_Bufs(0), C_Bufs(1), C_Bufs(2), C_Bufs(3), C_Bufs(4), C_Bufs(5), C_Bufs(6), C_Bufs(7),  total_bytes, opcode, dt); 
                   }
                   else if (npeers == 16)
                   {
-                    quad_double_math_16way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7), S_Bufs(8), S_Bufs(9), S_Bufs(10), S_Bufs(11), S_Bufs(12), S_Bufs(13), S_Bufs(14), S_Bufs(15), count, opcode); 
+                    bgq_math_16way( C_Bufs(0), C_Bufs(0), C_Bufs(1), C_Bufs(2), C_Bufs(3), C_Bufs(4), C_Bufs(5), C_Bufs(6), C_Bufs(7), C_Bufs(8), C_Bufs(9), C_Bufs(10), C_Bufs(11), C_Bufs(12), C_Bufs(13), C_Bufs(14), C_Bufs(15), total_bytes, opcode, dt); 
                   }
                   else if (npeers == 64)
                   {
-                    quad_double_math_16way( S_Bufs(0), S_Bufs(0), S_Bufs(1), S_Bufs(2), S_Bufs(3), S_Bufs(4), S_Bufs(5), S_Bufs(6), S_Bufs(7), S_Bufs(8), S_Bufs(9), S_Bufs(10), S_Bufs(11), S_Bufs(12), S_Bufs(13), S_Bufs(14), S_Bufs(15), count, opcode); 
-                    quad_double_math_16way( S_Bufs(16), S_Bufs(16), S_Bufs(17), S_Bufs(18), S_Bufs(19), S_Bufs(20), S_Bufs(21), S_Bufs(22), S_Bufs(23), S_Bufs(24), S_Bufs(25), S_Bufs(26), S_Bufs(27), S_Bufs(28), S_Bufs(29), S_Bufs(30), S_Bufs(31), count, opcode); 
-                    quad_double_math_16way( S_Bufs(32), S_Bufs(32), S_Bufs(33), S_Bufs(34), S_Bufs(35), S_Bufs(36), S_Bufs(37), S_Bufs(38), S_Bufs(39), S_Bufs(40), S_Bufs(41), S_Bufs(42), S_Bufs(43), S_Bufs(44), S_Bufs(45), S_Bufs(46), S_Bufs(47), count, opcode); 
-                    quad_double_math_16way( S_Bufs(48), S_Bufs(48), S_Bufs(49), S_Bufs(50), S_Bufs(51), S_Bufs(52), S_Bufs(53), S_Bufs(54), S_Bufs(55), S_Bufs(56), S_Bufs(57), S_Bufs(58), S_Bufs(59), S_Bufs(60), S_Bufs(61), S_Bufs(62), S_Bufs(63), count, opcode); 
-                    quad_double_math_4way( S_Bufs(0), S_Bufs(0), S_Bufs(16), S_Bufs(32), S_Bufs(48), count, opcode); 
+                    bgq_math_16way( C_Bufs(0), C_Bufs(0), C_Bufs(1), C_Bufs(2), C_Bufs(3), C_Bufs(4), C_Bufs(5), C_Bufs(6), C_Bufs(7), C_Bufs(8), C_Bufs(9), C_Bufs(10), C_Bufs(11), C_Bufs(12), C_Bufs(13), C_Bufs(14), C_Bufs(15), total_bytes, opcode, dt); 
+                    bgq_math_16way( C_Bufs(16), C_Bufs(16), C_Bufs(17), C_Bufs(18), C_Bufs(19), C_Bufs(20), C_Bufs(21), C_Bufs(22), C_Bufs(23), C_Bufs(24), C_Bufs(25), C_Bufs(26), C_Bufs(27), C_Bufs(28), C_Bufs(29), C_Bufs(30), C_Bufs(31), total_bytes, opcode, dt); 
+                    bgq_math_16way( C_Bufs(32), C_Bufs(32), C_Bufs(33), C_Bufs(34), C_Bufs(35), C_Bufs(36), C_Bufs(37), C_Bufs(38), C_Bufs(39), C_Bufs(40), C_Bufs(41), C_Bufs(42), C_Bufs(43), C_Bufs(44), C_Bufs(45), C_Bufs(46), C_Bufs(47), total_bytes, opcode, dt); 
+                    bgq_math_16way( C_Bufs(48), C_Bufs(48), C_Bufs(49), C_Bufs(50), C_Bufs(51), C_Bufs(52), C_Bufs(53), C_Bufs(54), C_Bufs(55), C_Bufs(56), C_Bufs(57), C_Bufs(58), C_Bufs(59), C_Bufs(60), C_Bufs(61), C_Bufs(62), C_Bufs(63), total_bytes, opcode, dt); 
+                    bgq_math_4way( C_Bufs(0), C_Bufs(0), C_Bufs(16), C_Bufs(32), C_Bufs(48), total_bytes, opcode, dt); 
                   }
                   else
                   {
@@ -718,12 +719,13 @@ namespace PAMI
 
             //Initialize all the Virtual,Global and Physical addreses required in the operation
             //Initialize the shmem descriptor used for staging data and synchronization
-            inline void init (void* srcbuf, void* rcvbuf, void* srcbuf_gva, void* rcvbuf_gva, void* rcvbuf_phy, void* shmbuf_phy, unsigned local_rank, pami_op opcode)
+            inline void init (void* srcbuf, void* rcvbuf, void* srcbuf_gva, void* rcvbuf_gva, void* rcvbuf_phy, void* shmbuf_phy, unsigned local_rank, pami_op opcode, pami_dt  dt)
             {
 
               _srcbuf = (double*)srcbuf;
               _rcvbuf = (double*)rcvbuf;
               _opcode = opcode;
+              _dt     = dt;
 
               void* buf = _my_desc->get_buffer();
               _controlB = (ControlBlock*)buf;
@@ -785,6 +787,8 @@ namespace PAMI
             uint16_t _chunk_for_injection;
             ControlBlock* _controlB;
             pami_op _opcode;
+            pami_dt _dt;
+    
             //unsigned  _chunk_array[Num16kChunks];
             unsigned  _chunk_array[Num32kChunks];
             unsigned  _cur_offset;

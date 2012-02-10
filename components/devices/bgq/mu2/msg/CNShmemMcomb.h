@@ -52,12 +52,14 @@ namespace PAMI
               uint32_t              length,
               uint32_t              op,
               pami_op               opcode,
+              pami_dt               dt,
               uint32_t              sizeoftype,
               volatile uint64_t   * counterAddress,
               PAMI::Device::Shmem::CNShmemDesc       *shmem_desc):
           CNShmemBase (context, fn, cookie, spwq, dpwq,length, counterAddress,shmem_desc),
               _op (op),
               _opcode(opcode),
+              _dt(dt),
               _sizeoftype(sizeoftype),
               _doneMULarge (false),
               _doneMUShort (false),
@@ -96,37 +98,60 @@ namespace PAMI
             _shmbuf_phy = (uint64_t)memRegion.BasePa +
               ((uint64_t)_shmem_desc->get_buffer() - (uint64_t)memRegion.BaseVa);
 
-            if (_length < VERY_SHORT_MSG_CUTOFF)
+            if (PAMI_DOUBLE == _dt)
+            { 
+              if (_length < VERY_SHORT_MSG_CUTOFF)
+              {
+                if (_length <= 32)
+                {
+                  char* buf = (char*) _shmem_desc->get_buffer();
+                  memcpy((void*)&buf[_length*__global.mapping.t()], srcbuf, _length);
+                }
+                else
+                {
+                  void* buf = _shmem_desc->get_buffer(__global.mapping.t());
+                  memcpy(buf, srcbuf, _length);
+                }
+              }
+              else
+              {
+                rc = Kernel_CreateMemoryRegion (&memRegion, rcvbuf, _length);
+                PAMI_assert ( rc == 0 );
+                rcvbuf_phy = (uint64_t)memRegion.BasePa +
+                  ((uint64_t)rcvbuf - (uint64_t)memRegion.BaseVa);
+                void *rcvbuf_gva = NULL;
+                rc = Kernel_Physical2GlobalVirtual ((void*)rcvbuf_phy, &rcvbuf_gva);
+
+
+                rc = Kernel_CreateMemoryRegion (&memRegion, srcbuf, _length);
+                PAMI_assert ( rc == 0 );
+                srcbuf_phy = (uint64_t)memRegion.BasePa +
+                  ((uint64_t)srcbuf - (uint64_t)memRegion.BaseVa);
+                void *srcbuf_gva = NULL;
+                rc = Kernel_Physical2GlobalVirtual ((void*)srcbuf_phy, &srcbuf_gva);
+
+                _shmsg.init((void*)srcbuf, (void*)rcvbuf, (void*)srcbuf_gva, (void*)rcvbuf_gva, (void*)rcvbuf_phy, (void*)_shmbuf_phy, __global.mapping.t(), _opcode, _dt);
+
+              }
+
+            }
+            else
             {
               if (_length <= 32)
               {
                 char* buf = (char*) _shmem_desc->get_buffer();
                 memcpy((void*)&buf[_length*__global.mapping.t()], srcbuf, _length);
               }
-              else
+              else if (_length <= SHORT_MSG_CUTOFF/__global.mapping.tSize())
               {
                 void* buf = _shmem_desc->get_buffer(__global.mapping.t());
                 memcpy(buf, srcbuf, _length);
               }
-            }
-            else
-            {
-              rc = Kernel_CreateMemoryRegion (&memRegion, rcvbuf, _length);
-              PAMI_assert ( rc == 0 );
-              rcvbuf_phy = (uint64_t)memRegion.BasePa +
-                ((uint64_t)rcvbuf - (uint64_t)memRegion.BaseVa);
-              void *rcvbuf_gva = NULL;
-              rc = Kernel_Physical2GlobalVirtual ((void*)rcvbuf_phy, &rcvbuf_gva);
-
-
-              rc = Kernel_CreateMemoryRegion (&memRegion, srcbuf, _length);
-              PAMI_assert ( rc == 0 );
-              srcbuf_phy = (uint64_t)memRegion.BasePa +
-                ((uint64_t)srcbuf - (uint64_t)memRegion.BaseVa);
-              void *srcbuf_gva = NULL;
-              rc = Kernel_Physical2GlobalVirtual ((void*)srcbuf_phy, &srcbuf_gva);
-
-              _shmsg.init((void*)srcbuf, (void*)rcvbuf, (void*)srcbuf_gva, (void*)rcvbuf_gva, (void*)rcvbuf_phy, (void*)_shmbuf_phy, __global.mapping.t(), _opcode);
+              else
+              {
+                printf("unsupported data type\n");
+                PAMI_abort();
+              }
             }
 
             if (__global.mapping.t() == 0)
@@ -138,6 +163,7 @@ namespace PAMI
               else
                 _context.setCNShmemCollectiveBufferBatEntry((uint64_t)rcvbuf_phy);
             }
+
             Memory::sync();
             _shmem_desc->signal_arrived(); //signal that I have copied all my addresses/data
           }
@@ -260,11 +286,16 @@ namespace PAMI
 
             pami_result_t res;
 
-            if (length < VERY_SHORT_MSG_CUTOFF)
-              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, _opcode, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+            if (PAMI_DOUBLE == _dt)
+            {
+              if (length < VERY_SHORT_MSG_CUTOFF)
+                res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, _opcode, _dt, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+              else
+                res = _shmsg.short_msg_combine(length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+            }
             else
-              res = _shmsg.short_msg_combine(length, __global.mapping.tSize(), __global.mapping.t(), combineDone);
-
+              res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_combine(_shmem_desc, length, _opcode, _dt, __global.mapping.tSize(), __global.mapping.t(), combineDone);
+            
             if (res == PAMI_SUCCESS)
             {
               _doneShmemMcomb = 1;
@@ -278,12 +309,19 @@ namespace PAMI
           {
 
             pami_result_t res;
-            if (_length < VERY_SHORT_MSG_CUTOFF)
+            if (PAMI_DOUBLE == _dt)
+            {
+              if (_length < VERY_SHORT_MSG_CUTOFF)
+                res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_multicast(_shmem_desc, _dpwq, _length, 
+                    __global.mapping.tSize(), __global.mapping.t(), (uint64_t*)_counterAddress, _cc);
+              else
+                res = _shmsg.short_msg_multicast(_length, __global.mapping.tSize(), __global.mapping.t(),
+                    (uint64_t*)_counterAddress, _cc);
+            }
+            else
               res = PAMI::Device::Shmem::CNShmemMessage::very_short_msg_multicast(_shmem_desc, _dpwq, _length, 
                   __global.mapping.tSize(), __global.mapping.t(), (uint64_t*)_counterAddress, _cc);
-            else
-              res = _shmsg.short_msg_multicast(_length, __global.mapping.tSize(), __global.mapping.t(),
-                  (uint64_t*)_counterAddress, _cc);
+            
 
             if (res == PAMI_SUCCESS)
             {
@@ -427,6 +465,7 @@ namespace PAMI
 
           uint32_t                 _op;
           pami_op                 _opcode;
+          pami_dt                 _dt;
           uint32_t                 _sizeoftype;
           bool                     _doneMULarge;
           bool                     _doneMUShort;
