@@ -325,17 +325,6 @@ namespace PAMI
 	    _rm.init(id_client, id_context, progress);
 
             // ----------------------------------------------------------------
-            // Initialize the deterministic packet connection array.
-            // ----------------------------------------------------------------
-            size_t i, num_endpoints = _mapping.size() * _id_count;
-            
-            pami_result_t mmrc;
-  	        mmrc = __global.heap_mm->memalign((void **) & _connection, 16, sizeof(void *) * num_endpoints);
-            PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for mu connection array, rc=%d\n", mmrc);
-
-            for (i = 0; i < num_endpoints; i++) _connection[i] = NULL;
-
-            // ----------------------------------------------------------------
             // Initialize the MU Counter Pools for this context.
             // 1. Determine how many pools we need based on the number of
             //    counters requested via env var.
@@ -365,7 +354,8 @@ namespace PAMI
 
             _numCounterPools = numDynamicRouting / 64;
             if ( _numCounterPools == 0 ) _numCounterPools = 1;
-            
+
+            pami_result_t mmrc;
             mmrc = __global.heap_mm->memalign((void **) & _counterPool, 
                                               8, 
                                               _numCounterPools*sizeof(CounterPool));
@@ -513,10 +503,10 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
+            PAMI_assert_debugf(_connection.find(index) != _connection.end(), "Error. _connection[%zu] was not previously set.\n", index);
             TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], (void *) NULL);      
-            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
-            _connection[index] = NULL;
+            _connection.erase(index);
           }
               
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
@@ -524,8 +514,8 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
+            PAMI_assert_debugf(_connection.find(index) != _connection.end(), "Error. _connection[%zu] was not previously set.\n", index);
             TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection[index]);      
-            PAMI_assert_debugf(_connection[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
 
             return _connection[index];
           }
@@ -535,8 +525,8 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
+            PAMI_assert_debugf(_connection.find(index) == _connection.end(), "Error. _connection[%zu] was previously set.\n", index);
             TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], value);      
-            PAMI_assert_debugf(_connection[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
 
             _connection[index] = value;
           }
@@ -1254,10 +1244,9 @@ namespace PAMI
 	  void *            _mu_context_cookie;
 
         // -------------------------------------------------------------
-        // Deterministic packet interface connection array
+        // Deterministic packet interface connection container
         // -------------------------------------------------------------
-        
-        void ** _connection;
+        std::map<size_t,void*> _connection;
 	
         CounterPool *_counterPool;
         size_t       _numCounterPools;
