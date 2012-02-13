@@ -341,7 +341,7 @@ int main(int argc, char*argv[])
             for (k = 0; k < num_tasks; k++)
             {
               lengths[k] = i;
-              displs[k]  = k * i * get_type_size(dt_array[dt]);
+              displs[k]  = k * i;
             }
             lengths[k-1] = 0;
 

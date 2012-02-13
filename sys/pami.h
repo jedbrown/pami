@@ -2137,11 +2137,11 @@ extern "C"
    * \param[in]  sndbuf       The base address of the buffers containing data to be sent
    * \param[in]  stype        A single type datatype
    * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of offsets into the sndbuf.  Size of geometry length
+   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2166,11 +2166,11 @@ extern "C"
    * \param[in]  sndbuf       The base address of the buffers containing data to be sent
    * \param[in]  stype        A single type datatype
    * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of offsets into the sndbuf.  Size of geometry length
+   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2361,7 +2361,7 @@ extern "C"
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2391,7 +2391,7 @@ extern "C"
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2423,7 +2423,7 @@ extern "C"
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2453,7 +2453,7 @@ extern "C"
    * \param[out] rcvbuf       The base address of the buffer for data reception
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of offsets into the rcvbuf.  Size of geometry length
+   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
    *
    * \retval     0            Success
    *
@@ -2508,7 +2508,7 @@ extern "C"
    * \param[in]  sndbuf       The base address of the buffers containing data to be sent
    * \param[in]  stype        A single type datatype
    * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of offsets into the sndbuf.  Size of geometry length
+   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
    * \param[in]  rbuffer      Receive buffer.
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecount   Receive buffer type replication count
@@ -2538,7 +2538,7 @@ extern "C"
    * \param[in]  sndbuf       The base address of the buffers containing data to be sent
    * \param[in]  stype        A single type datatype
    * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of offsets into the sndbuf.  Size of geometry length
+   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
    * \param[in]  rbuffer      Receive buffer.
    * \param[in]  rtype        A single type datatype
    * \param[in]  rtypecount   Receive buffer type replication count

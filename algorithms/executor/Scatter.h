@@ -387,7 +387,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
       // all parents copy from send buffer to application destination buffer
       char *sndbuf = _rbuf;
       if (_disps && _sndcounts)
-        sndbuf = _sbuf + _disps[_myindex];
+        sndbuf = _sbuf + _disps[_myindex] * _stype->GetExtent();
       else if (_native->endpoint() == _root)
         sndbuf = _sbuf + _myindex * _buflen;
       else if (_nphases > 1)
@@ -421,7 +421,7 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
           CCMI_assert(_native->endpoint() == _root);
           CCMI_assert(ndst == 1);
           buflen   =  _sndcounts[dstindex] * _stype->GetDataSize();
-          offset   =  _disps[dstindex];
+          offset   =  _disps[dstindex] * _stype->GetExtent();
           _mdata._count = buflen;
         }
       else if ((unsigned)_nphases == _gtopology->size() - 1)

@@ -348,23 +348,23 @@ namespace CCMI
         size_t getSendLength(unsigned index)
         {
           EXECUTOR_DEBUG((stderr, "index = %d, scounts = %p, buflen = %d\n", index, _scounts, _buflen);)
-          return (_scounts) ? _scounts[index]*_stype->GetDataSize() : _buflen;
+          return (_scounts) ? _scounts[index] * _stype->GetDataSize() : _buflen;
         }
 
         size_t getRecvLength(unsigned index)
         {
           EXECUTOR_DEBUG((stderr, "index = %d, rcounts = %p, buflen = %d\n", index, _rcounts, _buflen);)
-          return (_rcounts) ? _rcounts[index]*_rtype->GetDataSize() : _buflen;
+          return (_rcounts) ? _rcounts[index] * _rtype->GetDataSize() : _buflen;
         }
 
         size_t getSendDisp(unsigned index)
         {
-          return (_sdisps) ? _sdisps[index] : index * _buflen;
+          return (_sdisps) ? _sdisps[index] * _stype->GetExtent(): index * _buflen;
         }
 
         size_t getRecvDisp(unsigned index)
         {
-          return (_rdisps) ? _rdisps[index] : index * _buflen;
+          return (_rdisps) ? _rdisps[index] * _rtype->GetExtent(): index * _buflen;
         }
 
         PAMI::PipeWorkQueue *getSendPWQ(unsigned index)

@@ -322,7 +322,7 @@ int main (int argc, char ** argv)
                 niter = NITERBW;
 
               for (k = 0; k < num_tasks; k++)lengths[k] = i;
-              for (k = 0; k < num_tasks; k++)displs[k]  = k*i*get_type_size(dt_array[dt]);
+              for (k = 0; k < num_tasks; k++)displs[k]  = k*i;
 
               allgatherv.cmd.xfer_allgatherv.stypecount       = i;
               allgatherv.cmd.xfer_allgatherv.stype            = dt_array[dt];

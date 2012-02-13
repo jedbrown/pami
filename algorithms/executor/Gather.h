@@ -424,7 +424,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::s
   if (_native->endpoint() == _root)
     {
       if (_disps && _rcvcounts)
-        memcpy(_rbuf + _disps[_rootindex], _sbuf, _rcvcounts[_rootindex] * _rtype->GetDataSize());
+        memcpy(_rbuf + _disps[_rootindex] * _rtype->GetExtent(), _sbuf, _rcvcounts[_rootindex] * _rtype->GetDataSize());
       else
         memcpy(_rbuf + _rootindex * _buflen, _sbuf, _buflen);
     }
@@ -505,7 +505,7 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
       CCMI_assert(_native->endpoint() == _root);
       _srclens[i] = 1;
       buflen    =  _rcvcounts[srcindex] * _rtype->GetDataSize();
-      offset    =  _disps[srcindex];
+      offset      =  _disps[srcindex] * _rtype->GetExtent();
     }
   else
     {

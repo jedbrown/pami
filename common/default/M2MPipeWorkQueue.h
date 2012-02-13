@@ -93,7 +93,7 @@ namespace PAMI
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
         //PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
         PAMI::Type::TypeCode * tempType = (PAMI::Type::TypeCode *) *dgsp;
-        _sizeOfDgsp = tempType->GetDataSize();
+        _sizeOfDgsp = tempType->GetExtent();
 
         _indexCount = indexcount;
         _buffer     = buffer;
@@ -144,7 +144,7 @@ namespace PAMI
         /// \todo why pami_type_t*? Copied from PAMI::PipeWorkQueue
         //PAMI_assert(*dgsp == PAMI_TYPE_BYTE);
         PAMI::Type::TypeCode * tempType = (PAMI::Type::TypeCode *) *dgsp;
-        _sizeOfDgsp = tempType->GetDataSize();
+        _sizeOfDgsp = tempType->GetExtent();
 
         _indexCount = indexcount;
         _buffer     = buffer;
@@ -153,7 +153,7 @@ namespace PAMI
         // Only a single offset and count, point our normal array at this single value.
         _offsets    = NULL;
         _byteCount  = dgspcount * _sizeOfDgsp;
-	_dgspCount  = dgspcount;
+        _dgspCount  = dgspcount;
         _dgspCounts = &_dgspCount;
         _nactive    = indexcount;
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueueT::configure()indexcount %zu, offset %zu, dgspcount %zu, bufinit %zu\n",this, indexcount,  offset,  dgspcount,  bufinit[0]));
@@ -308,7 +308,7 @@ namespace PAMI
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueueT::bufferToProduce()T_Single %u, index %zu, _dgspCounts[0] %zu,_sizeOfDgsp %zu, offsets %zu\n",this,T_Single,index,_dgspCounts[0],_sizeOfDgsp,(size_t)(_offsets?_offsets[0]:-1U)));
         /// \todo Need 'real' dgsp support to find the byte offset in the dgsp type.
         /// Assuming PAMI_TYPE_BYTE now.
-        size_t offset = T_Single?_byteCount*index:_offsets[index];
+        size_t offset = T_Single?_byteCount*index:_offsets[index]*_sizeOfDgsp;
         b = (char *) & _buffer[offset+_bytes[index]];
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueueT::bufferToProduce() <%p>buffer\n",this, b));
         return b;
@@ -339,7 +339,7 @@ namespace PAMI
         char *b;
         /// \todo Need 'real' dgsp support to find the byte offset in the dgsp type.
         /// Assuming PAMI_TYPE_BYTE now.
-        size_t offset = T_Single?_byteCount*index:_offsets[index];
+        size_t offset = T_Single?_byteCount*index:_offsets[index]*_sizeOfDgsp;
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueueT::bufferToConsume() index %zu, single %u, _indexcount %zu, offset %zu, dgspcount %zu, _sizeOfDgsp %zu, _bytes[index] %zu\n",this, index, (unsigned)T_Single, _indexCount,  offset,  _dgspCounts[T_Single?0:index],_sizeOfDgsp, (size_t)_bytes[index]));
         b = (char *) & _buffer[offset+((T_Single?(_byteCount):(_dgspCounts[index]*_sizeOfDgsp)) - _bytes[index])];
         TRACE_ERR((stderr,  "<%p>M2MPipeWorkQueueT::bufferToConsume() <%p/%p>buffer\n",this, _buffer, b));
@@ -367,21 +367,21 @@ namespace PAMI
       }
 
       inline char *getBufferBase_impl(size_t index) {
-	size_t offset = T_Single?(_byteCount*index):_offsets[index];
-	return (char *)&_buffer[offset];
+        size_t offset = T_Single?(_byteCount*index):_offsets[index]*_sizeOfDgsp;
+        return (char *)&_buffer[offset];
       }
 
       inline size_t getTotalBytes_impl (size_t index) {
-	return (T_Single?(_byteCount):(_dgspCounts[index]*_sizeOfDgsp));
+        return (T_Single?(_byteCount):(_dgspCounts[index]*_sizeOfDgsp));
       }
 
 
       inline size_t numIndices_impl () {
-	return _indexCount;
+        return _indexCount;
       }
       
       inline size_t numActive_impl () {
-	return _nactive;
+        return _nactive;
       }            
 
       static inline void compile_time_assert ()

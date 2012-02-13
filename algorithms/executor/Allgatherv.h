@@ -350,13 +350,13 @@ namespace CCMI
         size_t getSendDisp(int phase)
         {
           int index = (_myindex + _gtopology->size() - phase) % _gtopology->size();
-          return (_disps) ? _disps[index] : index * _buflen;
+          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _buflen;
         }
 
         size_t getRecvDisp(int phase)
         {
           int index = (_myindex + _gtopology->size() -  phase - 1) % _gtopology->size();
-          return (_disps) ? _disps[index] : index * _buflen;
+          return (_disps) ? _disps[index] * _rtype->GetExtent() : index * _buflen;
         }
 
         PAMI::PipeWorkQueue *getSendPWQ(int phase)
@@ -487,7 +487,7 @@ inline void  CCMI::Executor::AllgathervExec<T_ConnMgr, T_Type>::start ()
     {
       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps %p, _sbuf %p, _rcvcounts %p\n", this,_rbuf,_disps,_sbuf, _rcvcounts));
       TRACE_ADAPTOR((stderr, "<%p>Executor::AllgathervExec::start()_rbuf %p,_disps[%zu] %zu, _rbuf + _disps[_myindex] %p, _sbuf %p, _rcvcounts[_myindex] %zu\n", this,_rbuf,(size_t)_myindex, (size_t)_disps[_myindex], _rbuf + _disps[_myindex], _sbuf, (size_t)_rcvcounts[_myindex]));
-      memcpy(_rbuf + _disps[_myindex], _sbuf, _rcvcounts[_myindex]*_rtype->GetDataSize());
+      memcpy(_rbuf + _disps[_myindex] * _rtype->GetExtent(), _sbuf, _rcvcounts[_myindex]*_rtype->GetDataSize());
     }
 
   sendNext ();

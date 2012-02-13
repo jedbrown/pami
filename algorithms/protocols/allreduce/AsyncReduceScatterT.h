@@ -234,7 +234,7 @@ public:
         for (unsigned i = 0; i < counts-1; ++i)
         {
             _scounts[i+1] = stypecounts[i+1];
-            _sdispls[i+1] = _sdispls[i] + stypecounts[i] * sizeOfType;
+            _sdispls[i+1] = _sdispls[i] + stypecounts[i];
         }
 
         s_xfer.stypecounts = _scounts;

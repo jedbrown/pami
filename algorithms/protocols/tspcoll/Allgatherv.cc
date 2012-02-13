@@ -63,7 +63,7 @@ void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
   /* --------------------------------------------------- */
   /*    copy source buffer to dest buffer                */
   /* --------------------------------------------------- */
-  memcpy ((char *)rbuf + rdispls[this->ordinal()], sbuf, rtype->GetDataSize()*rtypecounts[this->ordinal()]);
+  memcpy ((char *)rbuf + rdispls[this->ordinal()] * rtype->GetExtent(), sbuf, rtype->GetDataSize()*rtypecounts[this->ordinal()]);
   /* --------------------------------------------------- */
   /* initialize destinations, offsets and buffer lengths */
   /* --------------------------------------------------- */
@@ -73,19 +73,19 @@ void xlpgas::Allgatherv<T_NI>::reset (const void         * sbuf,
       int destindex = (this->ordinal()+2*this->_comm->size()-(1<<i))%this->_comm->size();
       this->_dest[phase]   =  this->_comm->index2Endpoint (destindex);
       this->_dest[phase+1]   = this->_dest[phase];
-      this->_sbuf[phase]   = (char *)rbuf + rdispls[this->ordinal()];
+      this->_sbuf[phase]   = (char *)rbuf + rdispls[this->ordinal()] * rtype->GetExtent();
       this->_sbuf[phase+1]   = (char *)rbuf;
 
       size_t phasesumbytes=0;
       for (int n=0; n < (1<<i); n++)
         phasesumbytes += (rtype->GetDataSize()*rtypecounts[(this->ordinal()+n)%this->_comm->size()]);
 
-      this->_rbuf[phase]   = (char *)rbuf + ((rdispls[this->ordinal()] + phasesumbytes) % allsumbytes);
+      this->_rbuf[phase]   = (char *)rbuf + ((rdispls[this->ordinal()] * rtype->GetExtent() + phasesumbytes) % allsumbytes);
       this->_rbuf[phase+1]   = (char *)rbuf;
-      if (rdispls[this->ordinal()] + phasesumbytes >= allsumbytes)
+      if (rdispls[this->ordinal()] * rtype->GetExtent() + phasesumbytes >= allsumbytes)
         {
-          this->_sbufln[phase] = allsumbytes - rdispls[this->ordinal()];
-          this->_sbufln[phase+1] = rdispls[this->ordinal()] + phasesumbytes - allsumbytes;
+          this->_sbufln[phase] = allsumbytes - rdispls[this->ordinal()] * rtype->GetExtent();
+          this->_sbufln[phase+1] = rdispls[this->ordinal()] * rtype->GetExtent() + phasesumbytes - allsumbytes;
         }
       else
         {

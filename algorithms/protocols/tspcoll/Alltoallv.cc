@@ -42,7 +42,8 @@ void xlpgas::Alltoallv<T_NI,CntType>::reset (const void * s, void * d,
 template<class T_NI, class CntType>
 void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
   MUTEX_LOCK(&this->_mutex);
-  size_t datawidth = this->_stype->GetDataSize();
+  size_t sdatawidth = this->_stype->GetDataSize();
+  size_t rdatawidth = this->_rtype->GetDataSize();
   int j = this->_sndstartedcount[this->_odd];
   for (; j < (int)this->_comm->size(); j++) {
     //if the buffer is full then we give the system some time to
@@ -53,9 +54,9 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
     }
 
     if (this->_current == this->ordinal()) {
-	memcpy (this->_rbuf + this->_rdispls[this->_current],
-		this->_sbuf + this->_sdispls[this->_current],
-		this->_scnts[this->_current]*datawidth);
+	memcpy (this->_rbuf + this->_rdispls[this->_current] * rdatawidth,
+		this->_sbuf + this->_sdispls[this->_current] * sdatawidth,
+		this->_scnts[this->_current]*sdatawidth);
 
 	this->_sndcount[this->_odd]++;
 	this->_sndstartedcount[this->_odd]++;
@@ -75,17 +76,17 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
       pami_send_event_t   events;
       p_send.send.header.iov_base  = &(this->_header);
       p_send.send.header.iov_len   = sizeof(this->_header);
-      p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[this->_current];
-      p_send.send.data.iov_len     = this->_scnts[this->_current] * datawidth;
+      p_send.send.data.iov_base    = (char*) this->_sbuf + this->_sdispls[this->_current] * sdatawidth;
+      p_send.send.data.iov_len     = this->_scnts[this->_current] * sdatawidth;
       p_send.send.dispatch         = -1;
       memset(&p_send.send.hints, 0, sizeof(p_send.send.hints));
       p_send.send.dest             = this->_comm->index2Endpoint (this->_current);
       events.cookie         = this;
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
-      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[this->_current], this->_scnts[this->_current] * datawidth, this->_scnts[this->_current] * datawidth, this->_stype, this->_rtype);
+      this->_pwq.configure((char*) this->_sbuf + this->_sdispls[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_stype, this->_rtype);
       this->_pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), sizeof(this->_header),&this->_header,this->_scnts[this->_current] * datawidth, &this->_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), sizeof(this->_header),&this->_header,this->_scnts[this->_current] * sdatawidth, &this->_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
 
@@ -148,7 +149,7 @@ inline void xlpgas::Alltoallv<T_NI,CntType>::cb_incoming_v(pami_context_t    con
   TRACE((stderr, "%d: ALLTOALL: <%d,%d> INCOMING base=%p ptr=%p len=%d\n",
          XLPGAS_MYNODE, header->tag, header->kind, base0, s, s->_len));
 
-  char * rbuf =  s->_rbuf + s->_rdispls[header->senderID];
+  char * rbuf =  s->_rbuf + s->_rdispls[header->senderID] * s->_rtype->GetDataSize();
   if (pipe_addr)
     memcpy(rbuf, pipe_addr, data_size);
   else if (recv)

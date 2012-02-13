@@ -33,8 +33,8 @@ void initialize_sndbuf(size_t r, void *sbuf, void *rbuf, int dt)
     unsigned int *irbuf = (unsigned int *)  rbuf;
     for (k = 0; k < sndlens[r]; k++)
     {
-      isbuf[ sdispls[r]/get_type_size(dt_array[dt]) + k ] = ((r + k));
-      irbuf[ rdispls[r]/get_type_size(dt_array[dt]) + k ] = 0xffffffff;
+      isbuf[ sdispls[r] + k ] = ((r + k));
+      irbuf[ rdispls[r] + k ] = 0xffffffff;
     }
   }
   else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
@@ -44,8 +44,8 @@ void initialize_sndbuf(size_t r, void *sbuf, void *rbuf, int dt)
 
     for (k = 0; k < sndlens[r]; k++)
     {
-      dsbuf[ sdispls[r]/get_type_size(dt_array[dt]) + k ] = ((double)((r + k))) * 1.0;
-      drbuf[ sdispls[r]/get_type_size(dt_array[dt]) + k ] = 0xffffffffffffffff;
+      dsbuf[ sdispls[r] + k ] = ((double)((r + k))) * 1.0;
+      drbuf[ sdispls[r] + k ] = 0xffffffffffffffff;
     }
   }
   else if (dt_array[dt] == PAMI_TYPE_FLOAT)
@@ -55,8 +55,8 @@ void initialize_sndbuf(size_t r, void *sbuf, void *rbuf, int dt)
 
     for (k = 0; k < sndlens[r]; k++)
     {
-      fsbuf[ sdispls[r]/get_type_size(dt_array[dt]) + k ] = ((float)((r + k))) * 1.0;
-      frbuf[ sdispls[r]/get_type_size(dt_array[dt]) + k ] = 0xffffffffffffffff;
+      fsbuf[ sdispls[r] + k ] = ((float)((r + k))) * 1.0;
+      frbuf[ sdispls[r] + k ] = 0xffffffffffffffff;
     }
   }
   else
@@ -82,7 +82,7 @@ int check_rcvbuf(size_t sz, size_t myrank, void *rbuf, int dt)
     for (r = 0; r < sz; r++)
       for (k = 0; k < rcvlens[r]; k++)
       {
-        if (irbuf[ rdispls[r]/get_type_size(dt_array[dt]) + k ] != (unsigned int)((myrank + k)))
+        if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
         {
           fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
                   gProtocolName, sndlens[r],
@@ -100,7 +100,7 @@ int check_rcvbuf(size_t sz, size_t myrank, void *rbuf, int dt)
     for (r = 0; r < sz; r++)
       for (k = 0; k < rcvlens[r]; k++)
       {
-        if (drbuf[ rdispls[r]/get_type_size(dt_array[dt]) + k ] != (double)(((myrank*1.0) + (k*1.0))))
+        if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
         {
           fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
                   gProtocolName, sndlens[r],
@@ -118,7 +118,7 @@ int check_rcvbuf(size_t sz, size_t myrank, void *rbuf, int dt)
     for (r = 0; r < sz; r++)
       for (k = 0; k < rcvlens[r]; k++)
       {
-        if (frbuf[ rdispls[r]/get_type_size(dt_array[dt]) + k ] != (float)(((myrank*1.0) + (k*1.0))))
+        if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
         {
           fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
                   gProtocolName, sndlens[r],
@@ -322,7 +322,7 @@ int main(int argc, char*argv[])
               for (j = 0; j < num_tasks; j++)
               {
                 sndlens[j] = rcvlens[j] = i;
-                sdispls[j] = rdispls[j] = i * j * get_type_size(dt_array[dt]);
+                sdispls[j] = rdispls[j] = i * j;
 
                 initialize_sndbuf( j, sbuf, rbuf, dt );
 
