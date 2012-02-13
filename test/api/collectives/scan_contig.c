@@ -11,9 +11,7 @@
  * \brief Simple scan on world geometry with contiguous datatypes
  */
 
-/* see setup_env() for environment variable overrides
-#define OFFSET     0
- */
+/* see setup_env() for environment variable overrides               */
 #define FULL_TEST  1
 #define COUNT      65536
 #define NITERLAT   10

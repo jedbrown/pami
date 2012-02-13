@@ -11,15 +11,7 @@
  * \brief Simple Allreduce on world geometry
  */
 
-/* see setup_env() for environment variable overrides
-#define FULL_TEST 0
-#define COUNT      65536
-#define OFFSET     0
-#define NITERLAT   1
-#define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     65536
-*/
-
+/* see setup_env() for environment variable overrides               */
 #include "../pami_util.h"
 
 int main(int argc, char*argv[])

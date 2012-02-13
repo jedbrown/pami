@@ -11,6 +11,7 @@
  * \brief Simple reduce on world geometry using "query" algorithms
  */
 
+/* see setup_env() for environment variable overrides               */
 #include "../pami_util.h"
 
 int main(int argc, char*argv[])

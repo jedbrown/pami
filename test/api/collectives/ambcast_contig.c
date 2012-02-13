@@ -11,13 +11,9 @@
  * \brief Simple AMBcast test on world geometry with contiguous datatypes
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT      262144
 #define NITERLAT   100
-/*
-#define OFFSET     0
-#define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     65536
-*/
 
 #include "../pami_util.h"
 

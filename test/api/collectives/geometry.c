@@ -11,6 +11,7 @@
  * \brief Test for large geometry create counts
  */
 
+/* see setup_env() for environment variable overrides               */
 #define NITER   10000
 #define DO_BCAST
 #define DO_BARRIER

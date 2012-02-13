@@ -11,6 +11,7 @@
  * \brief Simple Reduce test on sub-geometries
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT     (524288)   /* see envvar TEST_BYTES for overrides */
 
 #define MAX_THREADS 128

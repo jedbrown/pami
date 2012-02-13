@@ -11,6 +11,7 @@
  * \brief Simple Barrier test on sub-geometries
  */
 
+/* see setup_env() for environment variable overrides               */
 #define MAX_THREADS 128
 #define NITERLAT   100
 #include "../pami_util.h"

@@ -13,6 +13,7 @@
 
 
 
+/* see setup_env() for environment variable overrides               */
 #define NITERLAT   100
 
 

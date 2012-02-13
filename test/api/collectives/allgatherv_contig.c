@@ -11,8 +11,7 @@
  * \brief Simple Allgatherv test on world geometry with contiguous datatypes
  */
 
-#define BUFSIZE 524288/16
-
+/* see setup_env() for environment variable overrides               */
 #include "../pami_util.h"
 
 

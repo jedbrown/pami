@@ -11,13 +11,9 @@
  * \brief Simple AMReduce test on world geometry
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT      65536
 #define NITERLAT   10
-/*
-#define OFFSET     0
-#define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     65536
-*/
 
 #include "../pami_util.h"
 

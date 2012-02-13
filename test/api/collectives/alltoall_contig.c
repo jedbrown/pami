@@ -11,14 +11,9 @@
  * \brief Simple Alltoall test on world geometry with contiguous datatypes
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT     (4096)
 #define NITERLAT   100
-/*
-#define OFFSET     0
-#define NITERLAT   100
-#define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     1024
-*/
 
 #include "../pami_util.h"
 

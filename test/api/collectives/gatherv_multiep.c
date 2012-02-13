@@ -11,6 +11,7 @@
  * \brief Simple Gatherv test on sub-geometries
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT     (1048576*8)   /* see envvar TEST_BYTES for overrides */
 
 #define MAX_THREADS 128

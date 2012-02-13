@@ -11,13 +11,8 @@
  * \brief Simple Alltoallv test on sub-geometries (only bytes)
  */
 
+/* see setup_env() for environment variable overrides               */
 #define COUNT     (4096)
-/*
-#define OFFSET     0
-#define NITERLAT   100
-#define NITERBW    MIN(10, niterlat/100+1)
-#define CUTOFF     1024
-*/
 
 #include "../pami_util.h"
 
