@@ -237,7 +237,7 @@ worker()
     TRACE_ERR("starting sends  iteration=%zu\n", iteration);
     for (i=0; i<WINDOW; ++i) {
       {
-        post_work(dest, iteration, i, &work_list[i][dest]);
+        post_work(dest, iteration, i, &work_list[i][0]);
       }
     }
 
