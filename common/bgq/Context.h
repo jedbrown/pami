@@ -242,13 +242,31 @@ namespace PAMI
       if(T_Range_Hi)
       {
         s = strstr(m->name, "I0:Binomial:-:ShortMU");
-        if (s != NULL)
+        // These only work for very small msg/number of ranks
+        if ((s != NULL) &&
+           ((t==PAMI_XFER_ALLGATHER       ) ||
+            (t==PAMI_XFER_ALLGATHERV      ) ||
+            (t==PAMI_XFER_ALLGATHERV_INT  ) ||
+            (t==PAMI_XFER_SCATTER         ) ||
+            (t==PAMI_XFER_SCATTERV        ) ||
+            (t==PAMI_XFER_SCATTERV_INT    ) ||
+            (t==PAMI_XFER_GATHER          ) ||
+            (t==PAMI_XFER_GATHERV         ) ||
+            (t==PAMI_XFER_GATHERV_INT     )
+            ))
         {  
           name[s-m->name] = 'X';   //Make experimental 
           /// \todo calculate range_hi based on geometry size?   
+          /// but for now, disable it by invalid range
+          m->check_correct.values.rangeminmax = 1;
+          m->range_lo                         = (size_t)-1;
+          m->range_hi                         = 0;
         }
-        m->check_correct.values.rangeminmax = 1;
-        m->range_hi                         = T_Range_Hi;
+        else
+        {
+          m->check_correct.values.rangeminmax = 1;
+          m->range_hi                         = T_Range_Hi;
+        }
       }
       TRACE_FORMAT("<%p> %s, rangeminmax %u, range_hi %zu",this,m->name,
                    m->check_correct.values.rangeminmax,m->range_hi);
