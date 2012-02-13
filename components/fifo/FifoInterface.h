@@ -155,9 +155,10 @@ namespace PAMI
           ///       produced globally, such as when there are multiple fifo
           ///       objects used by multiple producers.
           ///
-          /// \return Identifier of the last packet produced by this fifo object
+          /// \retval -1  No packets have been produced by this fifo object
+          /// \retval >=0 Identifier of the last packet produced by this fifo object
           ///
-          inline size_t lastPacketProduced ();
+          inline ssize_t lastPacketProduced ();
 
           ///
           /// \brief Retrieve the identifier of the last packet that was consumed in this fifo.
@@ -168,9 +169,10 @@ namespace PAMI
           ///       consumed globally, typically as when there are multiple fifo
           ///       objects but only one consumer.
           ///
-          /// \return Identifier of the last packet consumed in this fifo
+          /// \retval -1  No packets have been consumed in this fifo
+          /// \return >=0 Identifier of the last packet consumed in this fifo
           ///
-          inline size_t lastPacketConsumed ();
+          inline ssize_t lastPacketConsumed ();
 
           ///
           /// \brief Produce a packet into the fifo.
@@ -246,13 +248,13 @@ namespace PAMI
       }
 
       template <class T_Fifo>
-      size_t Fifo<T_Fifo>::lastPacketProduced ()
+      ssize_t Fifo<T_Fifo>::lastPacketProduced ()
       {
         return static_cast<T_Fifo*>(this)->lastPacketProduced_impl ();
       }
 
       template <class T_Fifo>
-      size_t Fifo<T_Fifo>::lastPacketConsumed ()
+      ssize_t Fifo<T_Fifo>::lastPacketConsumed ()
       {
         return static_cast<T_Fifo*>(this)->lastPacketConsumed_impl ();
       }

@@ -55,7 +55,7 @@ namespace PAMI
 
           inline pami_result_t advance_with_callback (pami_context_t context)
           {
-            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_callback(%p), _sequence = %zu, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
+            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_callback(%p), _sequence = %zd, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
             if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Invoke the work completion callback
@@ -78,7 +78,7 @@ namespace PAMI
 
           inline pami_result_t advance_with_status (pami_context_t context)
           {
-            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_status(%p), _sequence = %zu, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
+            TRACE_ERR((stderr, ">> RecPacketWork::advance_with_status(%p), _sequence = %zd, _fifo.lastPacketConsumed() = %zu\n", context, _sequence, _fifo.lastPacketConsumed()));
             if (_sequence <= _fifo.lastPacketConsumed())
             {
               // Set the associated message status to "done". This will remove
@@ -101,7 +101,7 @@ namespace PAMI
           inline RecPacketWork (T_Fifo              & fifo,
                                 pami_event_function   fn,
                                 void                * cookie,
-                                size_t                sequence) :
+                                ssize_t               sequence) :
             Work (__advance_with_callback, this),
             _fifo (fifo),
             _sequence (sequence),
@@ -113,7 +113,7 @@ namespace PAMI
         protected:
 
           T_Fifo                  & _fifo;
-          size_t                    _sequence;
+          ssize_t                   _sequence;
           pami_event_function       _done_fn;
           void                    * _done_cookie;
           Generic::GenericMessage * _msg;

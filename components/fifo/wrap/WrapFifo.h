@@ -57,7 +57,7 @@ namespace PAMI
             _head (NULL),
             _active (),
             _bounded_counter (),
-            _last_packet_produced (0)
+            _last_packet_produced (-1)
         {
           // Do a compile-time-assert that the fifo length is a power of two
           COMPILE_TIME_ASSERT(!(T_Size & (T_Size - 1)));
@@ -117,10 +117,10 @@ namespace PAMI
 
           TRACE_ERR((stderr, "   WrapFifo::initialize_impl() after sync memalign\n"));
 
-          _head = (size_t *) & _packet[T_Size];
+          _head = (ssize_t *) & _packet[T_Size];
           *(_head) = 0;
 
-          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zu\n", mm, key, _head, *_head));
+          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(%p, \"%s\"), _head = %p, *_head = %zd\n", mm, key, _head, *_head));
           return true;
         };
 
@@ -139,7 +139,7 @@ namespace PAMI
           _active.init (fifo._active);
 
 
-          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(WrapFifo &), _packet = %p, _head = %p, *_head = %zu, _last_packet_produced = %zu\n", _packet, _head, *_head, _last_packet_produced));
+          TRACE_ERR((stderr, "<< WrapFifo::initialize_impl(WrapFifo &), _packet = %p, _head = %p, *_head = %zd, _last_packet_produced = %zu\n", _packet, _head, *_head, _last_packet_produced));
         };
 
         inline void dumpPacket (size_t index)
@@ -185,12 +185,12 @@ namespace PAMI
 
         static const size_t packet_payload_size_impl = T_Packet::payload_size;
 
-        inline size_t lastPacketProduced_impl ()
+        inline ssize_t lastPacketProduced_impl ()
         {
           return _last_packet_produced;
         };
 
-        inline size_t lastPacketConsumed_impl ()
+        inline ssize_t lastPacketConsumed_impl ()
         {
           return *_head - 1;
         };
@@ -253,7 +253,7 @@ namespace PAMI
         {
           TRACE_ERR((stderr, ">> WrapFifo::consumePacket_impl(T_Consumer &)\n"));
 
-          const size_t head = *(this->_head);
+          const size_t head = (size_t)(*(this->_head));
           size_t index = head & WrapFifo::mask;
 
           if (_active[index])
@@ -288,7 +288,7 @@ namespace PAMI
               packet.consume (_packet[index]);
               //dumpPacket(head);
 
-              *(this->_head) = head + 1;
+              *(this->_head) = (ssize_t)(head + 1);
 
               // Increment the upper bound everytime a packet is consumed..ok
               // to be incremented in chunks
@@ -337,8 +337,8 @@ namespace PAMI
         // -----------------------------------------------------------------
         // Located in shared memory
         // -----------------------------------------------------------------
-        T_Packet        * _packet;
-        volatile size_t * _head;
+        T_Packet         * _packet;
+        volatile ssize_t * _head;
 
         // -----------------------------------------------------------------
         // Located in-place
@@ -346,7 +346,7 @@ namespace PAMI
         T_Wakeup                                           * _wakeup;
         typename T_Wakeup::template Region<volatile uint8_t> _active;
         T_Atomic                                             _bounded_counter;
-        size_t                                               _last_packet_produced;
+        ssize_t                                              _last_packet_produced;
     };
   };
 };
