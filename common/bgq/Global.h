@@ -582,11 +582,19 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
   return false;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+/// \envs{pami,routing,Message Routing}
+/// Point-to-Point messages that are transferred using the rendezvous protocol
+/// may be routed deterministically or dynamically.  If dynamically routed,
+/// they may use one of 4 zone routing techniques.  PAMI defaults the routing
+/// but it may be overridden using environment variables.
+/// \see \ref PAMI_EAGER
             
 ////////////////////////////////////////////////////////////////////////////////
-/// \env{bgq,PAMI_ROUTING}
+/// \env{routing,PAMI_ROUTING}
 /// Specifies PAMI network routing options.
-/// The complete syntax is <tt> [low:high][,[in][,out]] </tt>
+/// The complete syntax is <tt> PAMI_ROUTING=[low:high][,[in][,out]] </tt>
 ///
 /// <tt>low:high</tt> is the "flexability metric" range.  The flexability metric
 /// guages the routing flexability between a given source node and destination
@@ -609,9 +617,28 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 /// - 3: Dynamic routing zone 3.
 /// - 4: Deterministic routing.
 ///
-/// - Defaults depend on the number of nodes in the block.  Refer to
-///   /bgsys/drivers/ppcfloor/comm/README for a table showing
-///   the defaults for various block sizes.
+/// \verbatim
+/// Default flexability metric range, based upon system size:
+///
+/// BLOCK SIZE           Flexability Metric Range   Routing when   Routing when 
+///                      low:high                   "in" Range     "out" of Range
+/// ------------------   ------------------------   ------------   --------------
+///  32 <= Nodes <   64      1.5 - 3.5                    3              3
+///  64 <= Nodes <  128      1.5 - 3.5                    3              3
+/// 128 <= Nodes <  256      1.5 - 3.5                    3              3
+/// 256 <= Nodes <  512      1.5 - 3.5                    1              3
+/// 512 <= Nodes < 1024      1.5 - 3.5                    3              3
+///   1 <= Racks <  2        1.5 - 3.5                    1              3
+///   2 <= Racks <  4        1.0 - 3.5                    3              0
+///   4 <= Racks <  8        1.0 - 3.5                    3              0
+///   8 <= Racks < 16        1.0 - 3.5                    3              0
+///  16 <= Racks < 32        1.0 - 3.5                    3              0
+///  32 <= Racks < 48        1.0 - 3.5                    3              0
+///  48 <= Racks < 64        1.0 - 3.5                    3              0
+///  64 <= Racks < 80        1.0 - 3.5                    3              0
+///  80 <= Racks < 96        1.0 - 3.5                    3              0
+///  96 <= Racks             1.0 - 3.5                    3              0
+/// \endverbatim
 ////////////////////////////////////////////////////////////////////////////////
 
 /// \brief Initialize Values Associated with the Flexability Metric.
@@ -620,32 +647,6 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 ///
 void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personality )
 {
-  // Default flexability metric range, based upon system size, in racks:
-  //
-  // Routing 0,1,2,3 are dynamic routing zones
-  // Routine 4 is deterministic
-  //
-  // BLOCK SIZE           Flexability Metric Range   Routing when   Routing when 
-  //                                                 in Range       out of range
-  // ------------------   ------------------------   ------------   ------------
-  // 32 <= Nodes <   64      1.5 - 3.5                    3              3
-  // 64 <= Nodes <  128      1.5 - 3.5                    3              3
-  //128 <= Nodes <  256      1.5 - 3.5                    3              3
-  //256 <= Nodes <  512      1.5 - 3.5                    1              3
-  //512 <= Nodes < 1024      1.5 - 3.5                    3              3
-  //  1 <= Racks <  2        1.5 - 3.5                    1              3
-  //  2 <= Racks <  4        1.0 - 3.5                    3              0
-  //  4 <= Racks <  8        1.0 - 3.5                    3              0
-  //  8 <= Racks < 16        1.0 - 3.5                    3              0
-  // 16 <= Racks < 32        1.0 - 3.5                    3              0
-  // 32 <= Racks < 48        1.0 - 3.5                    3              0
-  // 48 <= Racks < 64        1.0 - 3.5                    3              0
-  // 64 <= Racks < 80        1.0 - 3.5                    3              0
-  // 80 <= Racks < 96        1.0 - 3.5                    3              0
-  // 96 <= Racks             1.0 - 3.5                    3              0
-  //
-  // NOTE:  If you change these tables, please update comm/README so users
-  //        know what the defaults are.
   float defaultFlexabilityMetricRange[15][2] = { { 1.5, 3.5 },   /*    32    */
                                                  { 1.5, 3.5 },   /*    64    */
                                                  { 1.5, 3.5 },   /*   128    */
