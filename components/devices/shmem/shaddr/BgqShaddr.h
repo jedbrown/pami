@@ -175,8 +175,6 @@ namespace PAMI
               {
                 protected:
 
-                  static const size_t maximum_active_packets = 2;
-
                   /// invoked by the thread object
                   /// \see SendQueue::Message::_work
                   static pami_result_t __advance (pami_context_t context, void * cookie)
@@ -189,8 +187,8 @@ namespace PAMI
 
                   inline pami_result_t advance ()
                   {
-                    size_t last_packet_consumed = _device->_fifo[_fnum].lastPacketConsumed();
-                    size_t last_packet_produced = _device->_fifo[_fnum].lastPacketProduced();
+                    ssize_t last_packet_consumed = _device->_fifo[_fnum].lastPacketConsumed();
+                    ssize_t last_packet_produced = _device->_fifo[_fnum].lastPacketProduced();
 
                     TRACE_ERR((stderr, ">> PhysicalAddress::PacketMessage::advance, this = %p, last_packet_consumed = %zu, last_packet_produced = %zu\n", this, last_packet_consumed, last_packet_produced));
 
@@ -210,33 +208,14 @@ namespace PAMI
                       }
 
 
-
-                    unsigned i;
-
-                    for (i = 0; i < maximum_active_packets; i++)
-                      {
-
-                        TRACE_ERR((stderr, "   PhysicalAddress::PacketMessage::advance, this = %p, _packet[%d] = %zu\n", this, i, _packet[i]));
-
-                        if (_packet[i] <= last_packet_consumed)
-                          {
-                            if (!_device->_fifo[_fnum].producePacket(_writer))
-                              {
-                                // Unable to write a packet. Try again later.
-                                TRACE_ERR((stderr, "<< PhysicalAddress::PacketMessage::advance, this = %p, return PAMI_EAGAIN\n", this));
-                                return PAMI_EAGAIN;
-                              }
-
-                            if (_writer.isDone())
-                              {
-                                // Just wrote the last packet. Check for completion later.
-                                TRACE_ERR((stderr, "<< PhysicalAddress::PacketMessage::advance, this = %p, return PAMI_EAGAIN\n", this));
-                                return PAMI_EAGAIN;
-                              }
-
-                            _packet[i] = _device->_fifo[_fnum].lastPacketProduced();
-                          }
-                      }
+		    while(!_writer.isDone()) {
+		      if (!_device->_fifo[_fnum].producePacket(_writer))
+			{
+			  // Unable to write a packet. Try again later.
+			  TRACE_ERR((stderr, "<< PhysicalAddress::PacketMessage::advance, this = %p, return PAMI_EAGAIN\n", this));
+			  return PAMI_EAGAIN;
+			}
+		    }		      
 
                     TRACE_ERR((stderr, "<< PhysicalAddress::PacketMessage::advance, this = %p, return PAMI_EAGAIN\n", this));
                     return PAMI_EAGAIN;
@@ -257,23 +236,15 @@ namespace PAMI
                       _device (device),
                       _fnum (fnum)
                   {
-                    unsigned i;
-
-                    for (i = 0; i < maximum_active_packets; i++)
-                      {
-                        _packet[i] = (size_t) 0;
-                      }
+		    // constructor
                   };
 
                 protected:
 
 
-                  PacketWriter             _writer;
-
+                  PacketWriter          _writer;
                   T_Device            * _device;
                   size_t                _fnum;
-                  size_t                _packet[maximum_active_packets];
-
               };
 
             private:

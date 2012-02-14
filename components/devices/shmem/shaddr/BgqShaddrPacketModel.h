@@ -54,6 +54,9 @@ namespace PAMI
       class BgqShaddrPacketModel : public Interface::PacketModel < BgqShaddrPacketModel<T_Device> >
       {
         public:
+
+          typedef T_Device Device;
+
           ///
           /// \brief Construct a shared address packet model.
           ///
