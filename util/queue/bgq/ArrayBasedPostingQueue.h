@@ -147,8 +147,8 @@ namespace PAMI {
 
 		/// \copydoc PAMI::Interface::QueueInterface::enqueue
 		inline void enqueue_impl(Element *element) __attribute__((__always_inline__)) {
-			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
 			L1P_FlushRequests();
+			uint64_t index = L2_AtomicLoadIncrementBounded(&_array_q.Producer);
 			if (index != L2_ATOMIC_FULL) {
 				array_queue(index,element);
 				return;
