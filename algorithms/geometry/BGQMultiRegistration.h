@@ -110,7 +110,7 @@ namespace PAMI
     // Two functions - one for MU dt/ops, one for current SHMEM dt/ops
     namespace MU
     {
-      extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+      inline metadata_result_t internal_op_dt_metadata_function(struct pami_xfer_t *in, bool Opt_shmem=false)
       {
         const bool support[PAMI_DT_COUNT][PAMI_OP_COUNT] =
         {
@@ -154,10 +154,31 @@ namespace PAMI
         result.check.datatype_op = support[dt][op]?0:1;
         pami_dt pdt = (pami_dt) dt;
         pami_op pop = (pami_op) op;
-        /// \todo TEMP: 64 PPN only supports double's
-        if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
-          result.check.datatype_op = 1;
-        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+
+        /// \todo TEMP: 64 PPN only supports double's?
+        //if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
+        //  result.check.datatype_op = 1;
+        //else 
+        
+        // Shmem_optimized has range limits on non-DOUBLEs
+        if(Opt_shmem && pdt != PAMI_DOUBLE)
+        {
+          PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
+          size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
+          result.check.range   |= !(dataSent <= 8192/__global.topology_local.size());
+
+          type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.rtype;
+          dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.rtypecount;
+          result.check.range   |= !(dataSent <= 8192/__global.topology_local.size());
+        }
+        TRACE_FORMAT("(dt %d,op %d) = op %s, range %s", pdt, pop, result.check.datatype_op ? "true" : "false",result.check.range ? "true" : "false");
+        TRACE_FN_EXIT();
+        return(result);
+      }
+      extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+      {
+        TRACE_FN_ENTER();
+        metadata_result_t result = MU::internal_op_dt_metadata_function(in);
         TRACE_FN_EXIT();
         return(result);
       }
@@ -169,29 +190,7 @@ namespace PAMI
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
       {
         TRACE_FN_ENTER();
-        metadata_result_t result = {0};
-        uintptr_t op;
-        uintptr_t dt;
-        if (((uintptr_t)in->cmd.xfer_allreduce.stype >= PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT) || ((uintptr_t)in->cmd.xfer_allreduce.op >= PAMI::Type::TypeFunc::PRIMITIVE_FUNC_COUNT))
-          result.check.datatype_op = 1; // No user-defined dt/op's
-
-        PAMI::Type::TypeFunc::GetEnums(in->cmd.xfer_allreduce.stype,
-                                       in->cmd.xfer_allreduce.op,
-                                       dt,
-                                       op);
-        pami_dt pdt = (pami_dt) dt;
-        pami_op pop = (pami_op) op;
-        result.check.datatype_op = ((pdt == PAMI_DOUBLE) && 
-                                    ((pop == PAMI_MIN)  ||
-                                     (pop == PAMI_MAX)  ||
-                                     (pop == PAMI_SUM)  ||
-                                     (pop == PAMI_LAND) ||
-                                     (pop == PAMI_LOR ) ||
-                                     (pop == PAMI_LXOR) ||
-                                     (pop == PAMI_BAND) ||
-                                     (pop == PAMI_BOR ) ||
-                                     (pop == PAMI_BXOR))) ?0:1;
-        TRACE_FORMAT("(dt %d,op %d) = %s", pdt, pop, result.check.datatype_op ? "true" : "false");
+        metadata_result_t result = MU::internal_op_dt_metadata_function(in,true /* optimized shmem */);
         TRACE_FN_EXIT();
         return(result);
       }
@@ -456,22 +455,13 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 64;
-//    m->recv_min_align                     = 64;
-//    m->check_fn                           = align_metadata_function<1,64,1,64,Shmem::op_dt_metadata_function>;
-      m->check_fn                           = Shmem_Optimized::op_dt_metadata_function;
+      m->check_correct.values.checkrequired = 1; // Must calculate range in the check_fn
+      m->check_fn                           = Shmem_Optimized::op_dt_metadata_function; 
+      m->check_correct.values.rangeminmax   = 1;
+//    m->range_hi                           = 8192;// Non-doubles have a calculated range so can't set constant
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 64;
-//    m->recv_min_align                     = 64;
-//    m->check_fn                           = align_metadata_function<1,64,1,64,MU::op_dt_metadata_function>;
       m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
@@ -626,22 +616,10 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceNP:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 32;
-//    m->recv_min_align                     = 32;
-//    m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 32;
-//    m->recv_min_align                     = 32;
-//    m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
       m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
@@ -658,22 +636,10 @@ namespace PAMI
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceDputNP:SHMEM:MU");
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 32;
-//    m->recv_min_align                     = 32;
-//    m->check_fn                           = align_metadata_function<1,32,1,32,Shmem::op_dt_metadata_function>;
       m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #else
       m->check_correct.values.alldtop       = 0;
-//    m->check_correct.values.sendminalign  = 1;
-//    m->check_correct.values.recvminalign  = 1;
-//    m->check_correct.values.nonlocal      = 1;
-//    m->send_min_align                     = 32;
-//    m->recv_min_align                     = 32;
-//    m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
       m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
