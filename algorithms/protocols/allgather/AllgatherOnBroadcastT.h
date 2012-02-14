@@ -125,7 +125,7 @@ namespace CCMI
             rtypecounts = _cmd.cmd.xfer_allgatherv.rtypecounts[index];
             *dst        = _cmd.cmd.xfer_allgatherv.rcvbuf + 
                           _cmd.cmd.xfer_allgatherv.rdispls[index] * 
-                          (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv.rtype->GetExtent();
+                          ((PAMI::Type::TypeCode *)(_cmd.cmd.xfer_allgatherv.rtype))->GetExtent();
 	    //For non-inplace allgvs the src has been copied to dst on root
             *rtype      = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv.rtype;
           }
@@ -133,7 +133,7 @@ namespace CCMI
             rtypecounts = _cmd.cmd.xfer_allgatherv_int.rtypecounts[index];
             *dst        = _cmd.cmd.xfer_allgatherv_int.rcvbuf + 
                           _cmd.cmd.xfer_allgatherv_int.rdispls[index] * 
-                          (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv.rtype->GetExtent();
+                          ((PAMI::Type::TypeCode *)(_cmd.cmd.xfer_allgatherv.rtype))->GetExtent();
             *rtype    = (PAMI::Type::TypeCode *)_cmd.cmd.xfer_allgatherv_int.rtype;
           }
           else {
