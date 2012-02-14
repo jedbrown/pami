@@ -589,11 +589,15 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 /// may be routed deterministically or dynamically.  If dynamically routed,
 /// they may use one of 4 zone routing techniques.  PAMI defaults the routing
 /// but it may be overridden using environment variables.
-/// \see \ref PAMI_EAGER
+/// \see \ref PAMID_EAGER
+/// \see \ref PAMI_ROUTING
             
 ////////////////////////////////////////////////////////////////////////////////
 /// \env{routing,PAMI_ROUTING}
-/// Specifies PAMI network routing options.
+/// Specifies PAMI network routing options to be used for point-to-point
+/// messages that are large enough to use the rendezvous protocol (larger than
+/// the eager limit (PAMID_EAGER) ).
+///
 /// The complete syntax is <tt> PAMI_ROUTING=[low:high][,[in][,out]] </tt>
 ///
 /// <tt>low:high</tt> is the "flexability metric" range.  The flexability metric
