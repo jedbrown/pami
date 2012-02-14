@@ -745,9 +745,11 @@ namespace PAMI
 
       inline pami_result_t memregion_destroy_impl (pami_memregion_t * memregion)
         {
-          // Do nothing but set memregion to a invalid value
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          internal_rc_t rc =
+              (cp->*(cp->pUnregisterMem))(memregion, PAMI_CLIENT_MEMREGION_SIZE_STATIC);
           memset(memregion, 0, sizeof(pami_memregion_t));
-          return PAMI_SUCCESS;
+          return PAMI_RC(rc);
         }
 
 
