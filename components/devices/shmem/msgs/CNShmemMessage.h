@@ -343,7 +343,8 @@ namespace PAMI
 
               if (local_rank == 0)
               {
-                if (*counter_addr == counter_curr)
+                //if (*counter_addr == counter_curr)
+                if (*counter_addr != 0)
                   return PAMI_EAGAIN;
 
                 Memory::sync();
