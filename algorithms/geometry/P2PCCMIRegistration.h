@@ -1141,14 +1141,20 @@ namespace PAMI
             // Setup and Construct a binomial allreducefactory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory>(ni,  _binomial_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) {
-	      new ((void*)_binomial_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite, CCMI::Adaptor::P2PAllreduce::Binomial::Factory>);
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite Composite;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory   Factory;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT       OAT;
+	      new ((void*)_binomial_allreduce_factory) Factory(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT::cb_async_OAT_receiveHead);
 	      _binomial_allreduce_factory->setAsync();
 	    }
 
             // ----------------------------------------------------
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory4>(ni,  _binomial4_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) {
-	      new ((void*)_binomial4_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory4(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite4, CCMI::Adaptor::P2PAllreduce::Binomial::Factory4>);
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite4 Composite4;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory4   Factory4;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT4       OAT4;
+	      new ((void*)_binomial4_allreduce_factory) Factory4(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT4::cb_async_OAT_receiveHead);
 	      _binomial4_allreduce_factory->setAsync();
 	    }
 
@@ -1156,7 +1162,10 @@ namespace PAMI
             // ----------------------------------------------------
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::Factory8>(ni,  _binomial8_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
             if (rc == PAMI_SUCCESS) {
-	      new ((void*)_binomial8_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Binomial::Factory8(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, CCMI::Adaptor::Allreduce::cb_async_OAT_receiveHead<CCMI::Adaptor::P2PAllreduce::Binomial::Composite8, CCMI::Adaptor::P2PAllreduce::Binomial::Factory8>);
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite8 Composite8;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory8   Factory8;
+              typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT8       OAT8;
+	      new ((void*)_binomial8_allreduce_factory) Factory8(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT8::cb_async_OAT_receiveHead);
 	      _binomial8_allreduce_factory->setAsync();
 	    }
 	      

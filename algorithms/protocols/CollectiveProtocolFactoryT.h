@@ -66,6 +66,7 @@ namespace CCMI
           DO_DEBUG((templateName<T_Composite>()));
           TRACE_FN_EXIT();
         }
+
         void done_fn( pami_context_t   context,
                       pami_result_t    result )
         {
@@ -78,7 +79,7 @@ namespace CCMI
         CollectiveProtocolFactoryT * _factory;
         pami_event_function          _user_done_fn;
         void                       * _user_cookie;
-        T_Composite                            _obj;
+        T_Composite                  _obj;
         unsigned                     _connection_id;
       };
 

@@ -1503,8 +1503,8 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
 
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)cookie;
-
+    typedef typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t p2p_multicast_statedata_t;
+    p2p_multicast_statedata_t *state_data = (p2p_multicast_statedata_t*)cookie;
     TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
@@ -2350,8 +2350,8 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
 
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t*)cookie;
-
+    typedef typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_multicast_statedata_t p2p_multicast_statedata_t;
+    p2p_multicast_statedata_t *state_data = (p2p_multicast_statedata_t*)cookie;
     TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
@@ -2375,8 +2375,9 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
 
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*)cookie;
 
+    typedef typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t p2p_manytomany_send_statedata_t;
+    p2p_manytomany_send_statedata_t *state_data = (p2p_manytomany_send_statedata_t*)cookie;
     TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)
@@ -2399,8 +2400,8 @@ namespace PAMI
   {
     TRACE_FN_ENTER();
 
-    typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t*)cookie;
-
+    typedef typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_recv_statedata_t p2p_manytomany_recv_statedata_t;
+    p2p_manytomany_recv_statedata_t *state_data = (p2p_manytomany_recv_statedata_t*)cookie;
     TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
 
     if (--state_data->doneCountDown == 0)

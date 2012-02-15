@@ -114,7 +114,8 @@ public:
     {
       TRACE_FN_ENTER();
       T_Composite *obj = (T_Composite *)clientdata;
-      typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >::collObj *cobj = (typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >::collObj *)obj->getCollObj();
+      typedef typename CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER >::collObj collObj;
+      collObj * cobj = (collObj*)obj->getCollObj();
       cobj->~collObj();
       cobj->_factory->_alloc.returnObject(cobj);
       TRACE_FN_EXIT();

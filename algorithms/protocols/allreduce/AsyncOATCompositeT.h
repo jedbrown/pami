@@ -253,92 +253,95 @@ namespace CCMI
 	  _executor.start();
 	  TRACE_FN_EXIT();
 	}
-	
-      };  //-- AsyncOATCompositeT
-      
+    };  //-- AsyncOATCompositeT
+
+    template <class T_Composite, class T_Factory>
+    class OAT
+    {
+    public:
       ///
       /// \brief Generate a non-blocking allreduce message.
       ///
-      template <class T_Composite, class T_Factory>
-      void  cb_async_OAT_receiveHead
-	(pami_context_t         ctxt,
-	 const pami_quad_t     * info,
-	 unsigned               count,
-	 unsigned               conn_id,
-	 size_t                 peer,
-	 size_t                 sndlen,
-	 void                 * arg,
-	 size_t               * rcvlen,
-	 pami_pipeworkqueue_t ** rcvpwq,
-	 PAMI_Callback_t       * cb_done)
-      {
-	TRACE_FN_ENTER();
-	CollHeaderData  *cdata = (CollHeaderData *) info;
-	T_Factory *factory = (T_Factory *) arg;
+      static inline void  cb_async_OAT_receiveHead
+      (pami_context_t         ctxt,
+        const pami_quad_t     * info,
+        unsigned               count,
+        unsigned               conn_id,
+        size_t                 peer,
+        size_t                 sndlen,
+        void                 * arg,
+        size_t               * rcvlen,
+        pami_pipeworkqueue_t ** rcvpwq,
+        PAMI_Callback_t       * cb_done)
+        {
+          TRACE_FN_ENTER();
+          CollHeaderData  *cdata = (CollHeaderData *) info;
+          T_Factory *factory = (T_Factory *) arg;
 	
-	PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
-	  factory->getGeometry(ctxt, cdata->_comm);
+          PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)
+            factory->getGeometry(ctxt, cdata->_comm);
           CCMI::Executor::Composite *bcomposite = (CCMI::Executor::Composite *) geometry->getAllreduceComposite(factory->native()->contextid(),
-                                                                                                                cdata->_iteration);
+            cdata->_iteration);
 	
-	if ( likely(bcomposite != NULL  &&  
-		    bcomposite->getAlgorithmFactory() == factory &&
-		    !((T_Composite *)bcomposite)->getExecutor()->earlyArrival()) ) {
-	  ((T_Composite*)bcomposite)->getExecutor()->notifyRecvHead	    
-	    (info,      count,
-	     conn_id,   peer,
-	     sndlen,    arg,
-	     rcvlen,    rcvpwq,
-	     cb_done);	  
-	  TRACE_FN_EXIT();
-	  return;
-	}
+          if ( likely(bcomposite != NULL  &&
+              bcomposite->getAlgorithmFactory() == factory &&
+              !((T_Composite *)bcomposite)->getExecutor()->earlyArrival()) ) {
+            ((T_Composite*)bcomposite)->getExecutor()->notifyRecvHead
+              (info,      count,
+                conn_id,   peer,
+                sndlen,    arg,
+                rcvlen,    rcvpwq,
+                cb_done);
+            TRACE_FN_EXIT();
+            return;
+          }
 	
-	//Composite from different old algorithm
-	if (bcomposite != NULL && 
-	    bcomposite->getAlgorithmFactory() != factory) {
-	  geometry->setAllreduceComposite(factory->native()->contextid(),NULL, cdata->_iteration);
-	  bcomposite->cleanup(); //Call destructor
-	  factory->_alloc.returnObject(bcomposite);
-	  bcomposite = NULL;
-	}
+          //Composite from different old algorithm
+          if (bcomposite != NULL &&
+            bcomposite->getAlgorithmFactory() != factory) {
+            geometry->setAllreduceComposite(factory->native()->contextid(),NULL, cdata->_iteration);
+            bcomposite->cleanup(); //Call destructor
+            factory->_alloc.returnObject(bcomposite);
+            bcomposite = NULL;
+          }
 	
-	T_Composite *composite = (T_Composite *)bcomposite;	
-	if (composite == NULL) {
-	  //Need to create a new composite
-	  void *obj = factory->allocateObject();
-	  geometry->setAllreduceComposite(factory->native()->contextid(),obj, cdata->_iteration);
-	  composite = new (obj) T_Composite
-	    ( ctxt,
-              factory->native()->contextid(),
-	      factory->native(), 
-	      factory->connmgr(),    // Connection Manager
-	      factory->getBcastConnMgr(),
-	      geometry,          // Geometry Object
-	      cdata->_root, 
-	      cdata->_iteration );
-	  composite->setAlgorithmFactory(factory); 
-	}
+          T_Composite *composite = (T_Composite *)bcomposite;
+          if (composite == NULL) {
+            //Need to create a new composite
+            void *obj = factory->allocateObject();
+            geometry->setAllreduceComposite(factory->native()->contextid(),obj, cdata->_iteration);
+            composite = new (obj) T_Composite
+              ( ctxt,
+                factory->native()->contextid(),
+                factory->native(),
+                factory->connmgr(),    // Connection Manager
+                factory->getBcastConnMgr(),
+                geometry,          // Geometry Object
+                cdata->_root,
+                cdata->_iteration );
+            composite->setAlgorithmFactory(factory);
+          }
 
-	composite->initialize(NULL, 
-			      NULL, 
-			      cdata->_count, 
-			      (TypeCode *) PAMI_TYPE_BYTE,
-			      (TypeCode *) PAMI_TYPE_BYTE,	   
-			      (pami_dt)cdata->_dt,
-			      (pami_op)cdata->_op );
-	composite->getExecutor()->reset();
-        composite->setContext(ctxt);
+          composite->initialize(NULL,
+            NULL,
+            cdata->_count,
+            (TypeCode *) PAMI_TYPE_BYTE,
+            (TypeCode *) PAMI_TYPE_BYTE,
+            (pami_dt)cdata->_dt,
+            (pami_op)cdata->_op );
+          composite->getExecutor()->reset();
+          composite->setContext(ctxt);
 	
-	composite->getExecutor()->notifyRecvHead	    
-	  (info,      count,
-	   conn_id,   peer,
-	   sndlen,    arg,
-	   rcvlen,    rcvpwq,
-	   cb_done);	  
+          composite->getExecutor()->notifyRecvHead
+            (info,      count,
+              conn_id,   peer,
+              sndlen,    arg,
+              rcvlen,    rcvpwq,
+              cb_done);
 	
-	TRACE_FN_EXIT();
-      };
+          TRACE_FN_EXIT();
+        };
+    };
 
     };
   };

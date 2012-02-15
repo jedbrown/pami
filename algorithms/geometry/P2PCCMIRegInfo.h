@@ -1029,6 +1029,7 @@ namespace CCMI
           CCMI::ConnectionManager::RankBasedConnMgr,
           PAMI_XFER_ALLREDUCE >
 	  Factory;
+        typedef CCMI::Adaptor::Allreduce::OAT<Composite, Factory> OAT;
 
         extern inline void binomial4_allreduce_metadata(pami_metadata_t *m)
         {
@@ -1046,6 +1047,7 @@ namespace CCMI
           CCMI::ConnectionManager::RankBasedConnMgr,
           PAMI_XFER_ALLREDUCE >
         Factory4;
+        typedef CCMI::Adaptor::Allreduce::OAT<Composite4, Factory4> OAT4;
 
         extern inline void binomial8_allreduce_metadata(pami_metadata_t *m)
         {
@@ -1063,6 +1065,8 @@ namespace CCMI
           CCMI::ConnectionManager::RankBasedConnMgr,
           PAMI_XFER_ALLREDUCE >
         Factory8;
+
+        typedef CCMI::Adaptor::Allreduce::OAT<Composite8, Factory8> OAT8;
 
        extern inline unsigned getKey(unsigned                                   root,
                        unsigned                                   connid,
