@@ -161,20 +161,18 @@ namespace PAMI
             if (_useMU) TRACE_ERR((stderr, "Using MU device\n"));
           }
 
-#if 0
-        size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
-        // may need to factor in others such as shmem?
-#endif
-#if 0
-        bytes = initializeMapCache(personality, NULL, ll, ur, min, max, true);
+	size_t ppn = Kernel_ProcessCount();
+	size_t nn = personality.aSize() * personality.bSize() *
+		personality.cSize() * personality.dSize() * personality.eSize();
+	// circular dependencies prevent using
+	// __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
+        size_t num_ctx = 256 / ppn;
+	bytes = (56*1024) + (nn * ppn * 8);
+	if (ppn > 1) {
+		bytes += num_ctx * (12*1024) + ppn * (8*1024);
+	}
 
-	// reserve space for 8 sub-mm's...
-	bytes += PAMI::Memory::GenMemoryManager::MAX_META_SIZE() * 8;
-#else
-	bytes = 1024*1024*4;
-#endif
-
-  char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
+	char *env = getenv("PAMI_GLOBAL_SHMEMSIZE");
 	if (env) {
                 char *s = NULL;
                 bytes = strtoull(env, &s, 0);
