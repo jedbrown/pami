@@ -43,4 +43,5 @@
 
 #define MAX_CONTEXTS        (64)
 
+#define PAMI_PLATFORM_A2A_PACING_WINDOW __global._a2a_pacing_window
 #endif // __common_bgq_platform_h__

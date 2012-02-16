@@ -21,7 +21,11 @@ namespace xlpgas
   class Alltoall : public Collective<T_NI>
   {
   public:
+#ifndef  PAMI_PLATFORM_A2A_PACING_WINDOW
     static const size_t MAX_PENDING=1024;
+#else
+    #define MAX_PENDING PAMI_PLATFORM_A2A_PACING_WINDOW
+#endif
     void * operator new (size_t, void * addr) { return addr; }
 
     Alltoall (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_NI* ni) :

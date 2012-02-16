@@ -32,7 +32,6 @@
 
 namespace PAMI
 {
-
   ///
   /// \brief Provide a Native Interface over a point-to-point protocol
   ///
@@ -77,6 +76,11 @@ namespace PAMI
 
   namespace NativeInterfaceCommon // Common constants
   {
+#ifndef  PAMI_PLATFORM_A2A_PACING_WINDOW
+    #define PAMI_NI_M2M_MAX_PENDING 1024  /// M2M pacing window default
+#else
+    #define PAMI_NI_M2M_MAX_PENDING PAMI_PLATFORM_A2A_PACING_WINDOW  /// Platform pacing window
+#endif
     /// \brief Enum to enumerate which underlying interface is being used by the NI
     typedef enum
     {
@@ -473,9 +477,19 @@ namespace PAMI
             pami_quad_t           msginfo[model_msgcount_max];  ///< User's msginfo
           } metadata_t __attribute__ ((__aligned__ (16)));
 
-          unsigned               doneCountDown;
+          unsigned               doneCountDown;   /// number of destinations to send total count down
+          unsigned               pacingCountDown; /// number of destinations to send in one window count down
+          unsigned               pacingWindow;    /// number of destinations in a window
+          unsigned               postInProgress:1;
+          unsigned               nextPostPending:1;
+          size_t                 nextDestIndex;   /// next destination index
           pami_callback_t        cb_done;
           metadata_t             meta;
+          size_t                 msgsize;
+          pami_manytomanybuf_t   send;            ///< send data parameters 
+          pami_send_t            parameters;
+          void                 * m2m_protocol;
+
       } ;
 
       class p2p_manytomany_recv_statedata_t : public Queue::Element
@@ -828,6 +842,7 @@ namespace PAMI
 
 
     protected:
+      unsigned                              _m2m_pacing_window;
 
       /// \brief NativeInterfaceActiveMessage done function - free allocation and call client's done
       static void ni_client_done(pami_context_t  context,
@@ -922,14 +937,16 @@ namespace PAMI
       /// \brief common internal impl of postMulticast over p2p
       ///
       pami_result_t postMulticast_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::multicast_sizeof_msg],
-				       size_t            client,
-				       size_t            context,
+                                       size_t            client,
+                                       size_t            context,
                                        pami_multicast_t *mcast,
                                        void             *devinfo = NULL);
       pami_result_t postManytomany_impl(uint8_t (&state)[NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::manytomany_sizeof_msg],
                                         pami_manytomany_t *m2m,
                                         void             *devinfo = NULL);
 
+      /// \brief When destinations exceed window size, this is the post 'next' function when a window is done.
+      static pami_result_t postNextManytomany_impl(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *);
       ///
       /// \brief Received a p2p dispatch from another root (member function).
       ///
@@ -1567,9 +1584,11 @@ namespace PAMI
                                                                                                 pami_context_t  context,
                                                                                                 size_t          context_id,
                                                                                                 size_t          client_id):
-    NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>(client,context,context_id,client_id)
+    NativeInterfaceAllsided<T_Protocol, T_Max_Msgcount>(client,context,context_id,client_id),
+    _m2m_pacing_window(PAMI_NI_M2M_MAX_PENDING)  /// \todo make this configurable?
   {
     TRACE_FN_ENTER();
+
     DO_DEBUG((templateName<T_Protocol>()));
     TRACE_FN_EXIT();
   }
@@ -1934,11 +1953,12 @@ namespace PAMI
 
     typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data = (typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t*) & state;
 
+    state_data->send = m2m->send;
+
     // Get the source data and participants
-    PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)m2m->send.buffer;
-    PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)m2m->send.buffer;
-    PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)m2m->send.buffer;
-    PAMI::Topology    *topology = m2m->send.participants;
+    PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)state_data->send.buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)state_data->send.buffer;
+    PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)state_data->send.buffer;
 
     TRACE_FORMAT("<%p> dispatch %zu, connection_id %#X, msgcount %d/%p, pwq %p",
 		 this, this->_m2m_dispatch, m2m->connection_id,
@@ -1955,63 +1975,138 @@ namespace PAMI
     state_data->meta.msgcount      = m2m->msgcount;
 
     // calc how big our msginfo needs to beg
-    size_t msgsize =  sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().connection_id) +
+    state_data->msgsize =  sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().connection_id) +
                       sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().msgcount) +
                       sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().unused) +
                       (m2m->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().msginfo));
 
     if (m2m->msgcount)memcpy(state_data->meta.msginfo, msgdata, m2m->msgcount * sizeof(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t::metadata_t().msginfo));
 
-    size_t ndestinations = state_data->doneCountDown = topology->size();
+    state_data->nextDestIndex = 0;
+    state_data->nextPostPending = 0;
+    state_data->pacingCountDown = state_data->pacingWindow = this->_m2m_pacing_window;
+    state_data->doneCountDown = state_data->send.participants->size();
+    
+    size_t ndestinations = state_data->doneCountDown > state_data->pacingCountDown ? state_data->pacingCountDown:state_data->doneCountDown; 
 
-    pami_send_t         parameters;
+    state_data->m2m_protocol = (void*) this->_m2m_protocol;
 
-    parameters.send.dispatch = this->_m2m_dispatch;
-    parameters.send.hints  = (pami_send_hint_t)
+    state_data->parameters.send.dispatch = this->_m2m_dispatch;
+    state_data->parameters.send.hints  = (pami_send_hint_t)
     {
       0
     };
 
-    parameters.events.cookie = state_data;
-    parameters.events.local_fn = sendM2mDone;
-    parameters.events.remote_fn = NULL;
+    state_data->parameters.events.cookie = state_data;
+    state_data->parameters.events.local_fn = sendM2mDone;
+    state_data->parameters.events.remote_fn = NULL;
 
-    parameters.send.header.iov_base = &state_data->meta;
-    parameters.send.header.iov_len = msgsize;
+    state_data->parameters.send.header.iov_base = &state_data->meta;
+    state_data->parameters.send.header.iov_len = state_data->msgsize;
 
+    state_data->postInProgress = 1;
+
+    TRACE_FORMAT( "<%p> next destination %zu, ndestinations %zu", state_data,state_data->nextDestIndex, ndestinations);
     // Send the manytomany to each destination
     for (size_t i = 0; i < ndestinations; ++i)
       {
-        size_t index = topology->index2PermutedIndex(i);
-        pami_endpoint_t endpoint = topology->index2Endpoint(index);
+        size_t index = state_data->send.participants->index2PermutedIndex(i);
+        pami_endpoint_t endpoint = state_data->send.participants->index2Endpoint(index);
 
-        if (m2m->send.type == M2M_SINGLE) {
-          parameters.send.data.iov_base = spwq->bufferToConsume(index);
-          parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
+        if (state_data->send.type == M2M_SINGLE) {
+          state_data->parameters.send.data.iov_base = spwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
         }
-        else if (m2m->send.type == M2M_VECTOR_INT) {
-          parameters.send.data.iov_base = ipwq->bufferToConsume(index);
-          parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
+        else if (state_data->send.type == M2M_VECTOR_INT) {
+          state_data->parameters.send.data.iov_base = ipwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
         }
         else {
-          parameters.send.data.iov_base = lpwq->bufferToConsume(index);
-          parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
+          state_data->parameters.send.data.iov_base = lpwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
         }
 
         pami_result_t result = PAMI_SUCCESS;
 
-        parameters.send.dest = endpoint;
+        state_data->parameters.send.dest = endpoint;
 
-        TRACE_FORMAT( "<%p> simple(nd(%u(%u,%zu)) length %zd, payload %p", this, parameters.send.dest, endpoint, this->_contextid, parameters.send.data.iov_len, parameters.send.data.iov_base);
-        result = this->_m2m_protocol->simple(&parameters);
+        TRACE_FORMAT( "<%p> simple(nd(%u(%u,%zu)) length %zd, payload %p", this, state_data->parameters.send.dest, endpoint, this->_contextid, state_data->parameters.send.data.iov_len, state_data->parameters.send.data.iov_base);
+        result = this->_m2m_protocol->simple(&(state_data->parameters));
         TRACE_FORMAT( "<%p> simple result %u", this, result);
       }
+
+    state_data->postInProgress = 0;
+
+    if(state_data->nextPostPending)
+    {
+      TRACE_FORMAT( "<%p> nextPostPending next destination %zu, ndestinations %zu", state_data,state_data->nextDestIndex, ndestinations);
+      postNextManytomany_impl(state_data);
+    }
 
     TRACE_FORMAT( "<%p> dispatch %zu, connection_id %#X exit",
                this, this->_m2m_dispatch, m2m->connection_id);
     TRACE_FN_EXIT();
     return PAMI_SUCCESS;
   }; // NativeInterfaceActiveMessage<T_Protocol,T_Max_Msgcount>::postManytomany_impl
+
+  /// \brief When destinations exceed window size, this is the post 'next' function when a window is done.
+  template <class T_Protocol, int T_Max_Msgcount>
+  inline pami_result_t NativeInterfaceActiveMessage<T_Protocol, T_Max_Msgcount>::postNextManytomany_impl(typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t *state_data)
+  {
+    TRACE_FN_ENTER();
+    // Get the source data and participants
+    PAMI::M2MPipeWorkQueueT<size_t, 1> *spwq = (PAMI::M2MPipeWorkQueueT<size_t, 1> *)state_data->send.buffer;
+    PAMI::M2MPipeWorkQueueT<size_t, 0> *lpwq = (PAMI::M2MPipeWorkQueueT<size_t, 0> *)state_data->send.buffer;
+    PAMI::M2MPipeWorkQueueT<int, 0>    *ipwq = (PAMI::M2MPipeWorkQueueT<int, 0> *)state_data->send.buffer;
+
+    T_Protocol* m2m_protocol = (T_Protocol*)(state_data->m2m_protocol);
+
+    state_data->postInProgress = 1;
+    do 
+    {
+      // calc how big our msginfo needs to beg
+      size_t ndestinations = state_data->doneCountDown > state_data->pacingCountDown ? state_data->pacingCountDown:state_data->doneCountDown; 
+
+      TRACE_FORMAT( "<%p> nextPostPending %u, next destination %zu, ndestinations %zu",state_data,state_data->nextPostPending, state_data->nextDestIndex, ndestinations);
+      state_data->nextPostPending = 0;
+      // Send the manytomany to each destination
+      for (size_t i = 0; i < ndestinations; ++i)
+      {
+        size_t index = state_data->send.participants->index2PermutedIndex(i+state_data->nextDestIndex);
+        pami_endpoint_t endpoint = state_data->send.participants->index2Endpoint(index);
+        
+        if (state_data->send.type == M2M_SINGLE) 
+        {
+          state_data->parameters.send.data.iov_base = spwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = spwq->bytesAvailableToConsume(index);
+        }
+        else if (state_data->send.type == M2M_VECTOR_INT) 
+        {
+          state_data->parameters.send.data.iov_base = ipwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = ipwq->bytesAvailableToConsume(index);
+        }
+        else 
+        {
+          state_data->parameters.send.data.iov_base = lpwq->bufferToConsume(index);
+          state_data->parameters.send.data.iov_len  = lpwq->bytesAvailableToConsume(index);
+        }
+
+        pami_result_t result = PAMI_SUCCESS;
+
+        state_data->parameters.send.dest = endpoint;
+
+        TRACE_FORMAT( "<%p> simple(nd(%u) length %zd, payload %p", state_data, state_data->parameters.send.dest, state_data->parameters.send.data.iov_len, state_data->parameters.send.data.iov_base);
+        result = m2m_protocol->simple(&(state_data->parameters));
+        TRACE_FORMAT( "<%p> simple result %u", state_data, result);
+      }
+
+    } while(state_data->nextPostPending);
+
+    state_data->postInProgress = 0;
+
+    TRACE_FN_EXIT();
+    return PAMI_SUCCESS;
+  }; // NativeInterfaceActiveMessage<T_Protocol,T_Max_Msgcount>::postNextManytomany_impl
 
   ///
   /// \brief Received a p2p dispatch from another root (static function).
@@ -2378,7 +2473,7 @@ namespace PAMI
 
     typedef typename NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::p2p_manytomany_send_statedata_t p2p_manytomany_send_statedata_t;
     p2p_manytomany_send_statedata_t *state_data = (p2p_manytomany_send_statedata_t*)cookie;
-    TRACE_FORMAT( "<%p> countDown %u", cookie, state_data->doneCountDown);
+    TRACE_FORMAT( "<%p> doneCountDown %u, pacingCountDown %u", cookie, state_data->doneCountDown, state_data->pacingCountDown);
 
     if (--state_data->doneCountDown == 0)
       {
@@ -2390,6 +2485,14 @@ namespace PAMI
         if (cb_done.function)
           (cb_done.function)(context,cb_done.clientdata, PAMI_SUCCESS);
       }
+    else if(--state_data->pacingCountDown == 0)
+    {
+      state_data->pacingCountDown = state_data->pacingWindow;
+      state_data->nextDestIndex  += state_data->pacingWindow;
+      // Can't next too deep, so don't nest at all.  We're in post? Just mark next post is pending.
+      if(state_data->postInProgress == 0) postNextManytomany_impl(state_data);
+      else state_data->nextPostPending = 1;
+    }
     TRACE_FN_EXIT();
   }
 

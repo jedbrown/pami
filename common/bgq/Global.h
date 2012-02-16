@@ -79,6 +79,15 @@ void globalDumpHexData(const char * pstring, const uint32_t *buffer, size_t n_in
 /// \default 4M
 ////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////
+/// \env{pami,PAMI_A2A_PACING_WINDOW}
+/// Number of simultaneous send operations to start on Alltoall(v) collectives.
+/// Only when these complete will more send operations be started.  This 
+/// reduces the resource usage on large geometries.
+///
+/// \default 1024
+////////////////////////////////////////////////////////////////////////////
+
 namespace PAMI
 {
   class Global : public Interface::Global<PAMI::Global>
@@ -97,6 +106,10 @@ namespace PAMI
         size_t   bytes;
         size_t   pagesize  = 4096;
         char *envopts;
+        envopts = getenv("PAMI_A2A_PACING_WINDOW");
+        if(envopts) _a2a_pacing_window = atoi(envopts);
+        else _a2a_pacing_window = 1024;
+
         envopts = getenv("PAMI_DEVICE_1");
         _useshmem = (personality.tSize() > 1);
         _useMU = true;
@@ -517,6 +530,8 @@ namespace PAMI
       unsigned int _smallRouting;                     // Routing to use when message <= _smallRoutingSize.
       float        _flexabilityMetricRange[2];        // Flexability Metric low/high range values.
       unsigned int _flexabilityMetricRangeRouting[2]; // Routing (0,1,2,3,4) when in and out of range.
+  public:
+      unsigned _a2a_pacing_window;
   }; // PAMI::Global
 };     // PAMI
 
