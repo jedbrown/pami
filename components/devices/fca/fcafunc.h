@@ -5,8 +5,6 @@
 #ifndef __FcaFunc_h__
 #define __FcaFunc_h__
 
-#ifdef PAMI_USE_FCA
-
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <stdio.h>
@@ -17,18 +15,6 @@
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
 #define _LAPI_LINUX
-
-#define FCA_init_spec       fca_init_spec
-#define FCA_t               fca_t
-#define FCA_comm_new_spec_t fca_comm_new_spec_t
-#define FCA_comm_t          fca_comm_t
-#define FCA_comm_caps_t     fca_comm_caps_t
-#define FCA_reduce_spec_t   fca_reduce_spec_t
-#define FCA_bcast_spec_t    fca_bcast_spec_t
-#define FCA_gather_spec_t   fca_gather_spec_t
-#define FCA_gatherv_spec_t  fca_gatherv_spec_t
-#define FCA_reduce_dtype_t  fca_reduce_dtype_t
-
 const char *FCA_cmd_list[] =
 {
   "fca_get_version",
@@ -400,6 +386,8 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Translate_mpi_dtype FCAFunc::getInstance()->Translate_mpi_dtype
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
 
+#include "fcafunc.cc"
+
 #else
 // NO DLOPEN + FCA ENABLED PATH
 #define FCA_Get_version         fca_get_version
@@ -425,55 +413,5 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Get_dtype_size      fca_get_dtype_size
 
 #endif //FCA_DLOPEN
-
-#else //PAMI_USE_FCA
-
-// FCA COMPILED OUT PATH
-class FCAFunc
-  {
-    static FCAFunc * instance;
-  public:
-    FCAFunc * getInstance()
-    {
-      return NULL;
-    }
-  };
-#define FCA_init_spec void*
-#define FCA_t void*
-#define FCA_comm_new_spec_t void*
-#define FCA_comm_t void*
-#define FCA_comm_caps_t void*
-#define FCA_reduce_spec_t void*
-#define FCA_bcast_spec_t void*
-#define FCA_gather_spec_t void*
-#define FCA_gatherv_spec_t void*
-#define FCA_reduce_dtype_t void*
-
-#define FCA_Dlopen(x) (NULL)
-#define FCA_Get_version(x) PAMI_abort();
-#define FCA_Get_version_string(x)
-#define FCA_Init(x,y) PAMI_abort();
-#define FCA_Cleanup(x) PAMI_abort();
-#define FCA_Progress(x) PAMI_abort();
-#define FCA_Get_rank_info(x) PAMI_abort();
-#define FCA_Free_rank_info(x) PAMI_abort();
-#define FCA_Comm_new(x) PAMI_abort();
-#define FCA_Comm_end(x) PAMI_abort();
-#define FCA_Comm_init(x) PAMI_abort();
-#define FCA_Comm_destroy(x) PAMI_abort();
-#define FCA_Comm_get_caps(x) PAMI_abort();
-#define FCA_Do_reduce(x) PAMI_abort();
-#define FCA_Do_all_reduce(x) PAMI_abort();
-#define FCA_Do_bcast(x) PAMI_abort();
-#define FCA_Do_allgather(x) PAMI_abort();
-#define FCA_Do_allgatherv(x) PAMI_abort();
-#define FCA_Do_barrier(x) PAMI_abort();
-#define FCA_Translate_mpi_op(x) PAMI_abort();
-#define FCA_Translate_mpi_dtype(x) PAMI_abort();
-#define FCA_Get_dtype_size(x) PAMI_abort();
-
-#endif //PAMI_USE_FCA
-
-#include "fcafunc.cc"
 
 #endif

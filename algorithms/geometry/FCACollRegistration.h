@@ -15,8 +15,10 @@
 #define __algorithms_geometry_FCACollRegistration_h__
 
 #include "sys/pami.h"
-#include "components/devices/fca/fcafunc.h"
 
+#ifdef PAMI_USE_FCA
+
+#include "components/devices/fca/fcafunc.h"
 namespace PAMI{namespace CollRegistration{namespace FCA{
 template <class T_Geometry>
 class FCARegistration : public CollRegistration <FCARegistration<T_Geometry>, T_Geometry >
@@ -87,12 +89,44 @@ private:
   size_t         _client_id;
   bool           _enabled;
   GIAllocator    _geom_allocator;
-  FCA_init_spec  _fca_init_spec;
-  FCA_t         *_fca_context;
+  fca_init_spec  _fca_init_spec;
+  fca_t         *_fca_context;
 }; // FCARegistration
 }; // FCA
 }; // CollRegistration
 }; // PAMI
+
+#else //PAMI_USE_FCA
+
+namespace PAMI{namespace CollRegistration{namespace FCA{
+template <class T_Geometry>
+class FCARegistration : public CollRegistration <FCARegistration<T_Geometry>, T_Geometry >
+{
+public:
+  inline FCARegistration(pami_client_t                        client,
+                         pami_context_t                       context,
+                         size_t                               context_id,
+                         size_t                               client_id,
+                         size_t                               num_contexts):
+    CollRegistration <FCARegistration<T_Geometry>, T_Geometry > ()
+  {
+    return;
+  }
+
+  inline pami_result_t analyze_impl(size_t         context_id,
+                                    T_Geometry    *geometry,
+                                    uint64_t      *inout_val,
+                                    int           *inout_nelem,
+                                    int            phase)
+  {
+    return PAMI_SUCCESS;
+  }
+}; // FCARegistration
+}; // FCA
+}; // CollRegistration
+}; // PAMI
+
+#endif //PAMI_USE_FCA
 #endif
 //
 // astyle info    http://astyle.sourceforge.net
