@@ -63,6 +63,7 @@
 #include "algorithms/geometry/PGASCollRegistration.h"
 #include "algorithms/geometry/P2PCCMIRegistration.h"
 #include "algorithms/geometry/CAUCollRegistration.h"
+#include "algorithms/geometry/FCACollRegistration.h"
 #include "algorithms/geometry/ClassRouteId.h"
 
 // Collective shmem device
@@ -353,6 +354,7 @@ namespace PAMI
                                                  ProtocolAllocator,
                                                  LAPISend,
                                                  LAPICSMemoryManager>  CAUCollreg;
+  typedef CollRegistration::FCA::FCARegistration<PEGeometry>            FCACollreg;
 
   typedef Geometry::ClassRouteId<PEGeometry> LAPIClassRouteId;
 
@@ -459,6 +461,7 @@ namespace PAMI
         _pgas_collreg(NULL),
         _p2p_ccmi_collreg(NULL),
         _cau_collreg(NULL),
+        _fca_collreg(NULL),
         _devices(devices)
       {
       }
@@ -1038,7 +1041,7 @@ namespace PAMI
       /*  This is the "per context dispatch", and is used by    */
       /*  collectives, should start from 255 and decrease       */
       int                                    _dispatch_id;
-      
+
       /*  The over lapi devices                                 */
       DeviceWrapper                          _lapi_device;
       CAUDevice                              _cau_device;
@@ -1051,6 +1054,7 @@ namespace PAMI
       PGASCollreg                           *_pgas_collreg;
       P2PCCMICollreg                        *_p2p_ccmi_collreg;
       CAUCollreg                            *_cau_collreg;
+      FCACollreg                            *_fca_collreg;
 
       lapi_handle_t                          _lapi_handle;
       PlatformDeviceList                    *_devices;

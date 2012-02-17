@@ -327,6 +327,16 @@ namespace PAMI
 
         // Finish PGAS
         ctxt->_pgas_collreg->setGenericDevice(&ctxt->_devices->_generics[ctxt->getId()]);
+
+
+        // Infiniband FCA CollReg
+        rc = __global.heap_mm->memalign((void **)&ctxt->_fca_collreg, 0,
+                                        sizeof(*ctxt->_fca_collreg));
+        new(ctxt->_fca_collreg) FCACollreg(_client,
+                                           ctxt,
+                                           ctxt->getId(),
+                                           _clientid,
+                                           _ncontexts);
         return PAMI_SUCCESS;
       }
 
@@ -1063,6 +1073,11 @@ namespace PAMI
                                      classroute->_geometry,
                                      1,
                                      &reduce_result[2]);
+
+        ctxt->_fca_collreg->analyze(ctxt->getId(),
+                                    classroute->_geometry,
+                                    &reduce_result[2],&count,
+                                    1);
         client->unlock();
       }
       
@@ -1192,6 +1207,9 @@ namespace PAMI
 		nc+= ncur;
 		ncur=0;
                 _contexts[n]->_cau_collreg->analyze(n,new_geometry,&to_reduce[n][2],&ncur, 0);
+                nc  += ncur;
+                ncur =0;
+                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][2],&ncur, 0);
               }
             *geometry=(PEGeometry*) new_geometry;
           }
@@ -1323,6 +1341,10 @@ namespace PAMI
 		nc+=ncur;
 		ncur=0;
                 _contexts[n]->_cau_collreg->analyze(n,new_geometry,&to_reduce[n][2], &ncur, 0);
+
+		nc+=ncur;
+		ncur=0;
+                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][2], &ncur, 0);
               }
             *geometry=(PEGeometry*) new_geometry;
           }
@@ -1465,6 +1487,9 @@ namespace PAMI
           nc+=ncur;
           ncur=0;
           _contexts[idx]->_cau_collreg->analyze(idx,new_geometry,&to_reduce[n][2], &ncur, 0);
+          nc+=ncur;
+          ncur=0;
+          _contexts[idx]->_fca_collreg->analyze(idx,new_geometry,&to_reduce[n][2], &ncur, 0);
         }
         *geometry=(PEGeometry*) new_geometry;
 

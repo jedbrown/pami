@@ -5,6 +5,8 @@
 #ifndef __FcaFunc_h__
 #define __FcaFunc_h__
 
+#ifdef PAMI_USE_FCA
+
 #include <stdlib.h>
 #include <dlfcn.h>
 #include <stdio.h>
@@ -15,6 +17,67 @@
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
 #define _LAPI_LINUX
+
+#define FCA_init_spec       fca_init_spec
+#define FCA_t               fca_t
+#define FCA_comm_new_spec_t fca_comm_new_spec_t
+#define FCA_comm_t          fca_comm_t
+#define FCA_comm_caps_t     fca_comm_caps_t
+#define FCA_reduce_spec_t   fca_reduce_spec_t
+#define FCA_bcast_spec_t    fca_bcast_spec_t
+#define FCA_gather_spec_t   fca_gather_spec_t
+#define FCA_gatherv_spec_t  fca_gatherv_spec_t
+#define FCA_reduce_dtype_t  fca_reduce_dtype_t
+
+const char *FCA_cmd_list[] =
+{
+  "fca_get_version",
+  "fca_get_version_string",
+  "fca_init",
+  "fca_cleanup",
+  "fca_progress",
+  "fca_get_rank_info",
+  "fca_free_rank_info",
+  "fca_comm_new",
+  "fca_comm_end",
+  "fca_comm_init",
+  "fca_comm_destroy",
+  "fca_comm_get_caps",
+  "fca_do_reduce",
+  "fca_do_all_reduce",
+  "fca_do_bcast",
+  "fca_do_allgather",
+  "fca_do_allgatherv",
+  "fca_do_barrier",
+  "fca_translate_mpi_op",
+  "fca_translate_mpi_dtype",
+  "fca_get_dtype_size"
+};
+
+enum
+{
+  I_Get_version,
+  I_Get_version_string,
+  I_Init,
+  I_Cleanup,
+  I_Progress,
+  I_Get_rank_info,
+  I_Free_rank_info,
+  I_Comm_new,
+  I_Comm_end,
+  I_Comm_init,
+  I_Comm_destroy,
+  I_Comm_get_caps,
+  I_Do_reduce,
+  I_Do_all_reduce,
+  I_Do_bcast,
+  I_Do_allgather,
+  I_Do_allgatherv,
+  I_Do_barrier,
+  I_Translate_mpi_op,
+  I_Translate_mpi_dtype,
+  I_Get_dtype_size
+};
 
 class FCAFunc
 {
@@ -39,8 +102,8 @@ public:
   typedef       int   (fca_do_barrier_handler_t)(fca_comm_t *comm);
   typedef       int   (fca_translate_mpi_op_handler_t)(char *mpi_op_str);
   typedef       int   (fca_translate_mpi_dtype_handler_t)(char *mpi_dtype_str);
-  typedef       int   (fca_get_dtype_size_handler_t)(enum fca_reduce_dtype_t dtype); 
-  
+  typedef       int   (fca_get_dtype_size_handler_t)(enum fca_reduce_dtype_t dtype);
+
   static FCAFunc *getInstance();
   int             Load();
   unsigned long   Get_version(void);
@@ -126,6 +189,106 @@ inline FCAFunc::~FCAFunc()
     ::dlclose(dlopen_file);
   }
 }
+
+inline FCAFunc * FCAFunc::getInstance()
+{
+  if (instance == NULL)
+    {
+      instance = new FCAFunc();
+      int rc = instance->Load();
+      if(rc != 0)
+        {
+          delete instance;
+          instance = NULL;
+        }
+    }
+  return instance;
+}
+
+
+inline void * FCAFunc::import(const char * funcname)
+{
+  void *handle = NULL;
+  char *error = NULL;
+  ::dlerror();    /* Clear any existing error */
+  handle = ::dlsym(dlopen_file, funcname);
+  if ((error = ::dlerror()) != NULL)
+    {
+      ::fprintf(stderr, "Error when taking the handle of %s: %s\n", funcname, error);
+      handle = NULL;
+    }
+  return handle;
+}
+
+inline int FCAFunc::Load()
+{
+#ifdef _LAPI_LINUX // Linux
+  const char *filename = "libfca.so";
+#else
+#ifdef __64BIT__
+  const char *filename = "libfca_r.a(libfca64_r.o)";
+#else  // 32-bit
+  const char* filename = "libfca_r.a(libfca_r.o)";
+#endif
+#endif
+#ifdef _LAPI_LINUX // Linux
+  dlopen_file = ::dlopen(filename, RTLD_NOW | RTLD_GLOBAL);
+#else // aix
+  dlopen_file = ::dlopen(filename, RTLD_NOW | RTLD_GLOBAL | RTLD_MEMBER);
+#endif
+  if (NULL == dlopen_file) {
+    ::fprintf(stderr, "Error when opening %s: %s\n", filename, ::dlerror());
+    return -1;
+  }
+  get_version_handler         = (fca_get_version_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_version]);
+  get_version_string_handler  = (fca_get_version_string_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_version_string]);
+  init_handler                = (fca_init_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Init]);
+  cleanup_handler             = (fca_cleanup_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Cleanup]);
+  progress_handler            = (fca_progress_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Progress]);
+  get_rank_info_handler       = (fca_get_rank_info_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_rank_info]);
+  free_rank_info_handler      = (fca_free_rank_info_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Free_rank_info]);
+  comm_new_handler            = (fca_comm_new_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Comm_new]);
+  comm_end_handler            = (fca_comm_end_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Comm_end]);
+  comm_init_handler           = (fca_comm_init_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Comm_init]);
+  comm_destroy_handler        = (fca_comm_destroy_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Comm_destroy]);
+  comm_get_caps_handler       = (fca_comm_get_caps_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Comm_get_caps]);
+  do_reduce_handler           = (fca_do_reduce_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_reduce]);
+  do_all_reduce_handler       = (fca_do_all_reduce_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_all_reduce]);
+  do_bcast_handler            = (fca_do_bcast_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_bcast]);
+  do_allgather_handler        = (fca_do_allgather_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_allgather]);
+  do_allgatherv_handler       = (fca_do_allgatherv_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_allgatherv]);
+  do_barrier_handler          = (fca_do_barrier_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Do_barrier]);
+  translate_mpi_op_handler    = (fca_translate_mpi_op_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Translate_mpi_op]);
+  translate_mpi_dtype_handler = (fca_translate_mpi_dtype_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Translate_mpi_dtype]);
+  get_dtype_size_handler      = (fca_get_dtype_size_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_dtype_size]); 
+
+#define FCA_CHECK_FN(x) if(x == NULL) return -1;
+  FCA_CHECK_FN(get_version_handler);
+  FCA_CHECK_FN(get_version_string_handler);
+  FCA_CHECK_FN(init_handler);
+  FCA_CHECK_FN(cleanup_handler);
+  FCA_CHECK_FN(progress_handler);
+  FCA_CHECK_FN(get_rank_info_handler);
+  FCA_CHECK_FN(free_rank_info_handler);
+  FCA_CHECK_FN(comm_new_handler);
+  FCA_CHECK_FN(comm_end_handler);
+  FCA_CHECK_FN(comm_init_handler);
+  FCA_CHECK_FN(comm_destroy_handler);
+  FCA_CHECK_FN(comm_get_caps_handler);
+  FCA_CHECK_FN(do_reduce_handler);
+  FCA_CHECK_FN(do_all_reduce_handler);
+  FCA_CHECK_FN(do_bcast_handler);
+  FCA_CHECK_FN(do_allgather_handler);
+  FCA_CHECK_FN(do_allgatherv_handler);
+  FCA_CHECK_FN(do_barrier_handler);
+  FCA_CHECK_FN(translate_mpi_op_handler);
+  FCA_CHECK_FN(translate_mpi_dtype_handler);
+  FCA_CHECK_FN(get_dtype_size_handler);
+#undef FCA_CHECK_FN;
+  return 0;
+}
+
+
 inline unsigned long FCAFunc::Get_version(void)
 {
   return(get_version_handler());
@@ -212,6 +375,9 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 }
 
 #ifdef FCA_DLOPEN
+
+// DLOPEN + FCA ENABLED PATH
+#define FCA_Dlopen(x)           FCAFunc::getInstance()
 #define FCA_Get_version         FCAFunc::getInstance()->Get_version
 #define FCA_Get_version_string  FCAFunc::getInstance()->Get_version_string
 #define FCA_Init                FCAFunc::getInstance()->Init
@@ -235,6 +401,7 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
 
 #else
+// NO DLOPEN + FCA ENABLED PATH
 #define FCA_Get_version         fca_get_version
 #define FCA_Get_version_string  fca_get_version_string
 #define FCA_Init                fca_init
@@ -258,4 +425,55 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Get_dtype_size      fca_get_dtype_size
 
 #endif //FCA_DLOPEN
+
+#else //PAMI_USE_FCA
+
+// FCA COMPILED OUT PATH
+class FCAFunc
+  {
+    static FCAFunc * instance;
+  public:
+    FCAFunc * getInstance()
+    {
+      return NULL;
+    }
+  };
+#define FCA_init_spec
+#define FCA_t
+#define FCA_comm_new_spec_t
+#define FCA_comm_t
+#define FCA_comm_caps_t
+#define FCA_reduce_spec_t
+#define FCA_bcast_spec_t
+#define FCA_gather_spec_t
+#define FCA_gatherv_spec_t
+#define FCA_reduce_dtype_t
+
+#define FCA_Dlopen(x) (NULL)
+#define FCA_Get_version(x)
+#define FCA_Get_version_string(x)
+#define FCA_Init(x)
+#define FCA_Cleanup(x)
+#define FCA_Progress(x)
+#define FCA_Get_rank_info(x)
+#define FCA_Free_rank_info(x)
+#define FCA_Comm_new(x)
+#define FCA_Comm_end(x)
+#define FCA_Comm_init(x)
+#define FCA_Comm_destroy(x)
+#define FCA_Comm_get_caps(x)
+#define FCA_Do_reduce(x)
+#define FCA_Do_all_reduce(x)
+#define FCA_Do_bcast(x)
+#define FCA_Do_allgather(x)
+#define FCA_Do_allgatherv(x)
+#define FCA_Do_barrier(x)
+#define FCA_Translate_mpi_op(x)
+#define FCA_Translate_mpi_dtype(x)
+#define FCA_Get_dtype_size(x)
+
+#endif //PAMI_USE_FCA
+
+#include "fcafunc.cc"
+
 #endif
