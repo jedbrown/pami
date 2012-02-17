@@ -180,12 +180,19 @@ namespace PAMI
           {
             TRACE_FN_ENTER();
 
+            // The routing index is used to find the routing value to be used.
+            // The routing value is bit mask to be set into the descriptor for the dynamic
+            // routing zone, or 0xFF for deterministic routing.  Deterministic routing
+            // is already set into the descriptor.
+            uint8_t  routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+
             uint64_t numCounterPools = _context.getNumCounterPools();
             uint64_t poolID = 0;
             int64_t  counterNum = -1;
 
-            // DD2 hardware and CounterPools exist, allocate a counter.
-            if ( ( likely ( ( _isDD2 ) &&  
+            // If dynamic routing and DD2 hardware and CounterPools exist, allocate a counter.
+            if ( ( likely ( ( routingValue != 0xFF ) &&
+                            ( _isDD2 ) &&  
                             ( numCounterPools != 0 ) ) ) )
             {
               // It is DD2 hardware.  Try to get a MU counter.
@@ -235,16 +242,9 @@ namespace PAMI
                 desc[0].setTorusInjectionFIFOMap ( map );
 		
 		// Set routing and zone.
-                // The routing index is used to find the routing value to be used.
-                // The routing value is bit mask to be set into the descriptor for the dynamic
-                // routing zone, or 0xFF for deterministic routing.  Deterministic routing
-                // is already set into the descriptor.
-                uint32_t routingValue = _flexabilityMetricRoutingOptions[routingIndex];
-                if ( routingValue != 0xFF ) // Not deterministic routing?
-                {
-                  desc[0].setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
-                  desc[0].setPt2PtVirtualChannel ( MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC );
-                  desc[0].setZoneRouting ( routingValue );
+                desc[0].setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
+                desc[0].setPt2PtVirtualChannel ( MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC );
+                desc[0].setZoneRouting ( routingValue );
 #if 0
                   // When the following code is enabled to set all torus fifo map bits,
                   // the linktest benchmark that sends from 1 node to 10 others that are
@@ -270,7 +270,6 @@ namespace PAMI
 						       MUHWI_DESCRIPTOR_TORUS_FIFO_MAP_EP );
 		  }
 #endif
-		}
 
 		// Set the reception counter atomic address
 		desc[0].setRecCounterBaseAddressInfo ( _context.getGlobalBatId(),
