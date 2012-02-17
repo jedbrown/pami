@@ -995,6 +995,13 @@ namespace PAMI {
     ///
     size_t index2PermutedIndex_impl(size_t index)
     {
+      // a simple permutation - offset by my own index
+      if(likely(index < __size)) {
+        index += rank2Index_impl(mapping->task());
+        if(index < __size);
+        else index -= __size;
+      }
+      else index = (size_t)-1;
       return index;
     }
 
