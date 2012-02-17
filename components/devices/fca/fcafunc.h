@@ -438,39 +438,39 @@ class FCAFunc
       return NULL;
     }
   };
-#define FCA_init_spec
-#define FCA_t
-#define FCA_comm_new_spec_t
-#define FCA_comm_t
-#define FCA_comm_caps_t
-#define FCA_reduce_spec_t
-#define FCA_bcast_spec_t
-#define FCA_gather_spec_t
-#define FCA_gatherv_spec_t
-#define FCA_reduce_dtype_t
+#define FCA_init_spec void*
+#define FCA_t void*
+#define FCA_comm_new_spec_t void*
+#define FCA_comm_t void*
+#define FCA_comm_caps_t void*
+#define FCA_reduce_spec_t void*
+#define FCA_bcast_spec_t void*
+#define FCA_gather_spec_t void*
+#define FCA_gatherv_spec_t void*
+#define FCA_reduce_dtype_t void*
 
 #define FCA_Dlopen(x) (NULL)
-#define FCA_Get_version(x)
+#define FCA_Get_version(x) PAMI_abort();
 #define FCA_Get_version_string(x)
-#define FCA_Init(x)
-#define FCA_Cleanup(x)
-#define FCA_Progress(x)
-#define FCA_Get_rank_info(x)
-#define FCA_Free_rank_info(x)
-#define FCA_Comm_new(x)
-#define FCA_Comm_end(x)
-#define FCA_Comm_init(x)
-#define FCA_Comm_destroy(x)
-#define FCA_Comm_get_caps(x)
-#define FCA_Do_reduce(x)
-#define FCA_Do_all_reduce(x)
-#define FCA_Do_bcast(x)
-#define FCA_Do_allgather(x)
-#define FCA_Do_allgatherv(x)
-#define FCA_Do_barrier(x)
-#define FCA_Translate_mpi_op(x)
-#define FCA_Translate_mpi_dtype(x)
-#define FCA_Get_dtype_size(x)
+#define FCA_Init(x,y) PAMI_abort();
+#define FCA_Cleanup(x) PAMI_abort();
+#define FCA_Progress(x) PAMI_abort();
+#define FCA_Get_rank_info(x) PAMI_abort();
+#define FCA_Free_rank_info(x) PAMI_abort();
+#define FCA_Comm_new(x) PAMI_abort();
+#define FCA_Comm_end(x) PAMI_abort();
+#define FCA_Comm_init(x) PAMI_abort();
+#define FCA_Comm_destroy(x) PAMI_abort();
+#define FCA_Comm_get_caps(x) PAMI_abort();
+#define FCA_Do_reduce(x) PAMI_abort();
+#define FCA_Do_all_reduce(x) PAMI_abort();
+#define FCA_Do_bcast(x) PAMI_abort();
+#define FCA_Do_allgather(x) PAMI_abort();
+#define FCA_Do_allgatherv(x) PAMI_abort();
+#define FCA_Do_barrier(x) PAMI_abort();
+#define FCA_Translate_mpi_op(x) PAMI_abort();
+#define FCA_Translate_mpi_dtype(x) PAMI_abort();
+#define FCA_Get_dtype_size(x) PAMI_abort();
 
 #endif //PAMI_USE_FCA
 

@@ -47,7 +47,14 @@ public:
   {
     if(num_contexts > 1) return;
     void * rc = FCA_Dlopen(0);
-    if(rc) return;
+    if(!rc) return;
+    else
+      {
+        // TODO:  Fill in FCA Init Spec
+        // TODO:  print the FCA Banner and check FCA version
+        FCA_Init(&_fca_init_spec, &_fca_context);
+        _enabled=true;
+      }
   }
 
   inline pami_result_t analyze_impl(size_t         context_id,
@@ -80,6 +87,8 @@ private:
   size_t         _client_id;
   bool           _enabled;
   GIAllocator    _geom_allocator;
+  FCA_init_spec  _fca_init_spec;
+  FCA_t         *_fca_context;
 }; // FCARegistration
 }; // FCA
 }; // CollRegistration
