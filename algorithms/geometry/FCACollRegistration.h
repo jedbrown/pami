@@ -18,7 +18,7 @@
 
 #ifdef PAMI_USE_FCA
 
-#include "components/devices/fca/fcafunc.h"
+#include "algorithms/geometry/FCAWrapper.h"
 namespace PAMI{namespace CollRegistration{namespace FCA{
 template <class T_Geometry>
 class FCARegistration : public CollRegistration <FCARegistration<T_Geometry>, T_Geometry >
