@@ -27,13 +27,30 @@ public:
   class GeometryInfo
   {
     public:
-    GeometryInfo():
-      _dummy(0)
+    GeometryInfo(FCARegistration *reg):
+      _registration(reg)
     {
     }
-    int _dummy;
+    FCARegistration *_registration;
   };
   typedef PAMI::MemoryAllocator<sizeof(GeometryInfo),16> GIAllocator;
+
+  // Composite definitions
+  typedef FCAReduceExec<T_Geometry>        ReduceExec;
+  typedef FCAAllreduceExec<T_Geometry>     AllReduceExec;
+  typedef FCABroadcastExec<T_Geometry>     BroadcastExec;
+  typedef FCAAllgatherExec<T_Geometry>     AllgatherExec;
+  typedef FCAAllgathervIntExec<T_Geometry> AllgathervIntExec;
+  typedef FCABarrierExec<T_Geometry>       BarrierExec;
+
+  // Factory definitions
+  typedef FCAFactory<ReduceExec>        ReduceFactory;
+  typedef FCAFactory<AllReduceExec>     AllReduceFactory;
+  typedef FCAFactory<BroadcastExec>     BroadcastFactory;
+  typedef FCAFactory<AllgatherExec>     AllgatherFactory;
+  typedef FCAFactory<AllgathervIntExec> AllgathervIntFactory;
+  typedef FCAFactory<BarrierExec>       BarrierFactory;
+
   inline FCARegistration(pami_client_t                        client,
                          pami_context_t                       context,
                          size_t                               context_id,
@@ -45,7 +62,13 @@ public:
     _context_id(context_id),
     _num_contexts(num_contexts),
     _client_id(client_id),
-    _enabled(false)
+    _enabled(false),
+    _reduce_f(context,context_id,mapidtogeometry),
+    _allreduce_f(context,context_id,mapidtogeometry),
+    _broadcast_f(context,context_id,mapidtogeometry),
+    _allgather_f(context,context_id,mapidtogeometry),
+    _allgatherv_int_f(context,context_id,mapidtogeometry),
+    _barrier_f(context,context_id,mapidtogeometry)
   {
     if(num_contexts > 1) return;
     void * rc = FCA_Dlopen(0);
@@ -67,6 +90,38 @@ public:
   {
     if(!_enabled) return PAMI_SUCCESS;
     return PAMI_SUCCESS;
+
+    // TODO:  Conditionally insert these algorithms into the list
+    // TODO:  Implement metadata and strings
+    GeometryInfo *gi = (GeometryInfo*)_geom_allocator.allocateObject();
+    new(gi) GeometryInfo(this);
+    geometry->setKey(_context_id, Geometry::CKEY_FCAGEOMETRYINFO, gi);
+    geometry->setCleanupCallback(cleanupCallback, gi);
+
+    geometry->addCollective(PAMI_XFER_REDUCE,
+                            &_reduce_f,
+                            _context,
+                            _context_id);
+    geometry->addCollective(PAMI_XFER_ALLREDUCE,
+                            &_allreduce_f,
+                            _context,
+                            _context_id);
+    geometry->addCollective(PAMI_XFER_BROADCAST,
+                            &_broadcast_f,
+                            _context,
+                            _context_id);
+    geometry->addCollective(PAMI_XFER_ALLGATHER,
+                            &_allgather_f,
+                            _context,
+                            _context_id);
+    geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
+                            &_allgatherv_int_f,
+                            _context,
+                            _context_id);
+    geometry->addCollective(PAMI_XFER_BARRIER,
+                            &_barrier_f,
+                            _context,
+                            _context_id);
   }
 
   inline void freeGeomInfo(GeometryInfo *gi)
@@ -82,15 +137,24 @@ public:
   }
 private:
   // Client, Context, and Utility variables
-  pami_client_t  _client;
-  pami_context_t _context;
-  size_t         _context_id;
-  size_t         _num_contexts;
-  size_t         _client_id;
-  bool           _enabled;
-  GIAllocator    _geom_allocator;
-  fca_init_spec  _fca_init_spec;
-  fca_t         *_fca_context;
+  pami_client_t        _client;
+  pami_context_t       _context;
+  size_t               _context_id;
+  size_t               _num_contexts;
+  size_t               _client_id;
+  bool                 _enabled;
+  GIAllocator          _geom_allocator;
+  fca_init_spec        _fca_init_spec;
+  fca_t               *_fca_context;
+  ReduceFactory        _reduce_f;
+  AllReduceFactory     _allreduce_f;
+  BroadcastFactory     _broadcast_f;
+  AllgatherFactory     _allgather_f;
+  AllgathervIntFactory _allgatherv_int_f;
+  BarrierFactory       _barrier_f;
+
+
+
 }; // FCARegistration
 }; // FCA
 }; // CollRegistration
