@@ -75,8 +75,18 @@ public:
     if(!rc) return;
     else
       {
-        // TODO:  Fill in FCA Init Spec
         // TODO:  print the FCA Banner and check FCA version
+        
+        // Fill in FCA Init Spec
+        // use default config for now
+        _fca_init_spec.element_type = FCA_ELEMENT_RANK;
+        _fca_init_spec.job_id        = _Lapi_env.MP_partition;
+        _fca_init_spec.rank_id       = _Lapi_env.MP_child;
+        _fca_init_spec.progress.func = NULL;
+        _fca_init_spec.progress.arg  = NULL;
+        _fca_init_spec.dev_selector  = NULL;
+        _fca_init_spec.config        = fca_default_config;
+
         FCA_Init(&_fca_init_spec, &_fca_context);
         _enabled=true;
       }
