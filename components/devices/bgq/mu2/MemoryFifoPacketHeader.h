@@ -222,6 +222,36 @@ namespace PAMI
             TRACE_FN_EXIT();
           }
 
+
+          ///
+          /// \brief Set the Metadata correspoding to this
+          /// packet. Metadata will be aligned to the input parameter
+          /// bytes
+          /// \param[in] metadata of the packet protocol
+          /// \param[in] metadata size in bytes
+          ///
+	  inline void setMetaData (void        * metadata, 
+				   int           bytes, 
+				   int16_t       disp_msize)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("metadata = %p, bytes %d, disp_msize = %d", 
+			 metadata, bytes, disp_msize);
+            TRACE_HEXDATA(this, 32);
+
+            //Use bytes 14 and 15 for single packet and 18 and 19 for multipacket
+            uint16_t *raw16 = (uint16_t*)((char *)this + (18 - isSinglePacket() * 4));
+            uint16_t offset = bytes - 1;
+            *raw16 = disp_msize;
+	    
+            uint8_t *raw8 = (uint8_t *) this + 31 - offset;
+            uint8_t *src = (uint8_t *) metadata;
+            memcpy(raw8, src, bytes);
+
+            TRACE_HEXDATA(this, 32);
+            TRACE_FN_EXIT();
+          }
+
           ///
           /// \brief Get the Metadata in the packet
           /// \retval pointer to the metadata

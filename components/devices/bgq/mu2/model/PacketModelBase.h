@@ -288,7 +288,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
 
-        MUHWI_Destination_t   dest;
+        uint32_t              dest;
         uint16_t              rfifo;
         uint64_t              map;
 
@@ -300,6 +300,9 @@ namespace PAMI
 
         InjChannel & channel = device.injectionGroup.channel[fnum];
         bool isfree = channel.hasFreeSpaceWithUpdate ();
+
+	uint16_t rfifo_base =  *(uint16_t *)(&_singlepkt.PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO);
+	uint16_t disp_msize = (((MemoryFifoPacketHeader*)&_singlepkt.PacketHeader)->getDispatchId()) | ((metasize-1) << 12);
 
         register double f0  FP_REGISTER(0);
         register double f1  FP_REGISTER(1);
@@ -327,12 +330,14 @@ namespace PAMI
             // Initialize the injection fifo descriptor in-place.
             memfifo->setDestination (dest);
             memfifo->setTorusInjectionFIFOMap (map);
-            memfifo->setRecFIFOId (rfifo);
+	    //eliminate load from mem fifo as that is cache miss
+            //memfifo->setRecFIFOId (rfifo);	    
+	    *(uint16_t *)(&memfifo->PacketHeader.messageUnitHeader.Packet_Types.Memory_FIFO) = rfifo_base | (rfifo << 6); 
 
             MemoryFifoPacketHeader *hdr = (MemoryFifoPacketHeader*)
                                           & memfifo->PacketHeader;
             //Eliminated memcpy and an if branch
-            hdr->setMetaData(metadata, metasize);
+            hdr->setMetaData(metadata, metasize, disp_msize);
 
             // Copy the payload into the immediate payload buffer.
             size_t i, tbytes = 0;
