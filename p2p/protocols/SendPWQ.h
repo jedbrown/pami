@@ -192,24 +192,9 @@ namespace PAMI
             size_t size = state->dst_participants.size();
             for (unsigned i = 0; i < size; ++i)
             {
-              //FIXME:: to be discussed
-              //it relies on the fact the the topology is now endpoint aware;
               parameters->dest = state->dst_participants.index2Endpoint(i);
-              //fprintf(stderr, "CCMI:: Immediate send to EP%d\n", parameters->dest);
 
-              /*
-              pami_task_t task = state->dst_participants.index2Rank(i);
-
-              if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
-                continue;
-
-              result = PAMI_Endpoint_create ((pami_client_t) state->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
-                                             task,
-                                             state->contextid, /// \todo what context do I target?
-                                             &parameters->dest);
-              */
-
-              //TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->dest, (size_t) task, state->contextid);
+              TRACE_FORMAT( "<%p> send(%u(%zu))", this, parameters->dest, state->contextid);
               result = this->immediate (parameters);
               TRACE_FORMAT( "<%p> result %u", this, result);
 
@@ -336,21 +321,7 @@ namespace PAMI
             {
               parameters->send.dest = state->dst_participants.index2Endpoint(i);
 
-              //fprintf(stderr, "%p]CCMI:: send to EP%d\n", (void*)context, parameters->send.dest);
-
-              //FIXME: discuss next
-              /*
-              pami_task_t task = state->dst_participants.index2Rank(i);
-
-              if(task == __global.mapping.task()) /// \todo don't use global? remove myself from topo in caller?
-                continue;
-
-              result = PAMI_Endpoint_create ((pami_client_t) state->client, /// \todo client is ignored on the endpoint?  client isn't a pami_client_t
-                                             task,
-                                             state->contextid, /// \todo what context do I target?
-                                             &parameters->send.dest);
-              */
-              //TRACE_FORMAT( "<%p> send(%u(%zu,%zu))", this, parameters->send.dest, (size_t) task, state->contextid);
+              TRACE_FORMAT( "<%p> send(%u(%zu))", this, parameters->send.dest, state->contextid);
 
               result =  this->simple (parameters);
               TRACE_FORMAT( "<%p> result %u", this, result);

@@ -16,7 +16,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /*
  * \file common/NativeInterface.h
- * \brief Simple all-sided and active-message Native Interface on a p2p protocol.
+ * \brief Simple all-sided and active-message NativeInterface on a p2p protocol.
  */
 
 #ifndef __common_NativeInterface_h__
@@ -1321,22 +1321,6 @@ namespace PAMI
     state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
-
-    // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isEndpointMember(this->endpoint())) /// \todo change semantics here? ticket #31
-      {
-        state_data->doneCountDown--;// don't send to myself
-        PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
-
-        TRACE_FORMAT( "<%p>NativeInterfaceAllsided pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq? rcvpwq->bytesAvailableToProduce():(size_t)-1, length);
-
-        if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
-          {
-            memcpy(rcvpwq->bufferToProduce(), payload, length);
-          }
-        else{;} /// \todo now what??? Move this to completion?
-      }
-
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
@@ -1915,22 +1899,6 @@ namespace PAMI
     state_data->sendpwq.dst_participants = *((PAMI::Topology*)mcast->dst_participants);
 
     state_data->doneCountDown = state_data->sendpwq.dst_participants.size();
-
-    // Am I a destination?  Handle it.
-    if (state_data->sendpwq.dst_participants.isEndpointMember(this->endpoint())) /// \todo change semantics here? ticket #31
-      {
-        state_data->doneCountDown--;// don't send to myself
-        PAMI::PipeWorkQueue *rcvpwq = (PAMI::PipeWorkQueue *)mcast->dst;
-
-        TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage pwq<%p> length %zu/%zu", this, rcvpwq, rcvpwq->bytesAvailableToProduce(), length);
-
-        if (rcvpwq && (rcvpwq->bytesAvailableToProduce() >= length)) // copy it if desired
-          {
-            memcpy(rcvpwq->bufferToProduce(), payload, length);
-          }
-        else{;} /// \todo now what??? Move this to completion?
-      }
-
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
     {
       0
@@ -2268,11 +2236,14 @@ namespace PAMI
 
         if (data && bytes)
           {
-            /// \todo An assertion probably isn't the best choice...
             TRACE_FORMAT( "<%p>NativeInterfaceActiveMessage<%d>::handle_mcast()  pwq<%p>", this, __LINE__, rcvpwq);
-            PAMI_assertf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
-            memcpy(rcvpwq->bufferToProduce(), data, bytes);
-            rcvpwq->produceBytes(data_size);
+            // A debug only assertion, otherwise handle it by ignoring unexpected data
+            PAMI_assert_debugf(rcvpwq->bytesAvailableToProduce() >= data_size, "dst %zu >= data_size %zu\n", rcvpwq->bytesAvailableToProduce(), data_size);
+            if(rcvpwq->bytesAvailableToProduce() >= data_size)
+            {
+              memcpy(rcvpwq->bufferToProduce(), data, bytes);
+              rcvpwq->produceBytes(data_size);
+            }
           }
 
         // call original done
