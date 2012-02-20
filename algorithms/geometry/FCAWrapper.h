@@ -151,7 +151,7 @@ static inline fca_reduce_op_t p_func_to_fca_op(pami_data_function d)
   PAMI_assert(op < PAMI_OP_COUNT);
   fca_reduce_op_t fca_op = _fca_reduce_op_tbl[op];
   PAMI_assert(fca_op != -1);
-  return fct_op;
+  return fca_op;
 }
 
 // TODO:  convert endpoint based roots to TASKS
