@@ -86,119 +86,72 @@ public:
   PAMI::MemoryAllocator<sizeof(T_Composite),16>  _alloc;
 };
 
+const fca_reduce_op_t    _fca_reduce_op_tbl[PAMI_OP_COUNT] =
+  {
+    -1                         /*PAMI_COPY*/,
+    -1                         /*PAMI_NOOP*/,
+    FCA_OP_MAX                 /*PAMI_MAX*/,
+    FCA_OP_MIN                 /*PAMI_MIN*/,
+    FCA_OP_SUM                 /*PAMI_SUM*/,
+    FCA_OP_PROD                /*PAMI_PROD*/,
+    FCA_OP_LAND                /*PAMI_LAND*/,
+    FCA_OP_LOR                 /*PAMI_LOR*/,
+    FCA_OP_LXOR                /*PAMI_LXOR*/,
+    FCA_OP_BAND                /*PAMI_BAND*/,
+    FCA_OP_BOR                 /*PAMI_BOR*/,
+    FCA_OP_BXOR                /*PAMI_BXOR*/,
+    FCA_OP_MAXLOC              /*PAMI_MAXLOC*/,
+    FCA_OP_MINLOC              /*PAMI_MINLOC*/
+  };
+
+const fca_reduce_dtype_t _fca_reduce_dtype_tbl[PAMI_DT_COUNT] = 
+  {
+    FCA_DTYPE_UNSIGNED_CHAR    /*PAMI_BYTE  According to standard, MPI_BYTE is similar to MPI_UNSIGNED_CHAR*/,
+    FCA_DTYPE_CHAR             /*PAMI_SIGNED_CHAR*/,
+    FCA_DTYPE_SHORT            /*PAMI_SIGNED_SHORT*/,
+    FCA_DTYPE_INT              /*PAMI_SIGNED_INT*/,
+    FCA_DTYPE_LONG             /*PAMI_SIGNED_LONG*/,
+    -1                         /*PAMI_SIGNED_LONG_LONG*/,
+
+    FCA_DTYPE_UNSIGNED_CHAR    /*PAMI_UNSIGNED_CHAR*/,
+    FCA_DTYPE_UNSIGNED_SHORT   /*PAMI_UNSIGNED_SHORT*/,
+    FCA_DTYPE_UNSIGNED_INT     /*PAMI_UNSIGNED_INT*/,
+    FCA_DTYPE_UNSIGNED_LONG    /*PAMI_UNSIGNED_LONG*/,
+    -1                         /*PAMI_UNSIGNED_LONG_LONG*/,
+
+    FCA_DTYPE_FLOAT            /*PAMI_FLOAT*/,
+    FCA_DTYPE_DOUBLE           /*PAMI_DOUBLE*/,
+    -1                         /*PAMI_LONG_DOUBLE*/,
+
+    -1                         /*PAMI_LOGICAL*/,
+
+    -1                         /*PAMI_SINGLE_COMPLEX*/,
+    -1                         /*PAMI_DOUBLE_COMPLEX*/,
+
+    FCA_DTYPE_2INT             /*PAMI_LOC_2INT*/,
+    -1                         /*PAMI_LOC_2FLOAT*/,
+    -1                         /*PAMI_LOC_2DOUBLE*/,
+    FCA_DTYPE_SHORT_INT        /*PAMI_LOC_SHORT_INT*/,
+    FCA_DTYPE_FLOAT_INT        /*PAMI_LOC_FLOAT_INT*/,
+    FCA_DTYPE_DOUBLE_INT       /*PAMI_LOC_DOUBLE_INT*/
+  };
+
+
 static inline fca_reduce_dtype_t p_dtype_to_fca_dtype(pami_type_t f)
 {
-  // TODO:  remove branching, use table
-  // SSS: Table won't work since index is pami_type_t.
-  //      A map can be used instead.. not sure how much
-  //      performance gain of a map over switch if any.
-  switch(f)
-  {
-    case PAMI_TYPE_SIGNED_CHAR:
-      return FCA_DTYPE_CHAR;
-      break;
-    case PAMI_TYPE_SIGNED_SHORT:
-      return FCA_DTYPE_SHORT;
-      break;
-    case PAMI_TYPE_SIGNED_INT:
-      return FCA_DTYPE_INT;
-      break;
-    case PAMI_TYPE_SIGNED_LONG:
-      return FCA_DTYPE_LONG;
-      break;
-
-    case PAMI_TYPE_UNSIGNED_CHAR:
-      return FCA_DTYPE_UNSIGNED_CHAR;
-      break;
-    case PAMI_TYPE_UNSIGNED_SHORT:
-      return FCA_DTYPE_UNSIGNED_SHORT;
-      break;
-    case PAMI_TYPE_UNSIGNED_INT:
-      return FCA_DTYPE_UNSIGNED_INT;
-      break;
-    case PAMI_TYPE_UNSIGNED_LONG:
-      return FCA_DTYPE_UNSIGNED_LONG;
-      break;
-
-    case PAMI_TYPE_FLOAT:
-      return FCA_DTYPE_FLOAT;
-      break;
-    case PAMI_TYPE_DOUBLE:
-      return FCA_DTYPE_DOUBLE;
-      break;
-
-    case PAMI_TYPE_LOC_SHORT_INT:
-      return FCA_DTYPE_SHORT_INT;
-      break;
-    case PAMI_TYPE_LOC_2INT:
-      return FCA_DTYPE_2INT;
-      break;
-    case PAMI_TYPE_LOC_FLOAT_INT:
-      return FCA_DTYPE_FLOAT_INT;
-      break;
-/*  SSS: No equivalent in PAMI????
-    case PAMI_TYPE_LOC_LONG_INT:
-      return FCA_DTYPE_LONG_INT;
-      break;*/
-    case PAMI_TYPE_LOC_DOUBLE_INT:
-      return FCA_DTYPE_DOUBLE_INT;
-      break;
-
-    default:
-      assert(0);
-      return -1;
-      break; 
-  }
+  pami_dt primitive = (TypeCode *)f->GetPrimitive();
+  PAMI_assert(primitive < PAMI_DT_COUNT);
+  fca_reduce_dtype_t fca_dt = _fca_reduce_dtype_tbl[primitive];
+  PAMI_assert(fca_dt != -1);
+  return fca_dt;
 }
 static inline fca_reduce_op_t p_func_to_fca_op(pami_data_function d)
 {
-  // TODO:  remove branching, use table
-  // SSS: Table won't work since index is pami_data_function.
-  //      A map can be used instead.. not sure how much
-  //      performance gain of a map over switch if any.
-  switch(d)
-  {
-    case PAMI_DATA_MAX:
-      return FCA_OP_MAX;
-      break;
-    case PAMI_DATA_MIN:
-      return FCA_OP_MIN;
-      break;
-    case PAMI_DATA_SUM:
-      return FCA_OP_SUM;
-      break;
-    case PAMI_DATA_PROD:
-      return FCA_OP_PROD;
-      break;
-    case PAMI_DATA_LAND:
-      return FCA_OP_LAND;
-      break;
-    case PAMI_DATA_BAND:
-      return FCA_OP_BAND;
-      break;
-    case PAMI_DATA_LOR:
-      return FCA_OP_LOR;
-      break;
-    case PAMI_DATA_BOR:
-      return FCA_OP_BOR;
-      break;
-    case PAMI_DATA_LXOR:
-      return FCA_OP_LXOR;
-      break;
-    case PAMI_DATA_BXOR:
-      return FCA_OP_BXOR;
-      break;
-    case PAMI_DATA_MAXLOC:
-      return FCA_OP_MAXLOC;
-      break;
-    case PAMI_DATA_MINLOC:
-      return FCA_OP_MINLOC;
-      break;
-    default:
-      assert(0);
-      return -1;
-      break;
-  }
+  pami_op op = (pami_op)d;
+  PAMI_assert(op < PAMI_OP_COUNT);
+  fca_reduce_op_t fca_op = _fca_reduce_op_tbl[op];
+  PAMI_assert(fca_op != -1);
+  return fct_op;
 }
 
 // TODO:  convert endpoint based roots to TASKS
