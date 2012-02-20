@@ -89,18 +89,116 @@ public:
 static inline fca_reduce_dtype_t p_dtype_to_fca_dtype(pami_type_t f)
 {
   // TODO:  remove branching, use table
-  // TODO:  implement this function
-  if(f == PAMI_TYPE_SIGNED_INT)
-    return  FCA_DTYPE_INT;
-  else
-    {
+  // SSS: Table won't work since index is pami_type_t.
+  //      A map can be used instead.. not sure how much
+  //      performance gain of a map over switch if any.
+  switch(f)
+  {
+    case PAMI_TYPE_SIGNED_CHAR:
+      return FCA_DTYPE_CHAR;
+      break;
+    case PAMI_TYPE_SIGNED_SHORT:
+      return FCA_DTYPE_SHORT;
+      break;
+    case PAMI_TYPE_SIGNED_INT:
+      return FCA_DTYPE_INT;
+      break;
+    case PAMI_TYPE_SIGNED_LONG:
+      return FCA_DTYPE_LONG;
+      break;
+
+    case PAMI_TYPE_UNSIGNED_CHAR:
+      return FCA_DTYPE_UNSIGNED_CHAR;
+      break;
+    case PAMI_TYPE_UNSIGNED_SHORT:
+      return FCA_DTYPE_UNSIGNED_SHORT;
+      break;
+    case PAMI_TYPE_UNSIGNED_INT:
+      return FCA_DTYPE_UNSIGNED_INT;
+      break;
+    case PAMI_TYPE_UNSIGNED_LONG:
+      return FCA_DTYPE_UNSIGNED_LONG;
+      break;
+
+    case PAMI_TYPE_FLOAT:
+      return FCA_DTYPE_FLOAT;
+      break;
+    case PAMI_TYPE_DOUBLE:
+      return FCA_DTYPE_DOUBLE;
+      break;
+
+    case PAMI_TYPE_LOC_SHORT_INT:
+      return FCA_DTYPE_SHORT_INT;
+      break;
+    case PAMI_TYPE_LOC_2INT:
+      return FCA_DTYPE_2INT;
+      break;
+    case PAMI_TYPE_LOC_FLOAT_INT:
+      return FCA_DTYPE_FLOAT_INT;
+      break;
+/*  SSS: No equivalent in PAMI????
+    case PAMI_TYPE_LOC_LONG_INT:
+      return FCA_DTYPE_LONG_INT;
+      break;*/
+    case PAMI_TYPE_LOC_DOUBLE_INT:
+      return FCA_DTYPE_DOUBLE_INT;
+      break;
+
+    default:
       assert(0);
-    }
+      return -1;
+      break; 
+  }
 }
 static inline fca_reduce_op_t p_func_to_fca_op(pami_data_function d)
 {
   // TODO:  remove branching, use table
-  // TODO:  implement this function
+  // SSS: Table won't work since index is pami_data_function.
+  //      A map can be used instead.. not sure how much
+  //      performance gain of a map over switch if any.
+  switch(d)
+  {
+    case PAMI_DATA_MAX:
+      return FCA_OP_MAX;
+      break;
+    case PAMI_DATA_MIN:
+      return FCA_OP_MIN;
+      break;
+    case PAMI_DATA_SUM:
+      return FCA_OP_SUM;
+      break;
+    case PAMI_DATA_PROD:
+      return FCA_OP_PROD;
+      break;
+    case PAMI_DATA_LAND:
+      return FCA_OP_LAND;
+      break;
+    case PAMI_DATA_BAND:
+      return FCA_OP_BAND;
+      break;
+    case PAMI_DATA_LOR:
+      return FCA_OP_LOR;
+      break;
+    case PAMI_DATA_BOR:
+      return FCA_OP_BOR;
+      break;
+    case PAMI_DATA_LXOR:
+      return FCA_OP_LXOR;
+      break;
+    case PAMI_DATA_BXOR:
+      return FCA_OP_BXOR;
+      break;
+    case PAMI_DATA_MAXLOC:
+      return FCA_OP_MAXLOC;
+      break;
+    case PAMI_DATA_MINLOC:
+      return FCA_OP_MINLOC;
+      break;
+    default:
+      assert(0);
+      return -1;
+      break;
+  }
 }
 
 // TODO:  convert endpoint based roots to TASKS
