@@ -324,6 +324,32 @@ namespace PAMI
 
 	    _rm.init(id_client, id_context, progress);
 
+////////////////////////////////////////////////////////////////////////////////
+/// \env{bgq,PAMI_MEMORY_OPTIMIZED}
+/// Determines if PAMI should be configured for a restricted memory job. If
+/// not set PAMI will not be memory optimized and will consume memory as needed
+/// to provide the best performance.
+////////////////////////////////////////////////////////////////////////////////
+            _connection_array = NULL;
+            _enable_eager_connection_memory_optimization = false;
+            char *env;
+            if ((env = getenv("PAMI_MEMORY_OPTIMIZED")))
+            {
+              _enable_eager_connection_memory_optimization = true;
+            }
+            else
+            {
+              // --------------------------------------------------------------
+              // Initialize the deterministic packet connection array.
+              // --------------------------------------------------------------
+              size_t i, num_endpoints = _mapping.size() * _id_count;
+
+              pami_result_t mmrc;
+              mmrc = __global.heap_mm->memalign((void **) & _connection_array, 16, sizeof(void *) * num_endpoints);
+              PAMI_assertf(mmrc == PAMI_SUCCESS, "memalign failed for mu connection array, rc=%d\n", mmrc);
+              for (i = 0; i < num_endpoints; i++) _connection_array[i] = NULL;
+            }
+
             // ----------------------------------------------------------------
             // Initialize the MU Counter Pools for this context.
             // 1. Determine how many pools we need based on the number of
@@ -344,7 +370,6 @@ namespace PAMI
 ////////////////////////////////////////////////////////////////////////////////
 
             unsigned long numDynamicRouting = 64;
-            char *env;
             if ((env = getenv("PAMI_NUMDYNAMICROUTING"))) 
             {
               numDynamicRouting = strtoul(env, NULL, 0);
@@ -503,10 +528,18 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
-            PAMI_assert_debugf(_connection.find(index) != _connection.end(), "Error. _connection[%zu] was not previously set.\n", index);
-            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], (void *) NULL);      
-
-            _connection.erase(index);
+            if (unlikely(_enable_eager_connection_memory_optimization))
+            {
+              PAMI_assert_debugf(_connection_map.find(index) != _connection_map.end(), "Error. _connection[%zu] was not previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_map[index], (void *) NULL);
+              _connection_map.erase(index);
+            }
+            else
+            {
+              PAMI_assert_debugf(_connection_array[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_array[index], (void *) NULL);
+              _connection_array[index] = NULL;
+            }
           }
               
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
@@ -514,10 +547,18 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
-            PAMI_assert_debugf(_connection.find(index) != _connection.end(), "Error. _connection[%zu] was not previously set.\n", index);
-            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection[index]);      
-
-            return _connection[index];
+            if (unlikely(_enable_eager_connection_memory_optimization))
+            {
+              PAMI_assert_debugf(_connection_map.find(index) != _connection_map.end(), "Error. _connection[%zu] was not previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection_map[index]);
+              return _connection_map[index];
+            }
+            else
+            {
+              PAMI_assert_debugf(_connection_array[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection_array[index]);
+              return _connection_array[index];
+            }
           }
 
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
@@ -525,10 +566,18 @@ namespace PAMI
           {
             size_t index = task * _id_count + offset;
 
-            PAMI_assert_debugf(_connection.find(index) == _connection.end(), "Error. _connection[%zu] was previously set.\n", index);
-            TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection[index], value);      
-
-            _connection[index] = value;
+            if (unlikely(_enable_eager_connection_memory_optimization))
+            {
+              PAMI_assert_debugf(_connection_map.find(index) == _connection_map.end(), "Error. _connection[%zu] was not previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_map[index], value);
+              _connection_map[index] = value;
+            }
+            else
+            {
+              PAMI_assert_debugf(_connection_array[index] == NULL, "Error. _connection[%zu] was previously set.\n", index);
+              TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_array[index], value);
+              _connection_array[index] = value;
+            }
           }
 
           inline pami_result_t destroy ()
@@ -1244,9 +1293,11 @@ namespace PAMI
 	  void *            _mu_context_cookie;
 
         // -------------------------------------------------------------
-        // Deterministic packet interface connection container
+        // Deterministic packet interface connection containers
         // -------------------------------------------------------------
-        std::map<size_t,void*> _connection;
+        void **                _connection_array;
+        std::map<size_t,void*> _connection_map;
+        bool _enable_eager_connection_memory_optimization;
 	
         CounterPool *_counterPool;
         size_t       _numCounterPools;
