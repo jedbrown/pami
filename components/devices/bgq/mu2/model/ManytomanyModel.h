@@ -177,20 +177,70 @@ namespace PAMI
 
           pt2pt.Hints_ABCD = 0;
           pt2pt.Skip       = 8;
-          pt2pt.Misc1 =
-          MUHWI_PACKET_USE_DYNAMIC_ROUTING |
-          MUHWI_PACKET_DO_NOT_DEPOSIT |
-          MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
-          pt2pt.Misc2 =
-          MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC | MUHWI_PACKET_ZONE_ROUTING_1;
 
+	  uint32_t routing = MUHWI_PACKET_USE_DYNAMIC_ROUTING;
+	  uint32_t zone = MUHWI_PACKET_ZONE_ROUTING_1;
+	  uint32_t vc = MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC;
+	  //Check for DD1 (set routing to deterministic in DD1)
+
+	  if (__global.mapping.size() > 512)
+	    zone = MUHWI_PACKET_ZONE_ROUTING_0;
+
+	  bool isDD2 = true;
+	  // Determine if this is running on DD2 hardware
+	  uint32_t pvr; // Processor version register
+	  int rc;
+	  rc = Kernel_GetPVR( &pvr );
+	  assert(rc==0);
+	  if ( pvr == SPRN_PVR_DD1 )
+	    isDD2 = false;
+	  else
+	    isDD2 = true;
+
+	  if (!isDD2) {
+	    //printf("DD1 Hardware: use deterministic routing for M2M\n");
+	    zone = 0;
+	    routing = MUHWI_PACKET_USE_DETERMINISTIC_ROUTING;
+	    vc = MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;
+	  }
+	  else { //DD2
+	    char *key = getenv ("PAMI_M2M_ROUTING");
+	    if(key != NULL && strcasecmp(key, "DETERMINISTIC") == 0){
+	      zone = 0;
+	      routing = MUHWI_PACKET_USE_DETERMINISTIC_ROUTING;
+	      vc = MUHWI_PACKET_VIRTUAL_CHANNEL_DETERMINISTIC;    
+	    }
+	    else {
+	      key = getenv ("PAMI_M2M_ZONE");
+	      if(key != NULL && strcasecmp(key, "0") == 0)
+		zone = MUHWI_PACKET_ZONE_ROUTING_0;
+	      else if(key != NULL && strcasecmp(key, "1") == 0)
+		zone = MUHWI_PACKET_ZONE_ROUTING_1;
+	      else if(key != NULL && strcasecmp(key, "2") == 0)
+		zone = MUHWI_PACKET_ZONE_ROUTING_2;
+	      else if(key != NULL && strcasecmp(key, "3") == 0)
+		zone = MUHWI_PACKET_ZONE_ROUTING_3;
+	    }
+	  }
+
+	  char *key = getenv("PAMI_VERBOSE");
+	  if ( key != NULL && (strcmp(key, "0")!=0) ) 
+	    printf ("Configure manytomany with routing %s zone %d\n",
+		    (routing == MUHWI_PACKET_USE_DETERMINISTIC_ROUTING)? "DETERMINISTIC":"DYNAMIC",
+		    zone>>3 /*convert zone to [0-3]*/);
+	  
+          pt2pt.Misc1 = routing |
+	    MUHWI_PACKET_DO_NOT_DEPOSIT |
+	    MUHWI_PACKET_DO_NOT_ROUTE_TO_IO_NODE;
+	  
+          pt2pt.Misc2 = vc | zone; 
           _modeldesc.setPt2PtFields (&pt2pt);
           _modeldesc.setDataPacketType (MUHWI_PT2PT_DATA_PACKET_TYPE);
           _modeldesc.PacketHeader.NetworkHeader.pt2pt.Byte8.Size = 16;
 
-          // --------------------------------------------------------------------
+          // ---------------------------------------------------------
           // Set the common memory fifo descriptor fields
-          // --------------------------------------------------------------------
+          // ---------------------------------------------------------
           MUSPI_MemoryFIFODescriptorInfoFields_t memfifo;
           memset ((void *)&memfifo, 0, sizeof(memfifo));
 
