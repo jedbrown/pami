@@ -88,8 +88,8 @@ public:
 
 const fca_reduce_op_t    _fca_reduce_op_tbl[PAMI_OP_COUNT] =
   {
-    -1                         /*PAMI_COPY*/,
-    -1                         /*PAMI_NOOP*/,
+    (fca_reduce_op_t)-1        /*PAMI_COPY*/,
+    (fca_reduce_op_t)-1        /*PAMI_NOOP*/,
     FCA_OP_MAX                 /*PAMI_MAX*/,
     FCA_OP_MIN                 /*PAMI_MIN*/,
     FCA_OP_SUM                 /*PAMI_SUM*/,
@@ -111,43 +111,41 @@ const fca_reduce_dtype_t _fca_reduce_dtype_tbl[PAMI_DT_COUNT] =
     FCA_DTYPE_SHORT            /*PAMI_SIGNED_SHORT*/,
     FCA_DTYPE_INT              /*PAMI_SIGNED_INT*/,
     FCA_DTYPE_LONG             /*PAMI_SIGNED_LONG*/,
-    -1                         /*PAMI_SIGNED_LONG_LONG*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_SIGNED_LONG_LONG*/,
 
     FCA_DTYPE_UNSIGNED_CHAR    /*PAMI_UNSIGNED_CHAR*/,
     FCA_DTYPE_UNSIGNED_SHORT   /*PAMI_UNSIGNED_SHORT*/,
-    FCA_DTYPE_UNSIGNED_INT     /*PAMI_UNSIGNED_INT*/,
+    FCA_DTYPE_UNSIGNED         /*PAMI_UNSIGNED_INT*/,
     FCA_DTYPE_UNSIGNED_LONG    /*PAMI_UNSIGNED_LONG*/,
-    -1                         /*PAMI_UNSIGNED_LONG_LONG*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_UNSIGNED_LONG_LONG*/,
 
     FCA_DTYPE_FLOAT            /*PAMI_FLOAT*/,
     FCA_DTYPE_DOUBLE           /*PAMI_DOUBLE*/,
-    -1                         /*PAMI_LONG_DOUBLE*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_LONG_DOUBLE*/,
 
-    -1                         /*PAMI_LOGICAL*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_LOGICAL*/,
 
-    -1                         /*PAMI_SINGLE_COMPLEX*/,
-    -1                         /*PAMI_DOUBLE_COMPLEX*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_SINGLE_COMPLEX*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_DOUBLE_COMPLEX*/,
 
     FCA_DTYPE_2INT             /*PAMI_LOC_2INT*/,
-    -1                         /*PAMI_LOC_2FLOAT*/,
-    -1                         /*PAMI_LOC_2DOUBLE*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_LOC_2FLOAT*/,
+    (fca_reduce_dtype_t)-1     /*PAMI_LOC_2DOUBLE*/,
     FCA_DTYPE_SHORT_INT        /*PAMI_LOC_SHORT_INT*/,
     FCA_DTYPE_FLOAT_INT        /*PAMI_LOC_FLOAT_INT*/,
     FCA_DTYPE_DOUBLE_INT       /*PAMI_LOC_DOUBLE_INT*/
   };
 
 
-static inline fca_reduce_dtype_t p_dtype_to_fca_dtype(pami_type_t f)
+static inline fca_reduce_dtype_t p_dtype_to_fca_dtype(pami_dt dt)
 {
-  pami_dt primitive = (TypeCode *)f->GetPrimitive();
-  PAMI_assert(primitive < PAMI_DT_COUNT);
-  fca_reduce_dtype_t fca_dt = _fca_reduce_dtype_tbl[primitive];
+  PAMI_assert(dt < PAMI_DT_COUNT);
+  fca_reduce_dtype_t fca_dt = _fca_reduce_dtype_tbl[dt];
   PAMI_assert(fca_dt != -1);
   return fca_dt;
 }
-static inline fca_reduce_op_t p_func_to_fca_op(pami_data_function d)
+static inline fca_reduce_op_t p_func_to_fca_op(pami_op op)
 {
-  pami_op op = (pami_op)d;
   PAMI_assert(op < PAMI_OP_COUNT);
   fca_reduce_op_t fca_op = _fca_reduce_op_tbl[op];
   PAMI_assert(fca_op != -1);
@@ -155,6 +153,8 @@ static inline fca_reduce_op_t p_func_to_fca_op(pami_data_function d)
 }
 
 // TODO:  convert endpoint based roots to TASKS
+// TODO:  call pami callback
+// TODO:  figure out progress function details
 // --------------  FCA Reduce wrapper classes -------------
 template <class T_Geometry>
 class FCAReduceExec:public FCAComposite<T_Geometry>
@@ -176,12 +176,15 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_reduce_t *cmd = &(xfer->cmd.xfer_reduce);
+      uintptr_t      dt,op;
+      PAMI::Type::TypeFunc::GetEnums(cmd->stype,cmd->op,
+                                     dt,op);
       _spec.root     = cmd->root;
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
-      _spec.dtype    = p_dtype_to_fca_dtype(cmd->stype);
+      _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
       _spec.length   = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
-      _spec.op       = p_func_to_fca_op(cmd->op);
+      _spec.op       = p_func_to_fca_op((pami_op)op);
     }
 private:
   fca_reduce_spec_t  _spec;
@@ -208,12 +211,15 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allreduce_t *cmd = &(xfer->cmd.xfer_allreduce);
+      uintptr_t         dt,op;
+      PAMI::Type::TypeFunc::GetEnums(cmd->stype,cmd->op,
+                                     dt,op);
       _spec.root     = -1; // ? this ok?
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
-      _spec.dtype    = p_dtype_to_fca_dtype(cmd->stype);
+      _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
       _spec.length   = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
-      _spec.op       = p_func_to_fca_op(cmd->op);
+      _spec.op       = p_func_to_fca_op((pami_op)op);
     }
 private:
   fca_reduce_spec_t _spec;
