@@ -224,9 +224,10 @@ namespace PAMI
 	  }
 
 	  char *key = getenv("PAMI_VERBOSE");
-	  if ( key != NULL && (strcmp(key, "0")!=0) ) 
-	    printf ("Configure manytomany with routing %s zone %d\n",
-		    (routing == MUHWI_PACKET_USE_DETERMINISTIC_ROUTING)? "DETERMINISTIC":"DYNAMIC",
+	  if (__global.mapping.task() == 0)
+	    if ( key != NULL && (strcmp(key, "0")!=0) ) 
+	      printf ("Configure manytomany with routing %s zone %d\n",
+		      (routing == MUHWI_PACKET_USE_DETERMINISTIC_ROUTING)? "DETERMINISTIC":"DYNAMIC",
 		    zone>>3 /*convert zone to [0-3]*/);
 	  
           pt2pt.Misc1 = routing |
