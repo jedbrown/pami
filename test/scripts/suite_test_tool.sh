@@ -225,8 +225,10 @@ initCornerArray ()
     local block=$1   # block to be allocated
     local subSize=$2 # size of each subblock 
     local NodeLookupArray=( J00 J01 J12 J13 J29 J28 J17 J16 J04 J05 J08 J09 J25 J24 J21 J20 )
-    local NodeLookupArray16=( J07 J06 J11 J10 J26 J27 J22 J23 J03 J02 J15 J14 J30 J31 J18 J19 )
-
+    local NodeLookupArray16E=( J07 J06 J11 J10 J26 J27 J22 J23 J03 J02 J15 J14 J30 J31 J18 J19 ) # 2x2x2x2x1
+    local NodeLookupArray8AE=( J29 J26 J28 J27 J17 J22 J16 J23 J00 J07 J01 J06 J12 J11 J13 J10 J25 J30 J24 J31 J21 J18 J20 J19 J04 J03 J05 J02 J08 J15 J09 J14 J11 J22 J12 J17 J26 J07 J29 J00 J26 J07 J29 J00 J23 J10 J16 J13 ) # 1x2x2x2x1
+    local NodeLookupArray4ABE=( J03 J30 J04 J25 J02 J31 J05 J24 J15 J18 J08 J21 J14 J19 J09 J20 J30 J03 J25 J04 J31 J02 J24 J05 J18 J15 J21 J08 J19 J14 J20 J09 J07 J26 J00 J29 J06 J27 J01 J28 J10 J23 J13 J16 J27 J06 J28 J01 J22 J11 J17 J12  ) # 1x1x2x2x1
+    local NodeLookupArray2ABCE=( J01 J28 J02 J06 J31 J27 J05 J24 J00 J29 J03 J07 J30 J26 J24 J25 J13 J16 J14 J10 J19 J21 J09 J20 J12 J17 J15 J11 J18 J22 J08 J21 J28 J01 J31 J27 J02 J06 J24 J05 J29 J00 J30 J26 J03 J07 J25 J04 J16 J13 J19 J23 J14 J10 J20 J09 J17 J12 J18 J22 J15 J11 J21 J08 J24 J06 J02 J27 J31 J01 J28 J04 J25 J07 J03 J26 J30 J00 J29 J09 J20 J10 J14 J23 J19 J13 J16 J08 J21 J11 J15 J22 J18 J12 J17 J24 J05 J27 J31 J06 J02 J28 J01 J24 J05 J27 J31 J06 J02 J28 J01 J25 J04 J26 J30 J07 J03 J29 J00 J20 J09 J23 J19 J10 J14 J16 J13 J21 J08 J22 J18 J11 J15 J17 J12 ) # 1x1x1x2x1
     local midplaneList
     local myMidplane
     local myBoard
@@ -282,7 +284,7 @@ initCornerArray ()
 	echo "midplane(s):   ${midplaneList}"
 	echo "startingBoard: N${startingBoard}"
 	echo "last board:    N${lastBoard}"
-	echo "sub boards:    ${boardInc}"
+	echo "board inc:     ${boardInc}"
     fi
 
     for myMidplane in ${midplaneList}
@@ -303,14 +305,56 @@ initCornerArray ()
 		cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray[${boardIndex}]}"
 		cornerIndex=$(( ${cornerIndex} + 1 ))
 		
-		if [[ ${subSize} -eq 16 ]]
+		# Additional 16 node boundary corners
+		if (( ${subSize} < 32 ))
 		then 
-		    cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray16[${boardIndex}]}"
+		    cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray16E[${boardIndex}]}"
 		    cornerIndex=$(( ${cornerIndex} + 1 ))
 		fi
+		
+		# Additional 8 node boundary corners
+		if (( ${subSize} < 16 ))
+		then		    
+		    local MAX8board=$(( ${boardIndex} * 2 + 2 ))
+		    for (( Index8board=$(( ${boardIndex} * 2 )); Index8board < MAX8board; Index8board++ ))
+		    do
+			cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray8AE[${Index8board}]}"
+			cornerIndex=$(( ${cornerIndex} + 1 ))
+		    done
+		fi
+
+		# Additional 4 node boundary corners
+		if (( ${subSize} < 8 ))
+		then		    
+		    local MAX4board=$(( ${boardIndex} * 4 + 4 ))
+		    for (( Index4board=$(( ${boardIndex} * 4 )); Index4board < MAX4board; Index4board++ ))
+		    do
+			cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray4ABE[${Index4board}]}"
+			cornerIndex=$(( ${cornerIndex} + 1 ))
+		    done
+		fi
+
+		# Additional 2 node boundary corners
+		if (( ${subSize} < 4 ))
+		then		    
+		    local MAX2board=$(( ${boardIndex} * 8 + 8 ))
+		    for (( Index2board=$(( ${boardIndex} * 8 )); Index2board < MAX2board; Index2board++ ))
+		    do
+			cornerArray[${cornerIndex}]="${myMidplane}-N${myBoard}-${NodeLookupArray2ABCE[${Index2board}]}"
+			cornerIndex=$(( ${cornerIndex} + 1 ))
+		    done
+		fi		
+		
 	    fi
 	done
     done
+
+    # Ensure corner array is populated
+    if (( ${#cornerArray[@]} < 1 ))
+    then
+	echo "ERROR (E):  Corner array is empty!  Exiting ..."
+	exit 1
+    fi
 
     if (( debug > 0 ))
     then
@@ -771,7 +815,6 @@ local rank=""
 local tempSummary=""
 local evalSummary=""
 
- 
 # Verify standalone test
 if [[ ${evalSA} -eq 1 ]]
 then
@@ -796,7 +839,7 @@ else
     # Verify binary status from HW run
     if [[ "${run_type}" == 'hw' ]]
     then
-	if [[ -e ${testLog} ]]
+	if [[ -e ${testLog} ]] && (( $srun < 1 ))
 	then
 	    evalSignal=$( grep -a -i "ibm.runjob.client.job: .*exited with status" ${testLog} | awk '{print $NF}' )
 		
@@ -899,12 +942,18 @@ else
 		    evalSignal=${runSig}
 		fi
 	    fi
-	else # Log file DNE
+	else # Log file DNE || this was an srun
 	    if [[ ${runSig} -eq 0 ]] # *run* passed 
 	    then 
 		evalSignal=${runSubRC}
 	    else
 		evalSignal=${runSig}
+
+		case ${evalSignal} in
+		    6 ) evalSummary="Abort"
+			;;
+		    11 ) evalSummary="Seg fault"
+		esac
 	    fi
 	fi
     else # Verify binary status from Mambo, FPGA or MMCSLite run
@@ -979,6 +1028,7 @@ fi
 
 eval ${outLogSigVar}=${evalSignal}
 eval ${outLogSumVar}=\"$( echo ${evalSummary} | sed 's/"/\\"/g')\"
+
 
 return 0
 
@@ -1077,7 +1127,7 @@ runSA ()
 
     if [[ $? -ne 0 ]]
     then
-	echo "ERROR (E)::runSA:  cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runSA:  cd back to original dir FAILED!! Exiting ..."
 	exit 1
     fi
 
@@ -1152,6 +1202,25 @@ runHW ()
 	hput ${runENVHash} 'BG_SHAREDMEMSIZE' ${BG_SHAREDMEMSIZE}
     fi
 
+    # Create srun TaskProlog script (only thing that can write to the job's standard output or set extra environment variables for a job or job step)
+    local TaskProlog="${cwd}/TaskProlog.sh"
+
+    if (( ${srun} > 0 ))
+    then
+	{
+	  echo '#!/bin/sh'
+	  echo '#'
+	  echo 'if [ X"$SLURM_STEP_ID" = "X" -a X"$SLURM_PROCID" = "X"0 ]'
+	  echo 'then'
+	  echo 'echo "print =========================================="'
+	  echo 'echo "print SLURM_JOB_ID = $SLURM_JOB_ID"'
+	  echo 'echo "print SLURM_NODELIST = $SLURM_NODELIST"'
+	  echo 'echo "print =========================================="'
+	} >> ${TaskProlog}
+
+	# NOTE:  Add the final 'fi' after we've had a chance to add any ENV VARs
+    fi
+
     # Parse mpirun/runjob options
     # Determine which ENV vars need to be saved, updated and documented
     local env_name=""
@@ -1171,7 +1240,6 @@ runHW ()
 					  
 					  if [[ "${env_name}" != 'BG_PROCESSESPERNODE' && "${env_name}" != 'MPIRUN_MODE' ]]
 					  then
-
 					      # Update environment hash
 					      hput ${runENVHash} ${env_name} ${env_val}
 
@@ -1185,33 +1253,16 @@ runHW ()
 				      done
 
                                       # Remove -envs/--envs from $opts (we'll make our own)
-				      
-				      if [[ "${parm}" == '-envs' ]] # BGP
-					  then
+				      # Save off everything after "[-|--]envs"
+				      temp_opts=${opts##*${parm}}
 
-					  # Save off everything after "-envs"
-					  temp_opts=${opts##*-envs}
+				      # Set opts = everything before "[-|--]envs"
+				      opts=${opts%%${parm}*}
 
-				          # Set opts = everything before "-envs"
-					  opts=${opts%%-envs*}
-
-				          # Final opts string with -envs val removed
-					  if [[ "${temp_opts}" =~ '-' ]]
-					  then					 
-					      opts="${opts}-${temp_opts#*-}"
-					  fi
-				      else # BGQ
-					  # Save off everything after "--envs"
-					  temp_opts=${opts##*--envs}
-
-				          # Set opts = everything before "--envs"
-					  opts=${opts%%--envs*}
-
-				          # Final opts string with --envs val removed
-					  if [[ "${temp_opts}" =~ '--' ]]
-					  then					 
-					      opts="${opts}--${temp_opts#*--}"
-					  fi
+				      # Final opts string with [-|--]envs val removed
+				      if [[ "${temp_opts}" =~ '-' ]]
+				      then					 
+					  opts="${opts}-${temp_opts#*-}"
 				      fi
 				      ;;
 	    --include )               shift # to get include file path
@@ -1247,7 +1298,15 @@ runHW ()
 				      shift # to next option
 				      ;;  
 	    --python )                shift # to get python version
-		                      local pythonVer=$1
+		                      pythonVer=$1
+				      pythonBin="${pythonBase}/Python-${pythonVer}/bin/python${pythonVer:0:3}"
+
+				      if [[ ! -e "${pythonBin}" ]]
+				      then
+					  echo "ERROR (E)::runHW:  unsupported --python version: ${pythonVer} !!"
+					  echo "ERROR (E)::runHW:  ${pythonBin} DNE !!"
+					  runHW_rc=1
+				      fi
 
 				      # Cut this out of the options text so we don't send it to runjob
 				      # Save off everything after "--python"
@@ -1287,6 +1346,38 @@ runHW ()
 					  opts="${opts}--${temp_opts#*--}"
 				      fi
 
+				      shift # to next option
+				      ;;
+	    --timelimit | --timeout ) if (( ${srun} > 0 ))
+		                      then # Convert runfctest/runjob timeout (seconds) to srun timeout (mins)         
+				          local timeparm=$1
+					  shift # to get timeout value
+					  local timeval=$1
+
+				          # Cut --time[limit|out] <value> out of the options text 
+				          # Save off everything after "--time[limit|out]"
+				           temp_opts=${opts##*${timeparm}}
+
+				          # Set opts = everything before "--time[limit|out]"
+				          opts=${opts%%${timeparm}*}
+
+				          # Final opts string with --time[limit|out] <value> removed
+				          if [[ "${temp_opts}" =~ '--' ]]
+				          then					 
+					      opts="${opts}--${temp_opts#*--}"
+					  fi
+          
+					  # Convet timeout val from seconds to minutes
+					  if (( ${timeval} < 60 ))
+					  then
+					      timeval=1
+					  else
+					      timeval=$(( ${timeval} / 60 ))
+					  fi
+					  
+					  # Append srun time parm and value to opts string
+					  opts="${opts} --time=${timeval}"
+				      fi
 				      shift # to next option
 				      ;;
 	    * )                       # Goto the next value
@@ -1476,15 +1567,24 @@ runHW ()
         # verbose
 	if [[ ! "${opts}" =~ '--verbose' ]] 
 	then
-	    opts="${opts} --verbose INFO"
+	    if (( ${srun} > 0 ))
+	    then
+		opts="${opts} --verbose"
+	    else
+		opts="${opts} --verbose INFO"
+	    fi
 	fi
 
 	# timeout
-	if (( ${timeOut} > 0 )) && [[ ! "${opts}" =~ '--timeout' ]] 
+	if (( ${timeOut} > 0 )) && [[ ! "${opts}" =~ '--time' ]] 
 	then
-	    opts="${opts} --timeout ${timeOut}"
+	    if (( ${srun} > 0 ))
+	    then
+		opts="${opts} --time=${timeOut}"
+	    else
+		opts="${opts} --timeout ${timeOut}"
+	    fi
 	fi
-
     fi
 
     # Save off the current directory
@@ -1504,21 +1604,40 @@ runHW ()
 	echo "PPCFLOOR = ${run_floor}"
     } >> ${logFile}
 
-    # Print ENV vars to log and create -envs/--envs parm
+    # Print any cmd line env vars to log with value from current shell	
+    for ((envIndex=0; envIndex < ${#cmdlineEnvArray[@]}; envIndex++))
+    do
+	# Grab actual env var value from shell
+	eval echo "${cmdlineEnvArray[${envIndex}]%=*} = \$${cmdlineEnvArray[${envIndex}]%=*}" >> ${logFile}
+    done
+
+    # Print testlist ENV vars to log and edit TaskProlog file (srun) or create -envs/--envs parm (runjob)
     while read xename xeval
     do
-	echo "${xename} = ${xeval}" >> ${logFile}
-
 	if [[ "${xeval}" != "" ]]
 	then
-	    if [[ "${envs}" == "" ]]
+	    echo "${xename} = ${xeval}" >> ${logFile}
+
+	    if (( ${srun} > 0 ))
 	    then
-		envs="${xename}=${xeval}"
+		echo "echo \"export ${xename}=${xeval}\"" >> ${TaskProlog}
 	    else
-		envs="$envs ${xename}=${xeval}"
+		if [[ "${envs}" == "" ]]
+		then
+		    envs="${xename}=${xeval}"
+		else
+		    envs="${envs} ${xename}=${xeval}"
+		fi
 	    fi
 	fi
     done < ${runENVHash}
+
+    # Now we can finalize and chmod the TaskProlog file for srun
+    if (( ${srun} > 0 ))
+    then
+	echo 'fi' >> ${TaskProlog}
+	`chmod 777 ${TaskProlog}`
+    fi
 
     echo "SERVER ID = ${serverID}" >> ${logFile}
 
@@ -1571,17 +1690,18 @@ runHW ()
     else # Create BGQ run command
         # Remove "'s from args string if they exist
 #         args=$( echo $args | sed 's/"//g' ) 
-
-        # === Use ./${exe} until Issue 3041 is fixed ===
-	# Is this a python run?
-	
-	if [[ "${pythonVer}" != '0' ]]
+  	
+	if (( ${srun} > 0 ))
 	then
-	    pythonBin="${pythonBase}/Python-${pythonVer}/bin/python${pythonVer:0:3}"
-
-	    runCmd="${runjob} --cwd ${cwd} --exe ${pythonBin} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	    runCmd="srun --chdir=${cwd} --ntasks=${HWProcs} --ntasks-per-node=${HWMode} --task-prolog=${TaskProlog} --quit-on-interrupt"
 	else
-	    runCmd="${runjob} --cwd ${cwd} --exe ${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	    # Is this a python run?
+	    if [[ "${pythonVer}" != '0' ]]
+	    then		
+		runCmd="${runjob} --cwd ${cwd} --exe ${pythonBin} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	    else
+		runCmd="${runjob} --cwd ${cwd} --exe ${exe} --np ${HWProcs} --ranks-per-node ${HWMode} --block ${HWBlock}"
+	    fi
 	fi
 
 	# Add ENV vars
@@ -1596,10 +1716,25 @@ runHW ()
 	    runCmd="${runCmd} ${opts}"
 	fi
 
+	# Add exe (srun only): exe and exe args must be last entries
+	if (( ${srun} > 0 ))
+	then
+	    if [[ "${pythonVer}" != '0' ]]
+	    then
+		runCmd="${runCmd} ${pythonBin}"
+	    else
+		runCmd="${runCmd} ${exe}"
+	    fi
+	fi
 	# Add args
 	if [[ "${runjobArgs}" != "" ]]
 	then
-	    runCmd="${runCmd} --args ${runjobArgs}"
+	    if (( $srun > 0 ))
+	    then
+		runCmd="${runCmd} ${args}"
+	    else
+		runCmd="${runCmd} --args ${runjobArgs}"
+	    fi
 	fi
 
 	# Add stdin file
@@ -1617,16 +1752,18 @@ runHW ()
 
     local runStatus=0
 
+    echo ${runCmd} 2>&1 | tee -a ${logFile}
+
     if [[ ${quietly} -eq 1 ]]
     then
-	echo ${runCmd} >> ${logFile} 2>&1
+#	echo ${runCmd} >> ${logFile} 2>&1
 	if [[ ${debug} -eq 0 ]]
 	then
 	    eval ${runCmd} >> ${logFile} 2>&1
 	    runStatus=($( echo ${PIPESTATUS[*]} ))
 	fi
     else
-	echo ${runCmd} 2>&1 | tee -a ${logFile}
+#	echo ${runCmd} 2>&1 | tee -a ${logFile}
 	if [[ ${debug} -eq 0 ]]
 	then
 	    eval ${runCmd} 2>&1 | tee -a ${logFile}
@@ -1641,14 +1778,16 @@ runHW ()
     local elapsed_seconds="$((${after} - ${before}))" # Needs to be a string
     eval ${elapsedTimeVar}=$(date -d "1970-01-01 ${elapsed_seconds} seconds" +%T)
 
-    if [[ ${debug} -eq 1 ]]
+    if (( ${debug} > 0 ))
     then
 	if [[ "${platform}" == 'bgq' ]]
 	then
 	    for ((i=0; i < ${HWNodes}; i++))
 	      do
-	      echo 'Software Test PASS. 0' >> ${logFile}
+	      echo 'Software Test PASS. 0' >> ${logFile} # Mambo, FPGA or MMCSLite
 	    done
+	    
+	    echo 'ibm.runjob.client.Job: exited with status 0' >> ${logFile} # runjob
 	fi
 
 	declare -a runStatus; runStatus[0]=0; runStatus[1]=0
@@ -1736,14 +1875,16 @@ runHW ()
 		fi
 
 		# Check validate_cksum results
-		if (( ${runHW_rc} < 1 ))
+		if (( ${runHW_rc} < 1 && $( grep -a -c 'no errors' ${logFile} ) < 1 )) 
 		then
-		    local miscompares=$( grep -a -c 'not same' ${logFile} )
-		    if (( ${miscompares} > 1 ))
+
+		    runHW_rc=1
+
+		    local miscompares=$( grep -a -c 'mismatch' ${logFile} )
+		    if (( ${miscompares} > 0 ))
 		    then
-			runHW_rc=1
 			echo "ERROR (E)::runHW:  validate_cksum found ${miscompares} differences!!"
-		    fi
+		    fi  
 		fi		
 	    fi # end cksumFile cp/validate
 	else # cksumFile DNE
@@ -1773,7 +1914,7 @@ runHW ()
 	    medcommtime=`grep -e "median  communication time =" mpi_profile.0 | sed "s|  *| |g" | cut -d " " -f 6`
 	    maxcommtime=`grep -e "maximum communication time =" mpi_profile.0 | sed "s|  *| |g" | cut -d " " -f 6`
 	    totelaptime=`grep -e "total elapsed time       =" mpi_profile.0 | sed "s|  *| |g" | cut -d " " -f 5`
-	    echo "Comm time: min med max tot: $mincommtime $medcommtime $maxcommtime $totelaptime" | tee -a $logFile
+	    echo "Comm time: min med max tot: $mincommtime $medcommtime $maxcommtime $totelaptime" | tee -a ${logFile}
 	    cat mpi_profile.* | sed -e "s|^|MPI_PROFILE: |g" >> ${logFile}
 	    rm -f mpi_profile.*
 	fi
@@ -1871,7 +2012,7 @@ runHW ()
 
     if [[ $? -ne 0 ]]
     then
-	echo "ERROR (E)::runHW:  cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runHW:  cd back to original dir FAILED!! Exiting ..."
 	exit 1
     fi
 
@@ -1917,10 +2058,10 @@ exe_preProcessing ()
     local maxNPVar=$( echo $5 | awk '{print $7}' )
     local maxRPNVar=$( echo $5 | awk '{print $8}' )
 
-    local eppNodes=$orgNodes
-    local eppMode=$orgMode
-    local eppNP=$orgNP
-    local eppThreads=$orgThreads
+    local eppNodes=${orgNodes}
+    local eppMode=${orgMode}
+    local eppNP=${orgNP}
+    local eppThreads=${orgThreads}
 
     local OpenMP=0
     local eppMaxNP=0
@@ -1937,15 +2078,20 @@ exe_preProcessing ()
     then
 	if [[ "${run_type}" == 'hw' ]]
 	then
-	    runScript=$runjob
+	    if (( ${srun} > 0 ))
+	    then
+		runScript='srun'
+	    else	
+		runScript=${runjob}
 
-	    # If "--timelimit" option exists, change it to "--timeout"
-	    opts=$( echo $opts | sed -e 's/--timelimit/--timeout/g' )
+	        # If "--timelimit" option exists, change it to "--timeout"
+		opts=$( echo ${opts} | sed -e 's/--timelimit/--timeout/g' )
+	    fi
 	else
 	    runScript=$runfctest
 
 	    # If "--timeout" option exists, change it to "--timelimit"
-	    opts=$( echo $opts | sed -e 's/--timeout/--timelimit/g' )
+	    opts=$( echo ${opts} | sed -e 's/--timeout/--timelimit/g' )
 	fi
     fi
 
@@ -2315,7 +2461,7 @@ exe_preProcessing ()
     eval $maxNPVar=$eppMaxNP
     eval $maxRPNVar=$eppMaxRPN
 
-    # Update BG_SHAREDMEMSIZE ...default is 0, but it must be > 0 if mode is > 1 (for MPI apps)
+    # Update BG_SHAREDMEMSIZE ...default is 32, but it must be >= 64  if mode is > 1 (for MPI apps)
 
     if (( $eppMode > 1 )) && (( $BG_SHAREDMEMSIZE < 1 ))  
     then # set BG_SHAREDMEMSIZE to 64
@@ -2544,19 +2690,19 @@ runSim ()
 	echo "PAMI_DEVICE = ${PAMI_DEVICE}"
 	echo "BG_MEMSIZE = ${BG_MEMSIZE}"
 	echo "BG_SHAREDMEMSIZE = ${BG_SHAREDMEMSIZE}"
-    } >> $logFile
+    } >> ${logFile}
 
     for ((var=0; var < ${#ENV_VAR_ARRAY[@]}; var++))
       do
       if [[ "${ENV_VAR_ARRAY[$var]}" != 'BG_PROCESSESPERNODE' && "${ENV_VAR_ARRAY[$var]}" != 'PAMI_DEVICE' && "${ENV_VAR_ARRAY[$var]}" != 'BG_MEMSIZE' && "${ENV_VAR_ARRAY[$var]}" != 'BG_SHAREDMEMSIZE' ]]
       then
-	  echo "${ENV_VAR_ARRAY[$var]} = ${ENV_VAL_ARRAY[$var]}" >> $logFile 
+	  echo "${ENV_VAR_ARRAY[$var]} = ${ENV_VAL_ARRAY[$var]}" >> ${logFile} 
       fi
     done
 
-    echo "SERVER ID = ${serverID}" >> $logFile
+    echo "SERVER ID = ${serverID}" >> ${logFile}
 
-    echo "" >> $logFile
+    echo -e "\n" >> ${logFile}
 
     # Change to the working directory and run the test
     changeDir $cwd
@@ -2585,19 +2731,21 @@ runSim ()
 
     local runStatus=0
 
-    if [ $quietly -eq 1 ]]
+    echo $runCmd 2>&1 | tee -a ${logFile}
+
+    if [ ${quietly} -eq 1 ]]
     then
-	echo $runCmd >> $logFile 2>&1
+#	echo $runCmd >> ${logFile} 2>&1
 	if [[ ${debug} -eq 0 ]]
 	then
-	    eval $runCmd >> $logFile 2>&1
+	    eval $runCmd >> ${logFile} 2>&1
 	    runStatus=($( echo ${PIPESTATUS[*]} ))
 	fi
     else
-	echo $runCmd 2>&1 | tee -a $logFile
+#	echo $runCmd 2>&1 | tee -a ${logFile}
 	if [[ ${debug} -eq 0 ]]
 	then
-	    eval $runCmd 2>&1 | tee -a $logFile
+	    eval $runCmd 2>&1 | tee -a ${logFile}
 	    runStatus=($( echo ${PIPESTATUS[*]} ))
 	fi
     fi
@@ -2624,16 +2772,16 @@ runSim ()
 	    mkdir -p "${fctestDir}"
 	    if [[ $? -ne 0 || ! -d "${fctestDir}" ]]
 	    then
-		echo "Creation of ${fctestDir} FAILED!!"
+		echo "Creation of ${fctestDir} FAILED!! Exiting ..."
 		exit 1
 	    fi
 
-	    echo "Test directory: ${fctestDir}" >> $logFile	
+	    echo "Test directory: ${fctestDir}" >> ${logFile}	
 	    echo 'Software Test PASS. 0' >> "${fctestDir}/std.out"
 	else
 	    for ((i=0; i < ${simNodes}; i++))
 	      do
-	      echo 'Software Test PASS. 0' >> $logFile
+	      echo 'Software Test PASS. 0' >> ${logFile}
 	    done
 	fi
 
@@ -2648,7 +2796,7 @@ runSim ()
 	echo "ERROR (E)::runSim:  Execution of ${exe} FAILED!!"
 	runSim_rc=${runStatus[0]}
     else # runCmd passed, let's check the logFile	
-	if [[ $quietly -eq 0 && ${runStatus[1]} -ne 0 ]] || [[ ! -e $logFile ]]
+	if [[ ${quietly} -eq 0 && ${runStatus[1]} -ne 0 ]] || [[ ! -e ${logFile} ]]
 	then
 	    echo "ERROR (E)::runSim:  FAILED to redirect output into ${logFile}!!"
 	    echo "ERROR (E)::runSim:  No way to verify test results!!"
@@ -2659,7 +2807,7 @@ runSim ()
     # Verify success/failure of binary itself for runMambo and runMmcsLite runs
 #    if [[ "${runSim_rc}" -eq 0 && "${type}" != 'runFpga' ]]
 #    then
-#	$(tail -10 $logFile | grep -a -q 'Software Test PASS')
+#	$(tail -10 ${logFile} | grep -a -q 'Software Test PASS')
 #       
 #	runSim_rc=$?
 #    fi
@@ -2680,7 +2828,7 @@ runSim ()
 
     if [[ $? -ne 0 ]]
     then
-	echo "ERROR (E)::runSim:  cd back to original dir FAILED!! Exiting."
+	echo "ERROR (E)::runSim:  cd back to original dir FAILED!! Exiting ..."
 	exit 1
     fi
 
@@ -2805,7 +2953,7 @@ logToWeb ()
     local xmlStatusVar=$9
 
     
-    if [[ "$logAction" == 'skip' ]]
+    if [[ "$logAction" == 'skip' ]] || (( ${srun} > 0 ))
     then
 	echo "Skip logging to web."
 	return 0
@@ -3081,7 +3229,7 @@ usage ()
     echo "                             Valid values: 1, 16, 32, 64, 128, 256, or 512."
     echo ""
     echo "-b | --block <block>         Block name for runjob."
-    echo "                             To run multiple jobs in parallel, surround space separated block list with \"\":"
+    echo "                             To run multiple jobs in parallel, surround space-separated block list with \"\":"
     echo "                             ex:  -b \"<block 1> <block 2> ..<block n>\""
     echo ""
     echo "                             To run subblocks in BGQ:"
@@ -3108,7 +3256,7 @@ usage ()
     echo "-cp | --copy                 Only copy binaries to bgusr exe dir. Can be combined with -c and/or -r."
     echo ""
     echo "-corner | --corner <corner>  Universal corner(s) for all blocks."
-    echo "                             To define multiple corners, surround space separated corner list with \"\":"
+    echo "                             To define multiple corners, surround space-separated corner list with \"\":"
     echo "                             ex:  --corner \"<corner 1> <corner 2> ..<corner n>\""
     echo ""
     echo "                             ex: -b \"R00-M0-N01 R00-M0-N02\" --corner J05"
@@ -3155,6 +3303,11 @@ usage ()
     echo "                                      ex: -email foo@us.ibm.com"
     echo "                                      ex: --email \"foo@us.ibm.com manchu@us.ibm.com\""
     echo ""
+    echo "-envs | --envs <pairs>       ENV variables to set for all runs in the testlist. Each ENV pair will be exported to the shell and printed into the logfile."
+    echo "                             NOTE:  For multiple ENV variables, surround space-separated list with \"\"."
+    echo "                                      ex:  -envs PAMI_COLLECTIVES=1"
+    echo "                                      ex:  --envs \"PAMI_COLLECTIVES=1 PAMI_BARRIER=I0:MultiSync2Device:SHMEM:GI\""
+    echo ""
     echo "-f | --fpga                  Directs copies to gsa exe dir and runs from gsa exe dir on fpga simulator."
     echo ""
     echo "-fam | --family              Decides what default values get set, including db_host, comp_base, testfile, etc"
@@ -3169,7 +3322,8 @@ usage ()
     echo "-g | --group <name>          Provide group name for logXml.sh. Time stamp will atomatically be appended by this script."
     echo "                                      ex: -g foo"
     echo "" 
-    echo "-gpfs | --gpfs               Use gpfs file server (/gpfs/ddn_sfa10k) for copy and run sections instead of default file server (/bgusr)."
+    echo "-gpfs | --gpfs <type>        Use gpfs file server (/gpfs/) for copy and run sections instead of default file server (/bgusr)."
+    echo "                             Valid values: bgq0 or ddn"
     echo ""
     echo "-gs | --group-scale          Appends nodes and mode to group name provided with -g | --group parm.  For scaling runs, multiple groups will be created and populated"
     echo "                                      ex: -g foo --group-scale -nn 2"
@@ -3200,7 +3354,7 @@ usage ()
 #    echo "-ise | --ignore-syserr       Not implemented."
 #    echo ""
     echo "-iob | --ioblock <ioblock>   I/O Block name for runjob."
-    echo "                             To specify multiple I/O blocks, surround space separated block list with \"\":"
+    echo "                             To specify multiple I/O blocks, surround space-separated block list with \"\":"
     echo "                             ex:  -iob \"<ioblock 1> <ioblock 2> ..<ioblock n>\""
     echo ""
     echo "-iorb | --ioreboot           Force I/O block reboot when CN is rebooted due to failure."
@@ -3215,7 +3369,7 @@ usage ()
     echo ""
     echo "-m | --mambo                 Directs copies to gsa exe dir and runs from gsa exe dir on mambo simulator."
     echo ""
-    echo "-mode <arg>                  Specify BGP mode to run in. Can be given as a space separated range for scaling purposes.  Command line value(s) will be trumped by -mode or -env MPIRUN_MODE in the input file unless -fs|--force-scaling is also used on the command line."
+    echo "-mode <arg>                  Specify BGP mode to run in. Can be given as a space-separated range for scaling purposes.  Command line value(s) will be trumped by -mode or -env MPIRUN_MODE in the input file unless -fs|--force-scaling is also used on the command line."
     echo "                             Valid values: SMP, DUAL & VN."
     echo "                             default: 1 rank per node"
     echo "                             ex:  -mode DUAL"
@@ -3225,7 +3379,7 @@ usage ()
     echo ""
     echo "-nofree | --nofree           Don't free block(s) after runs are completed (default is to free them)."
     echo ""
-    echo "-nn | --numnodes <arg>       Specify number of nodes to boot (required for multi-node runs with MMCS-Lite). Can be given as a space separated range for scaling purposes.  Command line value(s) will be trumped by --numnodes in the input file unless -fs|--force-scaling is also used on the command line."
+    echo "-nn | --numnodes <arg>       Specify number of nodes to boot (required for multi-node runs with MMCS-Lite). Can be given as a space-separated range for scaling purposes.  Command line value(s) will be trumped by --numnodes in the input file unless -fs|--force-scaling is also used on the command line."
     echo "                             default: 1 node"
     echo "                             ex:  --numnodes 2"
     echo "                             ex:  --nn \"4 16\" (scaling)"
@@ -3243,7 +3397,7 @@ usage ()
     echo ""
     echo "-q | --quiet )               Redirect runtime output (>>) instead of tee."
     echo ""
-    echo "-rpn | --ranks-per-node <arg> Specify \"mode\" to run in. Can be given as a space separated range for scaling purposes.  Command line value(s) will be trumped by --ranks-per-node in the input file unless -fs|--force-scaling is also used on the command line."
+    echo "-rpn | --ranks-per-node <arg> Specify \"mode\" to run in. Can be given as a space-separated range for scaling purposes.  Command line value(s) will be trumped by --ranks-per-node in the input file unless -fs|--force-scaling is also used on the command line."
     echo "                             Valid values: 1 - 64 in powers of 2:  1, 2, 4, 8, 16, 32 & 64."
     echo "                             default: 1 rank per node"
     echo "                             ex:  --ranks-per-node 2"
@@ -3301,6 +3455,16 @@ usage ()
     echo "--compile-only              Tells script that this binary is to only be compiled.  This test will be skipped during copy and run phases"
     echo "                             ex:  functional/se/microBenchmarks/hello_se.elf --compile-only"
     echo ""
+    echo "--exebase <path>            Specify trunk for this binary to be copied to and run from."
+    echo "                              hw default: /bgusr/<USER>/<sandbox>/bgq/exe/sst"
+    echo "                                      ex: /bgusr/alderman/bgq_svn/bgq/exe/sst" 
+    echo "                             sim default: /gsa/rchgsa/home/<USER0:1>/<USER1:1>/<USER>/<sandbox>/bgq/exe/sst"                                 
+    echo "                                      ex: /gsa/rchgsa/home/a/l/alderman/bgq_svn/bgq/exe/sst"
+    echo ""
+    echo "                            This option would mainly be used for file tests. For example:"
+    echo "                                bgqfile.elf --exebase /bgusr/alderman/bgq_svn/bgq/exe/sst"
+    echo "                                bgqfile.elf --exebase /gpfs/bgq0/alderman/bgq_svn/bgq/exe/sst" 
+    echo "                                bgqfile.elf --exebase /gpfs/ddn_sfa10k/alderman/bgq_svn/bgq/exe/sst"           
     echo "--include <file>            Tells script that this binary requires an input file."
     echo "                             Script will copy input file to run dir that gets created."
     echo "                             For clarity and simplicity, provide abs path of input file."
@@ -3449,16 +3613,18 @@ copyHash="/tmp/${USER}_hashmap.copy.${timestamp}"       # avoid recopies
 # Exe vars
 gsa_base="/gsa/rchgsa/home/${USER:0:1}/${USER:1:1}/${USER}"
 bgusr_base="/bgusr/${USER}"
-gpfs_base="/gpfs/ddn_sfa10k/${USER}"
-gpfs=0                           # 0 = default file server (bgusr_base), 1 = gpfs server (gpfs_base)
+gpfs_base=""                # bgq0 or ddn
+gpfs=0                      # 0 = default file server (bgusr_base), 1 = gpfs server
+lustre=0
+lustre_base="/lustre/${USER}"
 sandbox=""
 common_exe_dir=""
-exe_base=""
-pythonBase="/bgsys/tools"        # Dir where Python bins 1st diverge
+default_exe_base=""
+pythonBase="/bgsys/tools"   # Dir where Python bins 1st diverge
 user_outdir=0
 out_dir=""
 run_type='hw'
-run=2              # 0 = off, 1 = on, 2 = unset
+run=2                   # 0 = off, 1 = on, 2 = unset
 run_floor=""
 serverID="unknown"
 cmdLineNode=0           # User specified node value on command line 
@@ -3475,6 +3641,7 @@ block=""
 corner=""
 cmdlineShape=""
 sub_block=""
+srun=0
 runSnapbug=0            # Do not run snapbug after failed run
 freeBlock=0             # 1 = Free block after each test
 noFree=0                # 1 = Don't free blocks after execution phase (default is to free them)
@@ -3483,6 +3650,7 @@ fpga_queue=0
 temp_jobid=""           # Used to build common jobid between llsubmit and llq
 jobid=""                # Used by FPGA and HW runs
 mpich=0
+dynamic=0
 ignoreSysFails=0
 ioblockHash="/tmp/${USER}_hashmap.ioblocks.${timestamp}"   # list of I/O blocks currently booted by this run 
 bootBlockHash="/tmp/${USER}_hashmap.blocks.${timestamp}"   # list of CN blocks currently booted by this run 
@@ -3529,6 +3697,7 @@ while [ "${1}" != "" ]; do
                                 ;;
         -as | --autosub )       shift
 	                        autoSubGen=$1
+				declare -a cornerArray
 	                        declare -a nodeArray=($( echo $1 | sed 's/"//g' )) 
 				cmdLineNode=1
                                 ;;
@@ -3544,12 +3713,12 @@ while [ "${1}" != "" ]; do
 	                        comp_base=$1
                                 ;;
         -c | --compile )        compile=1
-	                        if [[ $copy -eq 2 ]]; then copy=0; fi
-	                        if [[ $run -eq 2 ]]; then run=0; fi
+	                        if [[ ${copy} -eq 2 ]]; then copy=0; fi
+	                        if [[ ${run} -eq 2 ]]; then run=0; fi
                                 ;;
         -cp | --copy )          copy=1
-	                        if [[ $compile -eq 2 ]]; then compile=0; fi
-	                        if [[ $run -eq 2 ]]; then run=0; fi
+	                        if [[ ${compile} -eq 2 ]]; then compile=0; fi
+	                        if [[ ${run} -eq 2 ]]; then run=0; fi
                                 ;;
         -corner | --corner )    shift
 	                        declare -a cornerArray=($( echo $1 | sed 's/"//g' ))
@@ -3565,19 +3734,19 @@ while [ "${1}" != "" ]; do
 	                        testNameLength=$1
 				if [[ "${testNameLength}" != 'short' &&  "${testNameLength}" != 'rel' ]]
 				then
-				    echo "ERROR (E):  Unknown display-name arg:  ${1}"
+				    echo "ERROR (E):  Unknown display-name arg:  ${1}. Exiting ..."
 				    usage
 				    exit 1
 				fi
                                 ;;
         -e | --exebase )        shift
-	                        exe_base=$1
+	                        default_exe_base=$1
                                 ;;
         -email | --email )      shift
 	                        emailAddr=$1
                                 ;;
         -envs | --envs )        shift
-	                        declare -a envArray=($( echo $1 | sed 's/"//g' ))
+	                        declare -a cmdlineEnvArray=($( echo $1 | sed 's/"//g' ))
                                 ;;
         -f | --fpga )           run_type='runFpga'
                                 ;;
@@ -3593,7 +3762,9 @@ while [ "${1}" != "" ]; do
         -g | --group )          shift
 	                        logGroup=$1
                                 ;;
-        -gpfs | --gpfs )        gpfs=1
+        -gpfs | --gpfs )        shift
+	                        gpfs_base=$1
+	                        gpfs=1
                                 ;;
         -gs | --group-scale )   groupScale=1
                                 ;;
@@ -3623,12 +3794,18 @@ while [ "${1}" != "" ]; do
 				    * )                     
 					echo "ERROR (E):  Unrecognized log value: ${1}"
 					echo "ERROR (E):  Valid values are:  skip, print & update"
+					echo "ERROR (E):  Exiting ..."
 					exit 1
 				esac
+                                ;;
+        -lustre | --lustre )    lustre=1
                                 ;;
         -m | --mambo )          run_type='runMambo'
                                 ;;
         -mpich | --mpich )      mpich=1
+                                ;;
+        -mpich-dyn | --mpich-dynamic ) mpich=1
+	                               dynamic=1
                                 ;;
         -nn | --numnodes )      shift
 	                        declare -a nodeArray=($( echo $1 | sed 's/"//g' )) 
@@ -3649,8 +3826,8 @@ while [ "${1}" != "" ]; do
         -q | --quiet )          quietly=1
                                 ;;
         -r | --run )            run=1
-	                        if [[ $compile -eq 2 ]]; then compile=0; fi
-	                        if [[ $copy -eq 2 ]]; then copy=0; fi
+	                        if [[ ${compile} -eq 2 ]]; then compile=0; fi
+	                        if [[ ${copy} -eq 2 ]]; then copy=0; fi
                                 ;;
 	-mode | -rpn | --ranks-per-node ) shift
 	                        declare -a modeArray=($( echo $1 | sed 's/"//g' | tr '[:lower:]' '[:upper:]' ))
@@ -3677,20 +3854,22 @@ while [ "${1}" != "" ]; do
                                 ;;
 	-snap | --snap )        runSnapbug=1
 	                        ;;
+	-srun | --srun )        srun=1
+	                        ;;
 	-to | --timeout )       shift
 	                        timeOut=$1
 				;;
 	-uncp | --uncopy )      unCopy=1
-	                        if [[ $compile -eq 2 ]]; then compile=0; fi
-				if [[ $copy -eq 2 ]]; then copy=0; fi
-	                        if [[ $run -eq 2 ]]; then run=0; fi
+	                        if [[ ${compile} -eq 2 ]]; then compile=0; fi
+				if [[ ${copy} -eq 2 ]]; then copy=0; fi
+	                        if [[ ${run} -eq 2 ]]; then run=0; fi
 				;;
         -v | --verbose )        verbose=1
                                 ;;
         -h | --help )           usage
                                 exit 0
                                 ;;
-        * )                     echo "ERROR (E):  Unknown option ${1}"
+        * )                     echo "ERROR (E):  Unknown option ${1}. Exiting ..."
                                 usage
                                 exit 1
     esac
@@ -3702,9 +3881,9 @@ done
 # =========================================================
 
 # Default is to run all sections:  compile, copy & execute
-if [[ $compile -eq 2 ]]; then compile=1; fi
-if [[ $copy -eq 2 ]]; then copy=1; fi
-if [[ $run -eq 2 ]]; then run=1; fi
+if [[ ${compile} -eq 2 ]]; then compile=1; fi
+if [[ ${copy} -eq 2 ]]; then copy=1; fi
+if [[ ${run} -eq 2 ]]; then run=1; fi
 
 # Verify Code Family and set up dir variables
 upperFamily=$( echo $codeFamily | awk '{print toupper($0)}' )
@@ -3757,6 +3936,7 @@ case $codeFamily in
     * )                     
 	echo "ERROR (E):  Unrecognized code family: ${codeFamily}"
 	echo "ERROR (E):  Valid values are:  pami & sst"
+	echo "ERROR (E):  Exiting ..."
 	exit 1
 esac 
 
@@ -3773,7 +3953,7 @@ then
 	then
 	    echo "ERROR (E):  Unrecognizd DB host: ${db_host} !!"
 	    echo "ERROR (E):  Valid values are:  sst & msg"
-	    echo "ERROR (E):  Exiting."
+	    echo "ERROR (E):  Exiting ..."
 	    exit 1
 	fi
     fi
@@ -3795,9 +3975,9 @@ fi
 
 # Verify compile base (default or user specified)
 # Don't check now for MPICH, because comm may not have been built yet
-if [[ $mpich -eq 0 ]] && [[ $compile -eq 1 || $copy -eq 1 ]] && [[ ! -d "${comp_base}" ]] 
+if [[ $mpich -eq 0 ]] && [[ ${compile} -eq 1 || ${copy} -eq 1 ]] && [[ ! -d "${comp_base}" ]] 
 then
-    echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting."
+    echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting ..."
     exit 1
 fi
 
@@ -3821,6 +4001,7 @@ case $platform in
     * )                     
 	echo "ERROR (E):  Unrecognized platform: ${platform}"
 	echo "ERROR (E):  Valid values are:  bgp, bgq, linux, mpi & percs"
+	echo "ERROR (E):  Exiting ..."
 	exit 1
 esac
 
@@ -3829,7 +4010,7 @@ shopt -u nocasematch
 
 # Compare user platform with existing Make.rules target
 # This check is for runtime too, but the location of Make.rules is too user specific
-if [[ "${codeFamily}" == "pami" && $mpich -eq 0 ]] && [[ $compile -eq 1 || $copy -eq 1 ]]
+if [[ "${codeFamily}" == "pami" && $mpich -eq 0 ]] && [[ ${compile} -eq 1 || ${copy} -eq 1 ]]
 then
     if [[ -e "${abs_rules_dir}/Make.rules" ]]
     then 
@@ -3837,7 +4018,7 @@ then
 	
 	if [[ $? -ne 0 || "${target}" == "" ]]
 	then
-	    echo "ERROR (E):  FAILED to determine current Make.rules target. Exiting."
+	    echo "ERROR (E):  FAILED to determine current Make.rules target. Exiting ..."
 	    exit 1
 	else
 	    if [[ "${platform}" != "${target}" ]]
@@ -3846,7 +4027,7 @@ then
 		echo "ERROR (E):  Run ../buildtools/configure manually from: $abs_rules_dir"
 		echo "ERROR (E):     or"
 		echo "ERROR (E):  Rerun sst_pami_verif.sh and append the -rc <floor> option."
-		echo "ERROR (E):  Exiting."
+		echo "ERROR (E):  Exiting ..."
 		exit 1
 	    fi
 	fi
@@ -3856,12 +4037,12 @@ then
 	echo "ERROR (E):  Run ../buildtools/configure manually from: $abs_pami_build_dir"
 	echo "ERROR (E):     or"
 	echo "ERROR (E):  Rerun sst_pami_verif.sh and append the -rc <floor> option."
-	echo "ERROR (E):  Exiting."
+	echo "ERROR (E):  Exiting ..."
 	exit 1
     fi
 fi
 
-# Set file to default based on input parms
+# Set input file to default based on input parms
 if [[ "${inputFile}" == "" ]]
 then
     if [[ $mpich -eq 1 ]]
@@ -3883,7 +4064,7 @@ fi
 # Ensure input file exists
 if [[ ! -e "${inputFile}" ]]
 then
-    echo "ERROR (E):  Input file: ${inputFile} DNE!! Exiting."
+    echo "ERROR (E):  Input file: ${inputFile} DNE!! Exiting ..."
 
     #ding ding ding
     if [[ A1 = A$ding ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
@@ -3908,13 +4089,23 @@ case "$serverID" in
 esac
 
 # Set exe_base to default if not specified
-if [[ "${exe_base}" == "" ]]
+if [[ "${default_exe_base}" == "" ]]
 then
 
     # Set common exe dir parm
-    if [[ $mpich -eq 1 || "${codeFamily}" == 'sst' ]]
+    if [[ "${codeFamily}" == 'sst' ]]
     then
-	common_exe_dir='bgq/exe/sst'
+	if (( $mpich > 0 ))
+	then
+	    if (( $dynamic > 0 ))
+	    then
+		common_exe_dir='bgq/exe/mpich-dynamic'
+	    else
+		common_exe_dir='bgq/exe/mpich'
+	    fi
+	else
+	    common_exe_dir='bgq/exe/sst'
+	fi
     else # pami
 	common_exe_dir="pami/${platform}/exe/test"
     fi
@@ -3931,38 +4122,57 @@ then
     sandbox=${temp_dir#*${USER}/}
 
     if [[ "${run_type}" == 'runMambo' || "${run_type}" == 'runFpga' ]]
-    then
-	exe_base="${gsa_base}/${sandbox}/${common_exe_dir}"
-    else
-	if [[ $gpfs -eq 1 ]]
+    then # Sim run
+	default_exe_base="${gsa_base}/${sandbox}/${common_exe_dir}"
+    else # HW run
+	if (( $gpfs > 0 ))
 	then
-	    exe_base="${gpfs_base}/${sandbox}/${common_exe_dir}"
+	    case $gpfs_base in
+		bgq0 )
+		    default_exe_base="/gpfs/bgq0/${USER}/${sandbox}/${common_exe_dir}"
+	    	    ;;
+		ddn )
+		    default_exe_base="/gpfs/ddn_sfa10k/${USER}/${sandbox}/${common_exe_dir}"
+		    ;;
+                *)
+		    echo "ERROR (E):  Invalid gpfs value: ${gpfs_base}"
+		    echo "ERROR (E):  Valid values:  bgq0 or ddn"
+		    # Exit if user wanted to copy or run"
+		    if (( ${copy} > 0 )) || (( ${run} > 0 ))
+		    then
+			echo "ERROR (E):  Exiting ..."
+			exit 1
+		    fi
+	    esac
+	elif (( $lustre > 0 ))
+	then
+	    default_exe_base="${lustre_base}/${sandbox}/${common_exe_dir}"
 	else
-	    exe_base="${bgusr_base}/${sandbox}/${common_exe_dir}"
+	    default_exe_base="${bgusr_base}/${sandbox}/${common_exe_dir}"
 	fi
     fi
 fi
 
 # Verify/Create the exe dir (default or user specified) if copying or running
-if [[ $copy -eq 1 || $run -eq 1 ]]
+if [[ ${copy} -eq 1 || ${run} -eq 1 ]]
 then
-    if [[ ! -d "${exe_base}" ]]
+    if [[ ! -d "${default_exe_base}" ]]
     then
-        # exe_base dir DNE
+        # default_exe_base dir DNE
         # Create if user plans to copy binaries during this run
-	if [[ $copy -eq 1 ]]
+	if [[ ${copy} -eq 1 ]]
 	then
-	    echo "Creating exe base ..."
-	    mkdir -p "${exe_base}"
+	    echo "Creating deafult exe base: ${default_exe_base} ..."
+	    mkdir -p "${default_exe_base}"
 
-	    if [[ $? -ne 0 || ! -d "${exe_base}" ]]
+	    if [[ $? -ne 0 || ! -d "${default_exe_base}" ]]
 	    then
-		echo "Creation of ${exe_base} FAILED!!"
+		echo "ERROR (E):  Creation of ${default_exe_base} FAILED!! Exiting ..."
 		exit 1
 	    fi
 	else # Fail if user only planned to run
 	    
-	    echo "ERROR (E):  Runtime dir: ${exe_base} DNE!! Exiting."
+	    echo "ERROR (E):  Runtime dir: ${default_exe_base} DNE!! Exiting ..."
 	    exit 1
 	fi
     fi
@@ -3971,7 +4181,7 @@ fi
 # Default number of nodes
 if (( ${#nodeArray[@]} < 1 )) # no value was provided through -nn | --numnodes and -as | --autosub cmdline parms
 then
-    if [[ $run -eq 1 && "${run_type}" == 'hw' ]] # executing binaries on hw using MMCS
+    if [[ ${run} -eq 1 && "${run_type}" == 'hw' ]] && (( ${srun} < 1 )) # executing binaries on hw using MMCS
     then # get default num nodes from user-defined shape (--shape or --block cmdline parm)
 	definedShape=''
 
@@ -4009,7 +4219,7 @@ then
 	    # Create block info command
 	    infoCmd="${blockInfoScript} -numNodes ${baseBlock}"
 
-	    echo $infoCmd
+	    echo ${infoCmd}
 
 	    if [[ ${debug} -ne 1 ]]
 	    then
@@ -4024,13 +4234,13 @@ then
 
 	    if [[ $infoRC -ne 0 ]]
 	    then # attempt to get block info failed
-		echo "ERROR (E):: ${infoCmd} FAILED with rc = ${infoRC} ...Exiting."
+		echo "ERROR (E):: ${infoCmd} FAILED with rc = ${infoRC}. Exiting ..."
 		exit 1
 	    fi
 	else # default to 1 
 	    nodeArray[0]=1
 	fi
-    else # compile, copy or sim run
+    else # compile, copy, sim run or srun
 	nodeArray[0]=1
     fi     
     
@@ -4042,10 +4252,13 @@ echo -e "\nENVIRONMENT VARIABLE DEFAULTS:"
 echo      "------------------------------"
 
 # Loop through defaults set by user with the -envs | --envs cmdline parm
-#for ((envIndex=0; envIndex < ${#envArray[@]}; envIndex++))
-#do
-# 
-#done
+for ((envIndex=0; envIndex < ${#cmdlineEnvArray[@]}; envIndex++))
+do
+    export ${cmdlineEnvArray[${envIndex}]}
+
+    # Grab actual value from shell
+    eval echo "${cmdlineEnvArray[${envIndex}]%=*} = \$${cmdlineEnvArray[${envIndex}]%=*}"
+done
 
 # Set "mode" ENV variable to default value
 if [[ "${platform}" == 'bgq' ]]
@@ -4061,7 +4274,7 @@ else # BGP
     then
 	export MPIRUN_MODE='SMP'
     fi
-
+    
     echo "MPIRUN_MODE = ${MPIRUN_MODE}"
 fi
 
@@ -4081,21 +4294,21 @@ else
 	for ((pmode=0; pmode < ${#modeArray[@]}; pmode++))
 	do
             # Get numerical version of mode
-	    bgp_mode_TexttoNum ${modeArray[$pmode]} numMode
+	    bgp_mode_TexttoNum ${modeArray[${pmode}]} numMode
 
 	    if [[ $? -ne 0 ]]
 	    then
-		echo "ERROR (E):  bgp_mode_TexttoNum subroutine FAILED!!"
+		echo "ERROR (E):  bgp_mode_TexttoNum subroutine FAILED!! Exiting ..."
 		exit 1
 	    else
-		modeArray[$pmode]=$numMode
+		modeArray[${pmode}]=${numMode}
 	    fi
 	done
     fi
 fi
 
 # --- BGQ Runtime defaults ---
-if [[ $run -eq 1 && "${platform}" == 'bgq' ]]
+if [[ ${run} -eq 1 && "${platform}" == 'bgq' ]]
 then
     # Set up memory ENV variables to default values
     # BG_MEMSIZE
@@ -4105,8 +4318,7 @@ then
     fi
 
     echo "BG_MEMSIZE = ${BG_MEMSIZE}"
-    
-    
+        
     # BG_SHAREDMEMSIZE
     if [[ "${BG_SHAREDMEMSIZE}" == "" ]]
     then 
@@ -4114,7 +4326,7 @@ then
 	then
 	    export BG_SHAREDMEMSIZE=64 
 	else
-	    export BG_SHAREDMEMSIZE=0 # since there isn't anyone to share with
+	    export BG_SHAREDMEMSIZE=32 # min value due to BGAPPAGENT
 	fi
     fi
 
@@ -4144,6 +4356,7 @@ then
 		* )
 		    echo "ERROR (E):  Unknown PAMI_DEVICE setting:  ${PAMI_DEVICE}"
 		    echo "ERROR (E):  Valid options for PAMI_DEVICE are: B, M or S"
+		    echo "ERROR (E):  Exiting ..."
 		    exit 1
 	    esac
 	fi
@@ -4169,49 +4382,49 @@ then
 #    cur_floor=$(readlink -e "${cur_base}/x86_64.floor" ) 
     cur_floor=$(readlink -e "/bgsys/bgq/drivers/x86_64.floor" ) # until x86 systems are updated
 else
-    echo "ERROR (E):  Unknown arch (${arch})!! Can't determine current floor. Exiting."
+    echo "ERROR (E):  Unknown arch (${arch})!! Can't determine current floor. Exiting ..."
     exit 1
 fi
 
 # Exit if readlink failed
 if [[ $? -ne 0 ]]
 then
-    echo "ERROR (E):  readlink command FAILED!! Can't determine current floor. Exiting."
+    echo "ERROR (E):  readlink command FAILED!! Can't determine current floor. Exiting ..."
     exit 1
 fi
 
 # Reconfigure tree to desired floor if specified
-if [[ $reconfigure -eq 1 ]]
+if (( ${reconfigure} > 0 ))
 then
     if [[ "${compile_floor}" == 'latest' ]]
     then
-	compile_floor=$cur_floor
+	compile_floor=${cur_floor}
     else # Ensure path passed to me is legit
 	if [[ ! -e "${compile_floor}" ]]
 	then
-	    echo "ERROR (E):  ${compile_floor} DNE!! Exiting."
+	    echo "ERROR (E):  ${compile_floor} DNE!! Exiting ..."
 	    exit 1
 	fi
     fi
  
-    reConfig $abs_rules_dir $compile_floor $platform $run_type $codeFamily
+    reConfig ${abs_rules_dir} ${compile_floor} ${platform} ${run_type} ${codeFamily}
     if [[ $? -ne 0 ]]
     then
-	echo "ERROR (E):  reConfig FAILED!! Exiting."
+	echo "ERROR (E):  reConfig FAILED!! Exiting ..."
 	exit 1
     fi
 else # Set compile floor to existing floor in Make.rules
-    if [[ $mpich -eq 1 || "${codeFamily}" == 'sst' ]]
+    if [[ ${mpich} -eq 1 || "${codeFamily}" == 'sst' ]]
     then
 	compile_floor=$(grep -a 'BGQ_FLOOR_DIR=' "${abs_bgq_dir}/Make.rules" | cut -d '=' -f2 )
-	compile_floor=$(readlink -e $compile_floor)
+	compile_floor=$(readlink -e ${compile_floor})
     fi
 fi
 
 # Set compile_floor to BGQ_FLOOR_DIR in Make.rules (created by configure script)
-if [[ $mpich -eq 1 || "${codeFamily}" == 'sst' ]]
+if [[ ${mpich} -eq 1 || "${codeFamily}" == 'sst' ]]
 then
-    if [[ $compile -eq 1 || $copy -eq 1 ]]
+    if [[ ${compile} -eq 1 || ${copy} -eq 1 ]]
     then
 	if [[ ! -e "${abs_rules_dir}/Make.rules" ]]
 	then
@@ -4219,15 +4432,15 @@ then
 	    echo "ERROR (E):  Run ../scripts/configure manually from: ${abs_rules_dir}"
 	    echo "ERROR (E):     or"
 	    echo "ERROR (E):  Rerun sst_pami_verif.sh and append -rc <floor> option."
-	    echo "ERROR (E):  Exiting."
+	    echo "ERROR (E):  Exiting ..."
 	    exit 1
 	else
 	    compile_floor=$(fgrep -a 'BGQ_FLOOR_DIR=' "${abs_rules_dir}/Make.rules" | cut -d '=' -f2)
 	    if [[ ! -e "${compile_floor}" ]] 
 	    then
-		if [[ $compile -eq 1 ]]
+		if [[ ${compile} -eq 1 ]]
 		    then
-		    echo "ERROR (E):  BGQ_FLOOR_DIR: ${compile_floor} DNE!! Exiting."
+		    echo "ERROR (E):  BGQ_FLOOR_DIR: ${compile_floor} DNE!! Exiting ..."
 		    exit 1
 		else
 		    echo "WARNING (W):  BGQ_FLOOR_DIR: ${compile_floor} DNE!!"
@@ -4248,9 +4461,20 @@ then
 	run_floor=$(readlink -e "${run_floor}" )
 	if [[ $? -ne 0 ]]
 	then
-	    echo "ERROR (E):  ${run_floor} DNE!! Exiting."
+	    echo "ERROR (E):  ${run_floor} DNE!! Exiting ..."
 	    exit 1
 	fi
+    fi
+fi
+
+# Convert timeout (expected in seconds) to minutes if using slurm
+if (( ${timeOut} > 0 )) && (( ${srun} > 0 ))
+then
+    if (( ${timeOut} < 60 ))
+    then
+	timeOut=1
+    else
+	timeOut=$(( ${timeOut} / 60 ))
     fi
 fi
 
@@ -4301,16 +4525,68 @@ while read xtest xopts
   else # pami
       bin_base="${comp_base}/pami/test"
   fi
+
+  tempOpts="$(echo ${xopts%%--args*} | tr -d '\n' | tr -d '\r')"
+
+  # See if user specified an exebase for this binary
+  exeBase=${default_exe_base}
+
+  if [[ "${tempOpts}" =~ "-exebase" ]]
+  then
+      
+      # Get value
+      value=$( echo ${tempOpts##*--exebase} | awk '{ print $1 }' ) 
+
+      # Update exeBase parm
+      exeBase=${value}
+
+      # Verify/Create the exe base if copying or running
+      if [[ ${copy} -eq 1 || ${run} -eq 1 ]]
+      then
+	  if [[ ! -d "${exeBase}" ]]
+	  then
+              # exeBase dir DNE
+              # Create if user plans to copy binaries during this run
+	      if [[ ${copy} -eq 1 ]]
+	      then
+		  echo "Creating exe base: ${exeBase} ..."
+		  mkdir -p "${exeBase}"
+
+		  if [[ $? -ne 0 || ! -d "${exeBase}" ]]
+		  then
+		      echo "ERROR (E):  Creation of ${exeBase} FAILED!! Exiting ..."
+		      exit 1
+		  fi
+	      else # Fail if user only planned to run
+		  echo "ERROR (E):  Runtime base dir: ${exeBase} DNE!! Exiting ..."
+		  exit 1
+	      fi
+	  fi
+      fi
+
+      # Remove --exebase from $tempOpts
+      # Save off everything after --exebase
+      postParm=${tempOpts##*--exebase}
+
+      # Set tempOpts = everything before --exebase
+      tempOpts=${tempOpts%%--exebase*}
+
+      # Final opts string with --exebase val removed
+      if [[ "${postParm}" =~ '--' ]]
+      then					 
+	  tempOpts="${tempOpts}--${postParm#*--}"
+      fi
+  fi
   
   if [[ ${xtest} =~ '/' ]]
   then  
       hput ${exeHash} "${TEST_ARRAY[$element]}:$element:stub" "${xtest%/*}"
       hput ${exeHash} "${TEST_ARRAY[$element]}:$element:buildDir" "${bin_base}/${xtest%/*}"
-      hput ${exeHash} "${TEST_ARRAY[$element]}:$element:exeDir" "${exe_base}/${xtest%/*}"
+      hput ${exeHash} "${TEST_ARRAY[$element]}:$element:exeDir" "${exeBase}/${xtest%/*}"
   else
       hput ${exeHash} "${TEST_ARRAY[$element]}:$element:stub" ""
       hput ${exeHash} "${TEST_ARRAY[$element]}:$element:buildDir" "${bin_base}"
-      hput ${exeHash} "${TEST_ARRAY[$element]}:$element:exeDir" "${exe_base}"
+      hput ${exeHash} "${TEST_ARRAY[$element]}:$element:exeDir" "${exeBase}"
   fi
 
   # Enable test
@@ -4324,9 +4600,6 @@ while read xtest xopts
   # Create Compile log and signal elements
   hput ${exeHash} "${TEST_ARRAY[$element]}:$element:logCompile" 'N/A'
   hput ${exeHash} "${TEST_ARRAY[$element]}:$element:compSignal" 0
-
-  # Store "runjob" options
-  tempOpts="$(echo ${xopts%%--args*} | tr -d '\n' | tr -d '\r')"
 
   # Did user provide notes about this test?
   if [[ "${tempOpts}" =~ '-notes ' ]]
@@ -4509,11 +4782,11 @@ while read xtest xopts
 done < ${flatInputFile}
 
 # Ensure block was given if executing binaries on hw
-if [[ ${run} -eq 1 && ${needBlock} -eq 1 ]] && [[ "${run_type}" == "hw" || "${run_type}" == "runMmcsLite" ]] 
+if [[ ${run} -eq 1 && ${needBlock} -eq 1 ]] && [[ "${run_type}" == "hw" || "${run_type}" == "runMmcsLite" ]] && (( ${srun} < 1 )) 
 then 
     if [[ ${#blockNameArray[@]} -eq 0 ]]
     then
-	echo -e "ERROR (E):  Block parameter(s) missing. Specify with -b <block> or --block <block>.\nExiting." 
+	echo "ERROR (E):  Block parameter(s) missing. Specify with -b <block> or --block <block>. Exiting ..." 
 
             #ding ding ding
 	if [[ A1 = A${ding} ]]; then echo -en "\007"; sleep 1; echo -en "\007"; sleep 1; echo -en "\007"; fi
@@ -4554,6 +4827,7 @@ then
 		echo 
 		echo "ERROR (E):  ${utils_file} DNE."
 		echo "ERROR (E):  Please install the bgtools package available from SVN bgq/system_tests/tools/bgtools."
+		echo "ERROR (E):  Exiting ..."
 		exit 1
 	    fi
 
@@ -4601,6 +4875,15 @@ then
 		    1 )
 			cmdlineShape='1x1x1x1x1'
 			;;
+		    2 )
+			cmdlineShape='1x1x1x2x1'
+			;;
+		    4 )
+			cmdlineShape='1x1x2x2x1'
+			;;
+		    8 )
+			cmdlineShape='1x2x2x2x1'
+			;;
 		    16 )
 			cmdlineShape='2x2x2x2x1'
 			;;
@@ -4622,6 +4905,7 @@ then
 		    * )
 			echo "ERROR (E):  Unsupported automatic subblock generation node value:  ${autoSubGen}"
 			echo "ERROR (E):  Valid node values for automatic subblock generation are: 1, 16, 32, 64, 128, 256 or 512"
+			echo "ERROR (E):  Exiting ..."
 			exit 1
 		esac
 
@@ -4718,7 +5002,7 @@ fi # end block req'd
 # =========================================================
 # COMPILE
 # =========================================================
-if [[ $compile -eq 1 ]]
+if [[ ${compile} -eq 1 ]]
 then
 
     echo -e "\n******************************" 
@@ -4754,7 +5038,7 @@ then
 	changeDir $suiteSourceDir
 	if [[ $? -ne 0 ]]
 	then
-	    echo "ERROR (E):  changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 	    exit 1
 	fi
 
@@ -4793,7 +5077,7 @@ then
 		echo "WARNING (W):  ${comp_base} DNE"
 		echo "WARNING (W):  It may not have been built yet. Skipping make ${cleanType} ..."
 	    else 
-		echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting."
+		echo "ERROR (E):  Compile base dir: ${comp_base} DNE!! Exiting ..."
 		exit 1
 	    fi  
 	fi
@@ -4804,7 +5088,7 @@ then
 	changeDir $comp_base
 	if [[ $? -ne 0 ]]
 	then
-	    echo "ERROR (E):  changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 	    exit 1
 	fi
 
@@ -4833,7 +5117,7 @@ then
 	    changeDir "${abs_bgq_dir}/diags/src/oncore/mst/exercisers"
 	    if [[ $? -ne 0 ]]
 	    then
-		echo "ERROR (E):  changeDir FAILED!! Exiting."
+		echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 		exit 1
 	    fi
 
@@ -4854,7 +5138,7 @@ then
 	    changeDir "${abs_systest_dir}/applications"
 	    if [[ $? -ne 0 ]]
 	    then
-		echo "ERROR (E):  changeDir FAILED!! Exiting."
+		echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 		exit 1
 	    fi
 
@@ -5047,7 +5331,7 @@ then
 		makeCmd="make -j ${MAKECPUS} ${makeBinary} BGQ_INSTALL_DIR=${compile_floor}"
 
 	    # Execute make
-		if [[ $quietly -eq 1 ]]
+		if [[ ${quietly} -eq 1 ]]
 		then
 		    echo $makeCmd >> $compileLog 2>&1
 		    if [[ ${debug} -eq 0 ]]
@@ -5117,7 +5401,7 @@ then
 		fi	
 
 		# Let's check the log
-		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${compileLog}" ]]
+		if [[ ${quietly} -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${compileLog}" ]]
 		then
 		    echo "WARNING (W):  FAILED to redirect output into ${compileLog}!!"
 		fi
@@ -5182,7 +5466,7 @@ then
 	    changeDir $abs_mpich_src_dir
 	    if [[ $? -ne 0 ]]
 	    then
-		echo "ERROR (E):  changeDir FAILED!! Exiting."
+		echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 		exit 1
 	    fi
 
@@ -5194,7 +5478,7 @@ then
 
 	    makeCmd="make XL= "
 
-	    if [[ $quietly -eq 1 ]]
+	    if [[ ${quietly} -eq 1 ]]
 	    then
 		echo $makeCmd >> $make_log 2>&1
 		if [[ ${debug} -eq 0 ]]
@@ -5214,11 +5498,11 @@ then
             # Check status of make
 	    if [[ ${makeStatus[0]} -ne 0 ]]
 	    then
-		echo "ERROR (E):  make FAILED!!"
+		echo "ERROR (E):  make FAILED!! Exiting ..."
 		exit 1
 
 	    else # make passed, let's check the log
-		if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
+		if [[ ${quietly} -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
 		then
 		    echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 		fi
@@ -5230,11 +5514,16 @@ then
 	changeDir $comp_base
 	if [[ $? -ne 0 ]]
 	then
-	    echo "ERROR (E):  changeDir FAILED!! Exiting."
+	    echo "ERROR (E):  changeDir FAILED!! Exiting ..."
 	    exit 1
 	fi
 
 	#Remove existing log (That's what the DB is for)
+	if (( $dynamic > 0 ))
+	then
+	    make_log='make-dynamic.log'
+	fi
+
 	if [[ -e $make_log ]]
 	then
 	    rm $make_log
@@ -5248,7 +5537,7 @@ then
 		export VERBOSE=1
 
 	        # Create dummy stagingdir to avoid MPICH runtests hang ...will erase later
-		stagingDir="${exe_base}/dummy_mpich_bin"
+		stagingDir="${default_exe_base}/dummy_mpich_bin"
 	    
 
 		if [[ ! -d $stagingDir ]]
@@ -5257,7 +5546,7 @@ then
 
 		    if [[ $? -ne 0 || ! -d $stagingDir ]]
 		    then
-			echo "Creation of ${stagingDir} FAILED!!"
+			echo "Creation of ${stagingDir} FAILED!! Exiting ..."
 			exit 1
 		    fi
 		fi
@@ -5267,13 +5556,25 @@ then
 		makeCmd="make testing"
 	    else # bgq (see http://git01.rchland.ibm.com/trac/messaging/wiki/BGQ/BVT)
 		makeCmd="make -j ${MAKECPUS}"
+
+		if (( $dynamic > 0 ))
+		then
+#		    makeCmd="make"
+		    
+		    compilerDir="${abs_bgq_dir}/work/comm/gcc/bin"
+
+		    makeCmd="${makeCmd} CC=\"${compilerDir}/mpicc -dynamic\""
+		    makeCmd="${makeCmd} F77=\"${compilerDir}/mpif77 -dynamic\""
+		    makeCmd="${makeCmd} FC=\"${compilerDir}/mpif90 -dynamic\""
+		    makeCmd="${makeCmd} CXX=\"${compilerDir}/mpicxx -dynamic\"" 
+		fi
 	    fi
 	else # pami
 	    makeCmd="/bglhome/jratt/install-sles10/bin/make -j ${MAKECPUS}"
 	fi
 
 	# Execute make
-	if [[ $quietly -eq 1 ]]
+	if [[ ${quietly} -eq 1 ]]
 	then
 	    echo $makeCmd >> $make_log 2>&1
 	    if [[ ${debug} -eq 0 ]]
@@ -5318,11 +5619,11 @@ then
         # Check status of make
 	if [[ ${makeStatus[0]} -ne 0 ]]
 	then
-	    echo "ERROR (E):  make FAILED!!"
+	    echo "ERROR (E):  make FAILED!! Exiting ..."
 	    exit 1
 
 	else # make passed, let's check the log
-	    if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
+	    if [[ ${quietly} -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
 	    then
 		echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 	    fi
@@ -5419,20 +5720,22 @@ then
 	    echo "ERROR (E):  make FAILED!!"
 
 	    # If not compile only
-	    if [[ $copy -eq 1 || $run -eq 1 ]]
+	    if [[ ${copy} -eq 1 || ${run} -eq 1 ]]
 	    then
 
 	        # Exit now if user didn't run make clean or didn't choose to ignore make fails
 		if [[ $make_clean -eq 0 && $ignoreMakeFails -eq 0 ]]
 		then
+		    echo "ERROR (E): Exiting ..."
 		    exit 1
 		elif [[ $binaryCount -eq 0 ]] # Could continue, but no good binaries
 		then
+		    echo "ERROR (E): Exiting ..."
 		    exit 1
 		fi
 	    fi
 	else # make passed, let's check the log
-	    if [[ $quietly -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
+	    if [[ ${quietly} -eq 0 && ${makeStatus[1]} -ne 0 ]] || [[ ! -e "${make_log}" ]]
 	    then
 		echo "WARNING (W):  FAILED to redirect output into ${make_log}!!"
 	    fi
@@ -5443,7 +5746,7 @@ fi # end compile section
 # =========================================================
 # COPY
 # =========================================================
-if [[ $copy -eq 1 ]]
+if [[ ${copy} -eq 1 ]]
     then
 
     echo -e "\n****************************" 
@@ -5452,7 +5755,7 @@ if [[ $copy -eq 1 ]]
     echo "***                      ***"
     echo -e "****************************\n"
 
-    if [[ $compile -ne 1 ]] # Already know this if we compiled during this run
+    if [[ ${compile} -ne 1 ]] # Already know this if we compiled during this run
     then
 	# Always do this for sst, only do this for pami if we ran with -rc (can only determine pami compile floor by reconfiguring)
 	if [[ "${codeFamily}" == 'sst' ]] || [[ "${codeFamily}" == 'pami' && $reconfigure -eq 1 ]] 
@@ -5467,7 +5770,7 @@ if [[ $copy -eq 1 ]]
     fi
 
     # --- Copy each binary to the exe dir ---
-    echo "Copying binaries to exe dirs relative to: ${exe_base}"
+    echo "Copying binaries to exe dirs relative to: ${default_exe_base}"
 
     for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
       do
@@ -5481,8 +5784,8 @@ if [[ $copy -eq 1 ]]
       fi
 
       # Don't recopy tests
-      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:stub" stub
-      hget ${copyHash} "${stub}/${TEST_ARRAY[$test]}" alreadyCopied
+      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+      hget ${copyHash} "${exeDir}/${TEST_ARRAY[$test]}" alreadyCopied
 
       if [[ "${alreadyCopied}" == '1' ]]
 	  then
@@ -5491,19 +5794,31 @@ if [[ $copy -eq 1 ]]
 	  continue
       fi
 
+      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:stub" stub
       hget ${exeHash} "${TEST_ARRAY[$test]}:$test:buildDir" buildDir
-      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:exeDir" exeDir
+
+      # Inform user if exe base doesn't match the default
+#      defaultBase=1
+      if [[ ! "${exeDir}" =~ "${default_exe_base}" ]]
+      then
+#	  defaultBase=0
+	  echo "INFO (I):  Copying ${TEST_ARRAY[$test]} relative to: ${exeDir%%${stub}}"
+      fi
 
       # Create exe dir if it doesn't exist
       if [[ ! -d "${exeDir}" ]] 
-	  then
+      then
 	  echo "Creating exe dir: ${exeDir}"
 	  mkdir -p "${exeDir}"
 
 	  if [[ $? -ne 0 || ! -d "${exeDir}" ]]
 	      then
 	      echo "ERROR (E):  Creation of ${exeDir} FAILED!!"
-	      exit 1
+#	      if (( ${defaultBase} ))
+#	      then
+		  echo "ERROR (E): Exiting ..."
+		  exit 1
+#	      fi
 	  fi
       fi
 
@@ -5533,7 +5848,7 @@ if [[ $copy -eq 1 ]]
 	  hput ${exeHash} "${TEST_ARRAY[$test]}:$test:exe" 0
 
 	  # Log to web if user planned to run this test
-	  if [[ $run -eq 1 ]]
+	  if [[ ${run} -eq 1 ]]
 	  then
 
 	      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:notes" notes
@@ -5563,7 +5878,7 @@ if [[ $copy -eq 1 ]]
       else
 	  hput ${exeHash} "${TEST_ARRAY[$test]}:$test:status" 'Copied' 
 
-	  hput ${copyHash} "${stub}/${TEST_ARRAY[$test]}" 1 # Don't copy this test again
+	  hput ${copyHash} "${exeDir}/${TEST_ARRAY[$test]}" 1 # Don't copy this test again
       fi
     done
 
@@ -5573,7 +5888,7 @@ fi
 # =========================================================
 # EXECUTE
 # =========================================================
-if [[ $run -eq 1 ]]
+if [[ ${run} -eq 1 ]]
 then
 
     echo -e "\n******************************" 
@@ -5592,7 +5907,7 @@ then
     fi
 
     # Verify the binary exists if we didn't copy it during this run
-    if [[ $copy -ne 1 ]]
+    if [[ ${copy} -ne 1 ]]
     then
 	for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
 	do
@@ -5636,8 +5951,8 @@ then
 	  overallStatus=''
 	  hget ${exeHash} "${TEST_ARRAY[$test]}:$test:status" overallStatus
 
-#	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ] || [ "${overallStatus}" == 'Skipped (I/O)' ]
-	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && $compile -eq 0 ]] || [[ "${overallStatus}" == 'Skipped (DNE)' ]]
+#	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && ${compile} -eq 0 ]] || [ "${overallStatus}" == 'Skipped (DNE)' ] || [ "${overallStatus}" == 'Skipped (I/O)' ]
+	  if [[ "${overallStatus}" == 'Skipped (Compile Only)' && ${compile} -eq 0 ]] || [[ "${overallStatus}" == 'Skipped (DNE)' ]]
 	  then
 
 	      hget ${exeHash} "${TEST_ARRAY[$test]}:$test:stub" stub
@@ -5947,7 +6262,7 @@ then
 
 	  if [[ $? -ne 0 || ! -d $swtDir ]]
 	  then
-	      echo "Creation of ${swtDir} FAILED!!"
+	      echo "Creation of ${swtDir} FAILED!! Exiting ..."
 	      exit 1
 	  fi
 	      
@@ -6212,9 +6527,9 @@ then
 	  hput ${exeHash} "${TEST_ARRAY[$test]}:$test:combo_n${exeNodes}_m${exeMode}_p${exeNP}" 1
 
 	  # Boot blocks
-	  if [[ $needBlock -eq 1 ]]
+	  if [[ $needBlock -eq 1 ]] && (( ${srun} < 1 ))
 	  then
-      
+
 	      # Boot any I/O blocks
 	      if [[ $ioBooted -eq 0 ]] && (( ${#ioblockArray[@]} > 0 ))
 	      then
@@ -6368,9 +6683,9 @@ then
 				      then
 					  if [[ "${bootBlockStatus}" == 'reboot' ]] # reset succeeded
 					  then
-					      hput $runBlockHash $tempRun 'free'
+					      hput ${runBlockHash} $tempRun 'free'
 					  else # dead
-					      hput $runBlockHash $tempRun 'dead'
+					      hput ${runBlockHash} $tempRun 'dead'
 					  fi	  
 				      fi
 				  done
@@ -6386,7 +6701,7 @@ then
 			  * ) # booted or DNE in hash (free)
 		      esac # end bootBlockStatus case
 
-		      hget $runBlockHash ${blockArray[$index]} runBlockStatus
+		      hget ${runBlockHash} ${blockArray[$index]} runBlockStatus
 
 		      case $runBlockStatus in
 			  running )
@@ -6394,7 +6709,7 @@ then
 			      ;;
 			  idle )
 			      runBlock=${blockArray[$index]}
-			      hput $runBlockHash $runBlock 'running'
+			      hput ${runBlockHash} ${runBlock} 'running'
 			      break # out of block loop
 			      ;;
 			  error )
@@ -6410,7 +6725,7 @@ then
 			      if [[ "${run_type}" == 'runMmcsLite' ]]
 			      then
 				  runBlock=${blockArray[$index]}
-				  hput $runBlockHash $runBlock 'running'
+				  hput ${runBlockHash} ${runBlock} 'running'
 				  break # out of block loop
 			      fi
 				  
@@ -6432,7 +6747,7 @@ then
 			      then 
 				  hput $bootBlockHash $bootBlock 'booted'
 				  runBlock=${blockArray[$index]}
-				  hput $runBlockHash $runBlock 'running'
+				  hput ${runBlockHash} ${runBlock} 'running'
 				 
 				  break # out of for loop
 			      else # boot failed
@@ -6454,8 +6769,9 @@ then
 			      fi # end boot rc check
 			      ;;
 			  * )
-			      echo "ERROR (E):  ${runBlock} has undefined state: ${runBlockStatus}!! Exiting ..."
-			      echo "ERROR (E):  Valid states are: free, idle, running, error & dead."  
+			      echo "ERROR (E):  ${runBlock} has undefined state: ${runBlockStatus}!!"
+			      echo "ERROR (E):  Valid states are: free, idle, running, error & dead."
+			      echo "ERROR (E):  Exiting ..."
 			      exit 1
 		      esac # end runBlockStatus case
 		  done # end block for loop
@@ -6468,6 +6784,11 @@ then
 		  fi
 	      done # end block while loop
 	  fi # end needblock
+
+	  if (( ${srun} > 0 ))
+	  then
+	      runBlock=""
+	  fi
 
           # Print test scenario to screen
 	  if [[ $exeOverride == 'Y' ]]
@@ -6503,9 +6824,9 @@ then
 		  runSA "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${runLog}" "exeSignal exeRuntime"
 	      elif [[ "${run_type}" != 'hw' ]]
 	      then
-		  runSim $run_type "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime" $runBlock
+		  runSim "${run_type}" "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime" "${runBlock}"
 	      else 
-		  runHW "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" $runBlock "${exeArgs}" "${runLog}" "exeSignal exeRuntime"
+		  runHW "${swtDir}" "${TEST_ARRAY[$test]} ${test}" "${exeNodes} ${exeInputMode} ${exeNP} ${exeThreads}" "${exeOpts}" "${runBlock}" "${exeArgs}" "${runLog}" "exeSignal exeRuntime"
 	      fi
 
 	      exeRC=$?
@@ -6537,22 +6858,31 @@ then
 
 		      exeSummary=$( echo $exeSummary | sed "s|block|$bootBlock|g" )
 
+		      if (( ${srun} > 0 ))
+		      then
+			  if [[ "${exeSummary}" == '' ]]
+			  then
+			      echo "Terminated by signal: ${finalSignal}" >> ${runLog}
+			  else
+			      echo "Terminated by signal: ${finalSignal} (${exeSummary})"  >> ${runLog}
+			  fi
+		      fi
 		  fi
 	      fi
 	      
 	      # MMCS-Lite automatically frees the block
-	      if [[ $needBlock -eq 1 && "${run_type}" == 'runMmcsLite' ]]
+	      if [[ $needBlock -eq 1 && "${run_type}" == 'runMmcsLite' ]] 
 	      then
-		  hput $runBlockHash $runBlock 'free'
+		  hput ${runBlockHash} ${runBlock} 'free'
 	      fi
 
 	      # Reboot later, free or "free" the block?
-	      if [[ $needBlock -eq 1 && "${platform}" == 'bgq' && "${run_type}" == 'hw' ]]
+	      if [[ $needBlock -eq 1 && "${platform}" == 'bgq' && "${run_type}" == 'hw' ]] && (( ${srun} < 1 ))
 	      then
 
 		  # Gather I/O data and update block hashes for blocks in error state
 		  # Skip free attempt, will reboot block later
-		  if [[ $exeSummary =~ "[Bb]lock" || $exeSummary =~ "[Nn]ode" || $exeSummary =~ "${bootBlock}" ]]
+		  if [[ $exeSummary =~ [Bb]lock || $exeSummary =~ [Nn]ode || $exeSummary =~ "${bootBlock}" || $exeSummary =~ [Dd]atabase ]]
 		  then
 
 		      # Have to get I/O block info while compute block is still booted (get rid of this later)
@@ -6583,12 +6913,12 @@ then
 		      hput $bootBlockHash $bootBlock 'error'
 
 		      # Mark this (sub)block in error (set to free or dead during reboot)
-		      hput $runBlockHash $runBlock 'error'
+		      hput ${runBlockHash} ${runBlock} 'error'
 
 		  # Free block after MMCS run if requested
 		  elif [[ $freeBlock -eq 1 ]]
 		  then
-		      if [[ $quietly -eq 1 ]]
+		      if [[ ${quietly} -eq 1 ]]
 		      then
 			  freeCmd="${freeScript} -block ${bootBlock} >> ${runLog} 2>&1"
 		      else
@@ -6606,7 +6936,7 @@ then
 		      if [[ $freeRC -eq 0 ]]
 		      then
 			  hdelete $bootBlockHash $bootBlock
-			  hput $runBlockHash $runBlock 'free'			 
+			  hput ${runBlockHash} ${runBlock} 'free'			 
 		      else # free failed
 
 			  echo "${freeCmd} FAILED with rc = ${freeRC}"
@@ -6615,10 +6945,10 @@ then
 			  hput $bootBlockHash $bootBlock 'error'
 
 		          # Mark this (sub)block in error (set to free or dead during reboot)
-			  hput $runBlockHash $runBlock 'error'
+			  hput ${runBlockHash} ${runBlock} 'error'
 		      fi
 		  else # "free" the block
-			  hput $runBlockHash $runBlock 'idle'		     
+			  hput ${runBlockHash} ${runBlock} 'idle'		     
 		  fi # end reboot later, free or "free" the block
 	      fi # end needblock=1 && bgq && hw
 
@@ -6635,7 +6965,7 @@ then
 		      testStatus='Passed'
 
 		      # Adjust results based on block status
-		      if [[ $needBlock -eq 1 && $freeBlock -eq 1 && $freeRC -ne 0 && "${platform}" == 'bgq' ]]
+		      if [[ $needBlock -eq 1 && $freeBlock -eq 1 && $freeRC -ne 0 && "${platform}" == 'bgq'  && ${srun} -eq 0 ]]
 		      then
 			  $testStatus='FAILED'
 			  $finalSignal=888
@@ -6648,7 +6978,7 @@ then
 		      testStatus='FAILED'
 		      
 	              # Disable this test if failure is NOT due to a block related problem
-		      if [[ ! $exeSummary =~ "[Bb]oot" || ! $exeSummary =~ "[Bb]lock" || ! $exeSummary =~ "[Nn]ode" || ! $exeSummary =~ "${bootBlock}" ]]
+		      if [[ ! $exeSummary =~ [Bb]oot || ! $exeSummary =~ [Bb]lock || ! $exeSummary =~ [Nn]ode || ! $exeSummary =~ "${bootBlock}" || ! $exeSummary =~ [Dd]atabase ]]
 		      then
 			  hput ${exeHash} "${TEST_ARRAY[$test]}:$test:exe" 0
 		      fi
@@ -6773,7 +7103,7 @@ fi # end monitor/control FPGA ll jobs
 # =========================================================
 # EVALUATE
 # =========================================================
-if [[ $run -eq 1 ]]
+if [[ ${run} -eq 1 ]]
     then
 
     # Evaluate FPGA runs
@@ -6933,7 +7263,7 @@ fi
 if (( $unCopy > 0 ))
 then
 
-    echo -e "\nRemoving binaries from ${exe_base} ..."
+    echo -e "\nRemoving binaries from ${default_exe_base} ..."
 
     for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
     do
@@ -6949,20 +7279,20 @@ then
 	    if [[ $? -ne 0 || -e "${exeDir}/${TEST_ARRAY[$test]}" ]]
 	    then
 		echo "Removal of ${exeDir}/${TEST_ARRAY[$test]} FAILED!!"
-	    elif (( $run < 1 ))
+	    elif (( ${run} < 1 ))
 	    then 
 		# Update test status unless we compiled but didn't copy
-                if ( ! (( $compile > 0 && $copy < 1 )) ) 
+                if ( ! (( ${compile} > 0 && ${copy} < 1 )) ) 
 		then  
 		    hput ${exeHash} "${TEST_ARRAY[$test]}:$test:status" 'DEL from EXE tree'
 		fi
 	    fi
 	else # binary DNE
             # Update test status
-	    if (( $run < 1 ))
+	    if (( ${run} < 1 ))
 	    then 
 		# Update test status unless we compiled but didn't copy
-                if ( ! (( $compile > 0 && $copy < 1 )) ) 
+                if ( ! (( ${compile} > 0 && ${copy} < 1 )) ) 
 		then    
 		    hput ${exeHash} "${TEST_ARRAY[$test]}:$test:status" 'DNE in EXE tree'
 		fi
@@ -7273,7 +7603,7 @@ for ((test=0; test < ${#TEST_ARRAY[@]}; test++))
       fi
 
       # If a compile was performed during this run, get the log path
-      if [[ $compile -eq 1 ]] 
+      if [[ ${compile} -eq 1 ]] 
       then 
 	  hget ${exeHash} "${TEST_ARRAY[$test]}:$test:logCompile" compileLog
 	  echo -e "\t${compileLog}" >> $summaryFile
