@@ -85,7 +85,7 @@ public:
         _fca_init_spec.progress.func = NULL;
         _fca_init_spec.progress.arg  = NULL;
         _fca_init_spec.dev_selector  = NULL;
-        _fca_init_spec.config        = fca_default_config;
+        _fca_init_spec.config        = FCA_Default_config;
 
         FCA_Init(&_fca_init_spec, &_fca_context);
         _enabled=true;
