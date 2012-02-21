@@ -199,7 +199,7 @@ internals/bgq/memtest/memtest-pami.cnk
 #
 #=== internals/bgq/mu2 SUBDIR ===
 #internals/bgq/mu2/ammulticast-pami.cnk --timelimit 120 +++ OBSOLETE SEE TRAC 488 +++
-internals/bgq/mu2/collmulticast-pami.cnk
+#internals/bgq/mu2/collmulticast-pami.cnk               +++ OBSOLETE SEE TRAC 422 +++
 internals/bgq/mu2/geom_classroutes-pami.cnk
 internals/bgq/mu2/manytomany-pami.cnk
 internals/bgq/mu2/messagerate-pami.cnk
@@ -216,7 +216,7 @@ internals/fifo/bgq/fifo_pingpong.cnk --maxrpn 32
 #
 #=== internals/misc SUBDIR ===
 internals/misc/atomic_fairness.cnk --ranks-per-node 1 --maxnp 1
-internals/misc/barrier_reset.cnk
+#internals/misc/barrier_reset.cnk                  +++ REMOVED FROM MAKEFILE +++
 internals/misc/math.cnk
 #
 #=== internals/multisend SUBDIR ===
