@@ -108,30 +108,30 @@ public:
     geometry->setKey(_context_id, Geometry::CKEY_FCAGEOMETRYINFO, gi);
     geometry->setCleanupCallback(cleanupCallback, gi);
 
-    geometry->addCollective(PAMI_XFER_REDUCE,
-                            &_reduce_f,
-                            _context,
-                            _context_id);
-    geometry->addCollective(PAMI_XFER_ALLREDUCE,
-                            &_allreduce_f,
-                            _context,
-                            _context_id);
-    geometry->addCollective(PAMI_XFER_BROADCAST,
-                            &_broadcast_f,
-                            _context,
-                            _context_id);
-    geometry->addCollective(PAMI_XFER_ALLGATHER,
-                            &_allgather_f,
-                            _context,
-                            _context_id);
-    geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,
-                            &_allgatherv_int_f,
-                            _context,
-                            _context_id);
-    geometry->addCollective(PAMI_XFER_BARRIER,
-                            &_barrier_f,
-                            _context,
-                            _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_REDUCE,
+                                 &_reduce_f,
+                                 _context,
+                                 _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+                                 &_allreduce_f,
+                                 _context,
+                                 _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
+                                 &_broadcast_f,
+                                 _context,
+                                 _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_ALLGATHER,
+                                 &_allgather_f,
+                                 _context,
+                                 _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_ALLGATHERV_INT,
+                                 &_allgatherv_int_f,
+                                 _context,
+                                 _context_id);
+    geometry->addCollectiveCheck(PAMI_XFER_BARRIER,
+                                 &_barrier_f,
+                                 _context,
+                                 _context_id);
   }
 
   inline void freeGeomInfo(GeometryInfo *gi)

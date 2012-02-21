@@ -42,11 +42,17 @@ public:
     {
       _c = c;
     }
+  inline void executeDoneCallback()
+    {
+      if(this->_cb_done)
+        this->_cb_done(this->_context, this->_clientdata, PAMI_SUCCESS);
+    }
 protected:
-  T_Geometry  *_g;
-  Factory     *_f;
-  fca_comm_t  *_c;
+  T_Geometry        *_g;
+  Factory           *_f;
+  fca_comm_t        *_c;
 };
+
 
 // --------------  FCA Factory base class -------------
 template <class T_Composite>
@@ -76,14 +82,14 @@ public:
   }
   virtual void metadata(pami_metadata_t *mdata)
   {
-    new(mdata) PAMI::Geometry::Metadata(_string);
+    T_Composite::metadata(mdata);
   }
   virtual void returnComposite(T_Composite *composite)
     {
       _alloc.returnObject(composite);
     }
-  const char                                    *_string;
   PAMI::MemoryAllocator<sizeof(T_Composite),16>  _alloc;
+  const char                                    *_string;
 };
 
 const fca_reduce_op_t    _fca_reduce_op_tbl[PAMI_OP_COUNT] =
@@ -153,7 +159,6 @@ static inline fca_reduce_op_t p_func_to_fca_op(pami_op op)
 }
 
 // TODO:  convert endpoint based roots to TASKS
-// TODO:  call pami callback
 // TODO:  figure out progress function details
 // --------------  FCA Reduce wrapper classes -------------
 template <class T_Geometry>
@@ -171,8 +176,17 @@ public:
   {
     int rc = FCA_Do_reduce(this->_c, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_reduce failed with rc=%d",rc);
+    this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:Reduce:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_reduce_t *cmd = &(xfer->cmd.xfer_reduce);
@@ -206,8 +220,17 @@ public:
   {
     int rc = FCA_Do_all_reduce(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d",rc);
+    this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:Allreduce:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allreduce_t *cmd = &(xfer->cmd.xfer_allreduce);
@@ -222,7 +245,7 @@ public:
       _spec.op       = p_func_to_fca_op((pami_op)op);
     }
 private:
-  fca_reduce_spec_t _spec;
+  fca_reduce_spec_t  _spec;
 };
 
 // --------------  FCA Broadcast wrapper classes -------------
@@ -241,8 +264,17 @@ public:
   {
     int rc = FCA_Do_bcast(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d",rc);
+    this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:Broadcast:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
   {
     pami_broadcast_t *cmd = &(xfer->cmd.xfer_broadcast);
@@ -270,8 +302,17 @@ public:
   {
     int rc = FCA_Do_allgather(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d",rc);
+    this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:Allgather:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allgather_t *cmd = &(xfer->cmd.xfer_allgather);
@@ -301,6 +342,14 @@ public:
     int rc = FCA_Do_allgatherv(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d",rc);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:AllgathervInt:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allgatherv_int_t *cmd = &(xfer->cmd.xfer_allgatherv_int);
@@ -330,12 +379,22 @@ public:
   {
     int rc = FCA_Do_barrier(this->_comm);
     PAMI_assertf(rc == 0, "FCA_Do_barrier failed with rc=%d",rc);
+    this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
+  static inline void metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata(myName());
+    }
+  static inline const char *myName()
+    {
+      return "I1:Barrier:FCA:FCA";
+    }
   inline void setxfer(pami_xfer_t *xfer)
     {
     }
 private:
+
 };
 
 }//namespace CollRegistration
