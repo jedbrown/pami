@@ -45,7 +45,7 @@ namespace xlpgas
 ,  int nc=2);
       FixedLeader(int N, int myindex, int leader, int nchildren) : _N(N), _me(myindex), _leader(leader), _nchildren(nchildren) {}
       void bcast (xlpgas_local_addr_t buffer, size_t len);
-      void reduce (int64_t* val, int64_t* dest, const cau_reduce_op_t&);
+      void reduce (int64_t* val, int64_t* dest, const cau_reduce_op_t&, size_t nelems);
       void reset(int leader);
       int root() const {return this->_leader;}
       bool isdone           () const;
@@ -154,7 +154,8 @@ void inline xlpgas::local::FixedLeader<Wait>::reset (int leader)
 template <class Wait>
 void xlpgas::local::FixedLeader<Wait>::reduce (int64_t* val, 
 					       int64_t* dest, 
-					       const cau_reduce_op_t& op)
+					       const cau_reduce_op_t& op,
+					       size_t nelems)
 {
   /* ------------------------------------------------------------- */
   /* wait for children to have data                                */
@@ -166,13 +167,12 @@ void xlpgas::local::FixedLeader<Wait>::reduce (int64_t* val,
       bool wait_i = wait1 (this->_children[c], this->_state[this->_me].counter+1);
       all = all && wait_i;
     }
-    //if (this->_children[c]>=0)
-    //reduce_op(val, (int64_t *) this->_state[this->_children[c]].buffer, op);
   }
   if(!all) return;
   for (int c=0; c<this->_nchildren; c++) {
-    if (this->_children[c]>=0)
-      reduce_op(val, (int64_t *) this->_state[this->_children[c]].buffer, op);
+    if (this->_children[c]>=0){
+      reduce_op(val, (int64_t *) this->_state[this->_children[c]].buffer, op, nelems);
+    }
   }
 
   /* ------------------------------------------------------------- */
@@ -183,7 +183,8 @@ void xlpgas::local::FixedLeader<Wait>::reduce (int64_t* val,
     all = wait1 (_parent, this->_state[this->_me].counter);
   if(!all) return;
 
-  * (volatile int64_t *) this->_state[this->_me].buffer = *val;
+  //* (volatile int64_t *) this->_state[this->_me].buffer = *val;
+  memcpy(this->_state[this->_me].buffer, val, nelems*sizeof(int64_t));
   /* ------------------------------------------------------- */
   /* put out notice that I have data for this iteration      */
   /* ------------------------------------------------------- */
@@ -193,7 +194,7 @@ void xlpgas::local::FixedLeader<Wait>::reduce (int64_t* val,
   (*p) = (*p)+1;
   __lwsync(); /* write barrier */
 
-  *dest = *val;
+  memcpy(dest, val, nelems*sizeof(int64_t));
   _done = true;
   if (this->_cb_complete)
     _cb_complete ((void*)_pami_ctxt, _arg, PAMI_SUCCESS);

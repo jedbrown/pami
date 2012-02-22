@@ -48,6 +48,9 @@ void xlpgas::CAUReduce<T_NI>::reset (int rootindex,
   cau_op = xlpgas::cau_op_dtype(op,dt);
   mcast_data  = (int64_t*)dbuf;
   reduce_data = (int64_t*)sbuf;
+  this->_sbufln[0] = nelems;
+  //spread the data if not  64 bit (8byte) long
+  this->spread = (nelems>1) && (xlpgas::cau_dtype_size(cau_op)<8);
 }
 
 template <class T_NI>
@@ -58,7 +61,6 @@ void* xlpgas::CAUReduce<T_NI>::recv_reduce(lapi_handle_t *hndl, void *uhdr, uint
     reduce_hdr_t  &reduce_hdr = *(reduce_hdr_t *)uhdr;
     assert( *uhdr_len == sizeof(reduce_hdr) );
 
-    int ctxt = 0;//reduce_hdr->dest_ctxt;
     xlpgas::CollectiveManager<T_NI> *cm = (xlpgas::CollectiveManager<T_NI> *)__global._id_to_collmgr_table[*hndl];
     void * base = cm->find (reduce_hdr.kind,reduce_hdr.tag);
     if (base == NULL){
@@ -70,12 +72,18 @@ void* xlpgas::CAUReduce<T_NI>::recv_reduce(lapi_handle_t *hndl, void *uhdr, uint
     MUTEX_LOCK(&b->_mutex);
     ++(b->reduce_received); //reduce_hdr.seq;
     int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
-    b->temp_reduce_data = *data;
     //fprintf(stderr, "L%d reduce CB invoked  %d %d \n",b->ordinal(),b->reduce_received, b->instance_id);
     if (b->reduce_received <= b->instance_id){
-      //data already arrived
-      xlpgas::reduce_op(b->mcast_data, &(b->temp_reduce_data), reduce_hdr.op);
+      //data already arrived; first reduce with local data
+      xlpgas::sparse_reduce_op(b->mcast_data, data, reduce_hdr.op, b->_sbufln[0]);
+      //compact if necessary
+      if(b->spread){
+	xlpgas::compact_data(b->mcast_data, b->_sbufln[0], b->cau_op);
+      }
       exec_cb=true;
+    }
+    else {
+      memcpy(b->temp_reduce_data, data, b->_sbufln[0]*sizeof(int64_t));
     }
     MUTEX_UNLOCK(&b->_mutex);
     if (exec_cb && b->_cb_complete)
@@ -93,7 +101,17 @@ void xlpgas::CAUReduce<T_NI>::on_reduce_sent(lapi_handle_t *hndl, void *cookie)
 template <class T_NI>
 void  xlpgas::CAUReduce<T_NI>::kick(void){
   unsigned int ROOT=0;
-  int data_size = 1;
+  int nelems = this->_sbufln[0];
+  cau_reduce_op_t ncau_op = cau_op;
+  if(this->spread) {
+    //spread the data in place; we know the input and output has space
+    //for up to 8 64 bit elements also the input buf has been zeroed
+    //out by the reset function of the hybrid algo
+    xlpgas::spread_data(reduce_data, nelems, cau_op);
+    if(cau_op.operand_type ==  CAU_SIGNED_INT) ncau_op.operand_type =  CAU_SIGNED_LONGLONG;
+    if(cau_op.operand_type ==  CAU_UNSIGNED_INT) ncau_op.operand_type =  CAU_UNSIGNED_LONGLONG;
+  }
+
   if(this->ordinal() != ROOT) {
     //fprintf(stderr, "Non Root sends DID=%d\n", _dispatch_id);
     reduce_hdr.op     = cau_op;
@@ -103,7 +121,7 @@ void  xlpgas::CAUReduce<T_NI>::kick(void){
     RC0( LAPI_Cau_reduce(lapi_handle, base_group_id, 
 			 this->_dispatch_id, &reduce_hdr, sizeof(reduce_hdr),
 			 reduce_data, 
-			 data_size * sizeof(int64_t), cau_op,
+			 nelems * sizeof(int64_t), ncau_op,
 			 CAUReduce<T_NI>::on_reduce_sent, (void *)this) );
     ++reduce_received;
   }
@@ -115,10 +133,14 @@ void  xlpgas::CAUReduce<T_NI>::kick(void){
     MUTEX_LOCK(&this->_mutex);
     instance_id++;
     ++reduce_sent; 
-    *mcast_data=*reduce_data;
+    memcpy(mcast_data, reduce_data, this->_sbufln[0]*sizeof(int64_t));
     if (reduce_received >= instance_id){
-      //data already arrived
-      xlpgas::reduce_op(mcast_data, &temp_reduce_data, cau_op);
+      //data already arrived; reduce with local
+      xlpgas::sparse_reduce_op(mcast_data, temp_reduce_data, ncau_op, nelems);
+      // compact if necessary
+      if(this->spread){
+	xlpgas::compact_data(this->mcast_data, nelems, cau_op);
+      }
       exec_cb=true;
     }
     MUTEX_UNLOCK(&this->_mutex);
@@ -176,6 +198,7 @@ void xlpgas::CAUBcast<T_NI>::reset (int rootindex,
                                     void               * dbuf,
                                     unsigned           nbytes){
   _done =false;
+  this->_sbufln[0] = nbytes;
   mcast_data = (int64_t*)dbuf;
 }
 
@@ -193,7 +216,6 @@ void* xlpgas::CAUBcast<T_NI>::recv_mcast(lapi_handle_t *hndl, void *uhdr, uint *
     lapi_return_info_t &ret_info = *(lapi_return_info_t *)msg_len;
     mcast_hdr_t  &mcast_hdr = *(mcast_hdr_t *)uhdr;
     assert( *uhdr_len == sizeof(mcast_hdr) );
-    int ctxt = 0;//reduce_hdr->dest_ctxt;
     xlpgas::CollectiveManager<T_NI> *cm = (xlpgas::CollectiveManager<T_NI> *)__global._id_to_collmgr_table[*hndl];
     void * base = cm->find (mcast_hdr.kind,mcast_hdr.tag);
     if (base == NULL){
@@ -205,7 +227,7 @@ void* xlpgas::CAUBcast<T_NI>::recv_mcast(lapi_handle_t *hndl, void *uhdr, uint *
     ++(b->mcast_received);
 
     int64_t *data = (int64_t *)ret_info.udata_one_pkt_ptr;
-    *(b->mcast_data) = *data;
+    memcpy(b->mcast_data, data, b->_sbufln[0]);
 
     if (b->_cb_complete)
       b->_cb_complete ((void*)&(b->_ctxt), b->_arg, PAMI_SUCCESS);
@@ -217,18 +239,17 @@ template <class T_NI>
 void  xlpgas::CAUBcast<T_NI>::kick(void){
   //BCAST
   unsigned int ROOT=0;
-
   // initialize multicast header
   mcast_hdr.kind    = this->_header[0].kind;
   mcast_hdr.tag    = this->_header[0].tag;
 
   //int dd = *((int*)mcast_data);
-  //fprintf(stderr, "L%d MCAST dispatchid=%d  \n",this->ordinal(),_dispatch_id);
+  //fprintf(stderr, "L%d MCAST mcast_data=%p size=%ld \n",this->ordinal(), mcast_data, this->_sbufln[0]*sizeof(int64_t));
   if(this->ordinal() == ROOT){
     ++mcast_received;
     RC0( LAPI_Cau_multicast(lapi_handle, base_group_id, 
 			    _dispatch_id, &mcast_hdr, sizeof(mcast_hdr),
-			    mcast_data, sizeof(int64_t),
+			    mcast_data, this->_sbufln[0],
 			    CAUBcast<T_NI>::on_mcast_sent, (void *)this) );
 
     //this move inside on_mcast_sent

@@ -49,7 +49,9 @@ void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
                                                     TypeCode           * rdt,
                                                     user_func_t        * uf
 				     ) {
-  assert(nelems == 1);
+  //with CAU we can reduce up to to 64 bytes of data; 
+  //the data will be processes in group of 64 bit so a max of only 8 elements
+  assert(nelems <= 8);
   uintptr_t i_op, i_dt;
   PAMI::Type::TypeFunc::GetEnums((void*)sdt,
                                  ( void (*)(void*, void*, size_t, void*) )op,
@@ -58,32 +60,35 @@ void xlpgas::ShmCauAllReduce<T_NI,T_Device>::reset (const void         * sbuf,
   bool finish_early=false;//if shared memory only the collective ends without bcast;
   if(local_team->size() == team->size()) finish_early = true;
   
-  memcpy(&s, sbuf, sdt->GetDataSize() );
-  tmp = tmp_cau = 0;
+  //maybe add here a macro to memset and memcpy
+  memcpy(&s[0], sbuf, nelems * sdt->GetDataSize() );
+  memset(&tmp[0],     0, nelems * sdt->GetDataSize());
+  memset(&tmp_cau[0], 0, nelems * sdt->GetDataSize());
 
   int leader = 0; //ordinal zero in the current group
   
   //allocate shm bcast
   assert (shm_bcast != NULL);
-  shm_bcast->reset (leader, &tmp_cau, rbuf, nelems * sdt->GetDataSize() );
-
+  shm_bcast->reset (leader, &tmp_cau[0], rbuf, nelems * sdt->GetDataSize() );
   //allocate shm reduce
   assert (shm_reduce != NULL);
-  if(!finish_early)
-    shm_reduce->reset (leader, &s, &tmp, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
-  else
-    shm_reduce->reset (leader, &s, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+  if(!finish_early) {
+    shm_reduce->reset (leader, &s[0], &tmp[0], (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+  }
+  else {
+    shm_reduce->reset (leader, &s[0], &tmp_cau[0], (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+  }
 
   if(!finish_early){
     if(this->_is_leader){
       //allocate caureduce
       assert (cau_reduce != NULL);
-      cau_reduce->reset (leader, &tmp, &tmp_cau, (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
+      cau_reduce->reset (leader, &tmp[0], &tmp_cau[0], (pami_op)i_op, (pami_dt)i_dt, nelems, uf);
       shm_reduce->setComplete(&next_phase<T_NI>,cau_reduce);
 
       //allocate cau bcast
       assert (cau_bcast != NULL);
-      cau_bcast->reset (leader, &tmp_cau, &tmp_cau, nelems * sdt->GetDataSize() );
+      cau_bcast->reset (leader, &tmp_cau[0], &tmp_cau[0], nelems * sdt->GetDataSize() );
       cau_reduce->setComplete(&next_phase<T_NI>,cau_bcast);
 
       cau_bcast->setComplete(&next_phase<T_NI>,shm_bcast);

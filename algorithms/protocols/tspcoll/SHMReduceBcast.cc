@@ -36,10 +36,11 @@ void xlpgas::SHMReduce<T_NI>::reset (int rootindex,
 			       unsigned           nelems,
 			       user_func_t*       uf)
 {
-  this->cau_op = xlpgas::cau_op_dtype(op,dt);
-  this->_rbuf[0] = dbuf;
-  this->_sbuf[0] = const_cast<void*>(sbuf);
-  this->_done = false;
+  this->cau_op = xlpgas::cau_op_dtype(op,dt);  
+  this->_rbuf[0]   = dbuf;
+  this->_sbuf[0]   = const_cast<void*>(sbuf);
+  this->_sbufln[0] = nelems;
+  this->_done      = false;
   fl.set_undone();
 }
 
@@ -56,7 +57,7 @@ pami_result_t repost_function (pami_context_t context, void *cookie) {
 
 template<class T_NI>
 void xlpgas::SHMReduce<T_NI>::kick_internal (void) {
-  fl.reduce ( (int64_t*)this->_sbuf[0], (int64_t*)this->_rbuf[0] , cau_op);
+  fl.reduce ( (int64_t*)this->_sbuf[0], (int64_t*)this->_rbuf[0] , cau_op, this->_sbufln[0]);
 }
 
 template<class T_NI>
@@ -117,7 +118,7 @@ pami_result_t repost_bcast_function (pami_context_t context, void *cookie) {
 template<class T_NI>
 void xlpgas::SHMBcast<T_NI>::kick_internal (void) {
   if(!fl.haveParent()){
-    *((int64_t*)this->_rbuf[0]) = *((int64_t*)this->_sbuf[0]);
+    memcpy(this->_rbuf[0], this->_sbuf[0], _nbytes);
   }
   fl.bcast ((xlpgas_local_addr_t)this->_rbuf[0], _nbytes);
 }

@@ -37,6 +37,7 @@ namespace xlpgas
       //the text topology we don't cache for now; used only to extract the is leader info
       PAMI::Topology* my_master_team = (PAMI::Topology*)(geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX));
       this->_is_leader = my_master_team->isEndpointMember(this->rank());
+      //allocate space for temp buffers
     }
     virtual void reset (const void         * sbuf, 
 			void               * dbuf, 
@@ -66,10 +67,9 @@ namespace xlpgas
   public:
     PAMI::Topology *team, *local_team, *leader_team;
     xlpgas::Collective<T_NI> *shm_reduce, *shm_bcast, *cau_reduce, *cau_bcast;
-    int64_t s;
-    int64_t tmp;
-    int64_t tmp_cau;
-    
+    int64_t s[8];
+    int64_t tmp[8];
+    int64_t tmp_cau[8];
   }; /* ShmCauAllReduce */
 } /* Xlpgas */
 

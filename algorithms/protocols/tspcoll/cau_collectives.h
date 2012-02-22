@@ -43,35 +43,20 @@ namespace xlpgas{
 			  cau_reduce_op_t& op,
 			  int ctxt,T_Device*, pami_context_t);
 
-  //template <class T_NI>
-  //void cau_init(lapi_handle_t);
-
-  template<class CAU_RED_OP>
-  void reduce_op(int64_t *dst, int64_t *src, const CAU_RED_OP& op)
-  {
-    switch (op.operand_type) {
-        case CAU_SIGNED_INT:
-            reduce_fixed_point(*(int32_t *)dst, *(int32_t *)src, op.operation);
-            break;
-        case CAU_UNSIGNED_INT:
-            reduce_fixed_point(*(uint32_t *)dst, *(uint32_t *)src, op.operation);
-            break;
-        case CAU_SIGNED_LONGLONG:
-            reduce_fixed_point(*(int64_t *)dst, *(int64_t *)src, op.operation);
-            break;
-        case CAU_UNSIGNED_LONGLONG:
-            reduce_fixed_point(*(uint64_t *)dst, *(uint64_t *)src, op.operation);
-            break;
-        case CAU_FLOAT:
-            reduce_floating_point(*(float *)dst, *(float *)src, op.operation);
-            break;
-        case CAU_DOUBLE:
-            reduce_floating_point(*(double *)dst, *(double *)src, op.operation);
-            break;
-        default: assert(!"Bogus reduce operand type");
+  template <class OPDT>
+  size_t cau_dtype_size(const OPDT&  dtype){
+    switch (dtype.operand_type)
+    {
+    case CAU_SIGNED_INT:   return sizeof(int32_t); break;
+    case CAU_UNSIGNED_INT:   return sizeof(uint32_t); break;
+    case CAU_SIGNED_LONGLONG:    return sizeof(int64_t);break;
+    case CAU_UNSIGNED_LONGLONG:   return sizeof(uint64_t); break;
+    case CAU_DOUBLE:    return sizeof(double); break;
+    case CAU_FLOAT:    return sizeof(float); break;
+    default: xlpgas_fatalerror (-1,"xlpgas::cau_dtype_size :: data type not supported");
     }
+    return 0;
   }
-
 
   template <class OP, class DT>
   cau_reduce_op_t cau_op_dtype(OP      op,
@@ -102,33 +87,141 @@ namespace xlpgas{
   }
 
 
+  template<class CAU_RED_OP>
+  void reduce_op(int64_t *dst, int64_t *src, const CAU_RED_OP& op, size_t nelems)
+  {
+    switch (op.operand_type) {
+        case CAU_SIGNED_INT:
+            reduce_fixed_point((int32_t *)dst, (int32_t *)src, op.operation, nelems);
+            break;
+        case CAU_UNSIGNED_INT:
+            reduce_fixed_point((uint32_t *)dst, (uint32_t *)src, op.operation, nelems);
+            break;
+        case CAU_SIGNED_LONGLONG:
+	    reduce_fixed_point((int64_t *)dst, (int64_t *)src, op.operation,nelems);
+            break;
+        case CAU_UNSIGNED_LONGLONG:
+	    reduce_fixed_point((uint64_t *)dst, (uint64_t *)src, op.operation,nelems);
+            break;
+        case CAU_FLOAT:
+	    reduce_floating_point((float *)dst, (float *)src, op.operation,nelems);
+            break;
+        case CAU_DOUBLE:
+	    reduce_floating_point((double *)dst, (double *)src, op.operation,nelems);
+            break;
+        default: assert(!"Bogus reduce operand type");
+    }
+  }
+
   template <class T>
-  void reduce_fixed_point(T &dst, T &src, unsigned func)
+    void reduce_fixed_point(T *dst, T *src, unsigned func, size_t nelems)
     {
     switch (func) {
     case CAU_NOP: break;
-    case CAU_SUM: dst += src; break;
-    case CAU_MIN: dst = (src < dst ? src : dst); break;
-    case CAU_MAX: dst = (src > dst ? src : dst); break;
-    case CAU_AND: dst &= src; break;
-    case CAU_XOR: dst ^= src; break;
-    case CAU_OR:  dst |= src; break;
+    case CAU_SUM: for(size_t i=0;i<nelems;++i) dst[i] += src[i]; break;
+    case CAU_MIN: for(size_t i=0;i<nelems;++i) dst[i] = (src[i] < dst[i] ? src[i] : dst[i]); break;
+    case CAU_MAX: for(size_t i=0;i<nelems;++i) dst[i] = (src[i] > dst[i] ? src[i] : dst[i]); break;
+    case CAU_AND: for(size_t i=0;i<nelems;++i) dst[i] &= src[i]; break;
+    case CAU_XOR: for(size_t i=0;i<nelems;++i) dst[i] ^= src[i]; break;
+    case CAU_OR:  for(size_t i=0;i<nelems;++i) dst[i] |= src[i]; break;
     default: assert(!"Bogus fixed-point reduce function");
     }
    }
 
   template <class T>
-   void reduce_floating_point(T &dst, T &src, unsigned func)
+    void reduce_floating_point(T *dst, T *src, unsigned func, size_t nelems)
     {
       switch (func) {
       case CAU_NOP: break;
-      case CAU_SUM: dst += src; break;
-      case CAU_MIN: dst = (src < dst ? src : dst); break;
-      case CAU_MAX: dst = (src > dst ? src : dst); break;
+      case CAU_SUM: for(size_t i=0;i<nelems;++i) dst[i] += src[i]; break;
+      case CAU_MIN: for(size_t i=0;i<nelems;++i) dst[i] = (src[i] < dst[i] ? src[i] : dst[i]); break;
+      case CAU_MAX: for(size_t i=0;i<nelems;++i) dst[i] = (src[i] > dst[i] ? src[i] : dst[i]); break;
       default: assert(!"Bogus floating-point reduce function");
       }
     }
 
+
+  /**
+   * When interfacing with CAU we spread and compact the data; below
+   * everything is spread to 64 bit data; so the only difference
+   * between this version and reduce_op above is the cast for int32
+   * case
+   */
+  template<class CAU_RED_OP>
+  void sparse_reduce_op(int64_t *dst, int64_t *src, const CAU_RED_OP& op, size_t nelems)
+  {
+    switch (op.operand_type) {
+        case CAU_SIGNED_INT:
+            reduce_fixed_point((int64_t *)dst, (int64_t *)src, op.operation, nelems);
+            break;
+        case CAU_UNSIGNED_INT:
+            reduce_fixed_point((uint64_t *)dst, (uint64_t *)src, op.operation, nelems);
+            break;
+        case CAU_SIGNED_LONGLONG:
+	    reduce_fixed_point((int64_t *)dst, (int64_t *)src, op.operation,nelems);
+            break;
+        case CAU_UNSIGNED_LONGLONG:
+	    reduce_fixed_point((uint64_t *)dst, (uint64_t *)src, op.operation,nelems);
+            break;
+        case CAU_FLOAT:
+	    reduce_floating_point((float *)dst, (float *)src, op.operation,nelems);
+            break;
+        case CAU_DOUBLE:
+	    reduce_floating_point((double *)dst, (double *)src, op.operation,nelems);
+            break;
+        default: assert(!"Bogus reduce operand type");
+    }
+  }
+
+
+  /**
+   * utilities to spread/compact data for CAU interaction
+   * CAU only operates on 64 bit data
+   */
+
+  template <class T>
+  void _spread_data(int64_t* data, size_t nelems){
+    T* ud = (T*)data;
+    for (int s=0;s<nelems;++s) {
+      data[nelems - s - 1] = ud[nelems-s-1];
+    }
+  }
+
+  template <class T>
+  void _compact_data(int64_t* data, size_t nelems){
+    T* ud = (T*)data;
+    for (int s=0;s<nelems;++s) {
+      ud[s] = data[s];
+    }
+  }
+
+  template<class CAU_RED_OP>
+  void spread_data(int64_t *dst, size_t nelems, const CAU_RED_OP& op)
+  {
+    switch (op.operand_type) {
+        case CAU_SIGNED_INT:
+	  _spread_data<int32_t>(dst, nelems);
+          break;
+        case CAU_UNSIGNED_INT:
+   	  _spread_data<uint32_t>(dst, nelems);
+          break;
+        default: assert(!"Bogus spread operation requested");
+    }
+  }
+
+  template<class CAU_RED_OP>
+  void compact_data(int64_t *dst, size_t nelems, const CAU_RED_OP& op)
+  {
+    switch (op.operand_type) {
+        case CAU_SIGNED_INT:
+	  _compact_data<int32_t>(dst, nelems);
+          break;
+        case CAU_UNSIGNED_INT:
+   	  _compact_data<uint32_t>(dst, nelems);
+          break;
+        default: assert(!"Bogus compact operation requested");
+    }
+  }
 
     /////////////////////////////////////////////////////////////////
  struct reduce_hdr_t {
@@ -149,7 +242,7 @@ class CAUReduce: public CollExchange<T_NI>
 
     //data buf; one elem
     int64_t* reduce_data;
-    int64_t temp_reduce_data;
+    int64_t temp_reduce_data[8];//temporary buffer for reduction
     int64_t* mcast_data; //output; typically used by the next mcast
 
     //op type
@@ -162,6 +255,11 @@ class CAUReduce: public CollExchange<T_NI>
     lapi_handle_t lapi_handle;
     int  base_group_id;
     static int _dispatch_id;
+
+  public:
+    //boolean indicating if the data needs to be spread compacted
+    //to match the 64 bit requirement of cau
+    bool spread;
 
   public:
     void * operator new (size_t, void * addr) { return addr; }
@@ -231,6 +329,11 @@ class CAUReduce: public CollExchange<T_NI>
   }; /* CAUbcast */
 
 
+  /* 
+     The state must be 128 bytes total to be aligned with a cache
+     size; This is tuned for PERCS; On other machines this value needs
+     to be adjusted
+   */
   struct _State
   {
     unsigned char buffer [124];
