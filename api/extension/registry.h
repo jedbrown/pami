@@ -16,6 +16,7 @@
 #include "api/extension/c/pe_extension/Extension.h"
 #include "api/extension/c/hfi_extension/Extension.h"
 #include "api/extension/c/async_progress/Extension.h"
+#include "api/extension/c/collsel/Extension.h"
 #include "api/extension/c/bgq_l2atomic/Extension.h"
 #include "api/extension/c/bgq_mapping/Extension.h"
 

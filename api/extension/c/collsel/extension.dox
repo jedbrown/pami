@@ -1,0 +1,179 @@
+typedef void* advisor_t;
+typedef void* advisor_table_t;
+typedef enum {
+
+}  advisor_attribute_name_t;
+typedef union
+{
+  size_t         intval;
+  double         doubleval;
+  const char *   chararray;
+  const size_t * intarray;
+} advisor_attribute_value_t;
+
+typedef struct
+{
+  advisor_attribute_name_t  name;
+  advisor_attribute_value_t value;
+} advisor_configuration_t;
+
+typedef struct
+{
+  pami_algorithm_t            algo;
+  pami_metadata_t             md;
+  int                         must_query;
+} sorted_algorithm_t;
+
+typedef void* fast_query_t;
+
+/** This section is for initialization and finalization of the library */
+/**
+ * \param [in]  client        Initialized PAMI client handle
+ * \param [in]  configuration Advisor configuration flags
+ * \param [in]  num_configs   Number of configurations, may be zero
+ * \param [in]  contexts      Array of initialized pami contexts
+ * \param [in]  num_contexts  Number of contexts
+ * \param [out] advisor       A pami collective advisor object
+ *
+ * \retval ::PAMI_SUCCESS  The advisor has been successfully created.
+ * \retval ::PAMI_INVAL    The advisor could not be initialized
+ */
+int Collsel_init(pami_client_t            client,
+                 advisor_configuration_t  configuration[],
+                 size_t                   num_configs,
+                 pami_context_t           contexts[],
+                 size_t                   num_contexts,
+                 advisor_t               *advisor);
+/** \brief finalize the collective runtime advisor
+ * \param [in] advisor       A pami collective advisor object pointer
+ *
+ * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
+ * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
+ */
+int Collsel_destroy(advisor_t *advisor);
+
+/* This section is for selection table generation and read */
+
+/** \brief generate a collective selection table
+ * This API creates and initializes a collective selection table
+ *
+ * If the file exists, resume creation of the table from a checkpoint
+ * This uses the configuration to select which geometries are profiled
+ *
+ * \param [in] advisor             A pami collective advisor object pointer
+ * \param [in] out                 output table
+ * \param [in] geometry_sizes      a list of geometry sizes to profile
+ * \param [in] num_geometry_sizes  number of entries in the geometry_sizes list
+ * \param [in] message_sizes       a list of message sizes
+ * \param [in] num_message_sizes   number of entries in the message_sizes list
+ *
+ *  If num_geometry_sizes is 0 and num_message_sizes is 0, create a default table
+ *  By default, scan powers of 2, and power of (2^n) +/-1 on geometry size
+ *  and message size up to maximum tasks in the job, and up to 4 megabytes of data.
+ *
+ *  This operation is a blocking, collective call.  All tasks must call in to this call.
+ *  Internally, the advisor may spawn threads to advance all the contexts for a
+ *  multi-context client.  This library may create up to num_contexts threads to advance
+ *  progress and benchmark multi-endpoint geometries.  The threads should be cleaned up
+ *  after the call to table_create (by the library).
+ *
+ *  Note:  We may want to pass in a "thread model" to advisor create, that will control
+ *  how the progress engine works (example:  1 thread per context, 1 thread per all contexts,
+ *  etc).  For now, we can probably assume the 1 thread per context model will be the default
+ *  mode.
+ *
+ *  If the filename is located in a shared file system, one task will write the table to the fs.
+ *  If the filename is located in a local, non-shared file system, each task will write the data.
+ *  It is illegal to generate the file on some tasks to a shared file system, and some to local(too restrictive?!).
+ *
+ * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
+ * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
+ */
+int Collsel_table_create(advisor_t  advisor,
+                         char      *filename,
+                         size_t     geometry_sizes[],
+                         size_t     num_geometry_sizes,
+                         size_t     message_sizes[],
+                         size_t     num_message_sizes);
+/* Updates for a single collective type */
+int Collsel_table_update(advisor_t         advisor,
+                         char             *filename,
+                         pami_xfer_type_t  xfer_type,
+                         size_t            geometry_sizes[],
+                         size_t            num_geometry_sizes,
+                         size_t            message_sizes[],
+                         size_t            num_message_sizes);
+
+/* This section is for table query routines
+ * Generally used at geometry create time to
+ * query the table for "similarity"
+ * and also to merge lists of table data with geometry data
+ */
+
+/* At INIT time? */
+int Collsel_table_load(advisor_t        advisor,
+                       char            *filename,
+                       advisor_table_t *advisor_table);
+
+int Collsel_table_unload(advisor_table_t *advisor_table);
+
+/*
+ * 1) Find a geometry in the table that is "most similar" to the input geometry
+ */
+int Collsel_query(advisor_table_t *advisor_table,
+                  pami_geometry_t  geometry,
+                  fast_query_t    *fast_query );
+
+/*
+ * This fast lookup really needs to be FAST.  Therefore, this API
+ * is a candiate to make a macro if binary compatibility does not need
+ * to be preserved
+ *
+ * Another approach may be to let the user build their own table.
+ */
+int Collsel_advise(fast_query_t        fast_query,
+                   pami_xfer_type_t    xfer_type,
+                   pami_xfer_t        *xfer,
+                   sorted_algorithm_t  algorithms_optimized[],
+                   size_t              max_algorithms);
+
+/* Typedefs for function signatures */
+typedef int (*Collsel_init_fn)(pami_client_t            client,
+                               advisor_configuration_t  configuration[],
+                               size_t                   num_configs,
+                               pami_context_t           contexts[],
+                               size_t                   num_contexts,
+                               advisor_t               *advisor);
+
+typedef int (*Collsel_destroy_fn)(advisor_t *advisor);
+
+typedef int (*Collsel_table_create_fn)(advisor_t  advisor,
+                                       char      *filename,
+                                       size_t     geometry_sizes[],
+                                       size_t     num_geometry_sizes,
+                                       size_t     message_sizes[],
+                                       size_t     num_message_sizes);
+
+typedef int (*Collsel_table_update_fn)(advisor_t         advisor,
+                                       char             *filename,
+                                       pami_xfer_type_t  xfer_type,
+                                       size_t            geometry_sizes[],
+                                       size_t            num_geometry_sizes,
+                                       size_t            message_sizes[],
+                                       size_t            num_message_sizes);
+
+typedef int (*Collsel_table_load_fn)(advisor_t        advisor,
+                                     char            *filename,
+                                     advisor_table_t *advisor_table);
+
+typedef int (*Collsel_table_unload_fn)(advisor_table_t *advisor_table);
+
+typedef int (*Collsel_query_fn)(advisor_table_t *advisor_table,
+                                pami_geometry_t  geometry,
+                                fast_query_t    *fast_query );
+
+typedef int (*Collsel_advise_fn)(fast_query_t        fast_query,
+                                 pami_xfer_type_t    xfer_type,
+                                 pami_xfer_t        *xfer,
+                                 sorted_algorithm_t  algorithms_optimized[],
+                                 size_t              max_algorithms);
