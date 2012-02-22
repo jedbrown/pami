@@ -116,7 +116,6 @@ public:
   int             Translate_mpi_op(char *mpi_op_str);
   int             Translate_mpi_dtype(char *mpi_dtype_str);
   int             Get_dtype_size(enum fca_reduce_dtype_t dtype);
-  fca_config_t    Default_config;
 private:
   FCAFunc();
   ~FCAFunc();
@@ -145,6 +144,7 @@ private:
   fca_translate_mpi_op_handler_t    *translate_mpi_op_handler;
   fca_translate_mpi_dtype_handler_t *translate_mpi_dtype_handler;
   fca_get_dtype_size_handler_t      *get_dtype_size_handler;
+public:
   fca_config_t_value_t              *config_t_value;
 };
 
@@ -394,7 +394,7 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Translate_mpi_op    FCAFunc::getInstance()->Translate_mpi_op
 #define FCA_Translate_mpi_dtype FCAFunc::getInstance()->Translate_mpi_dtype
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
-#define FCA_Default_config      FCAFunc::getInstance()->Default_config
+#define FCA_Default_config      (*(FCAFunc::getInstance()->config_t_value))
 
 #include "fcafunc.cc"
 
