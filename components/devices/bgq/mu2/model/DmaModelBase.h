@@ -751,6 +751,7 @@ namespace PAMI
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
         uint32_t              routingIndex;
+        uint32_t              onALine;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
@@ -758,7 +759,8 @@ namespace PAMI
                                         rfifo,
                                         map,
 					paceRgetsToThisDest,
-                                        routingIndex );
+                                        routingIndex,
+                                        onALine);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
@@ -1007,7 +1009,8 @@ namespace PAMI
 							   remote_src_pa,
 							   bytes,
 							   map,
-                                                           routingIndex);
+                                                           routingIndex,
+                                                           onALine);
 
                 /* MUSPI_DescriptorDumpHex((char *)"Pacing DPut (DPut)", (MUHWI_Descriptor_t*)dput); */
 
@@ -1122,7 +1125,8 @@ namespace PAMI
                                                             MUHWI_PACKET_HINT_E_NONE,
                                                             local_fn,
                                                             cookie,
-                                                            routingIndex);
+                                                            routingIndex,
+                                                            onALine);
 
                 rget->setPayload (paddr, pbytes);
                             /* MUSPI_DescriptorDumpHex((char*)"DmaModelBase-Rget",desc); */
@@ -1228,6 +1232,7 @@ namespace PAMI
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
         uint32_t              routingIndex;
+        uint32_t              onALine;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
@@ -1235,7 +1240,8 @@ namespace PAMI
                                         rfifo,
                                         map,
 					paceRgetsToThisDest,
-                                        routingIndex);
+                                        routingIndex,
+                                        onALine);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 

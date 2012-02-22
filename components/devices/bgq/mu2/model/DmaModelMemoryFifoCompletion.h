@@ -70,6 +70,15 @@ namespace PAMI
                 (routingOptions[1] == 3) ? MUHWI_PACKET_ZONE_ROUTING_3 :
                 0xFF /*deterministic */  );
 
+            unsigned int smallRoutingOption = __global.getSmallRouting();
+            _smallRoutingSize = __global.getSmallRoutingSize();
+            _smallRouting =
+              ( (smallRoutingOption == 0) ? MUHWI_PACKET_ZONE_ROUTING_0 :
+                (smallRoutingOption == 1) ? MUHWI_PACKET_ZONE_ROUTING_1 :
+                (smallRoutingOption == 2) ? MUHWI_PACKET_ZONE_ROUTING_2 :
+                (smallRoutingOption == 3) ? MUHWI_PACKET_ZONE_ROUTING_3 :
+                0xFF /*deterministic */  );
+
             COMPILE_TIME_ASSERT((sizeof(MUSPI_DescriptorBase)*2) <= MU::Context::immediate_payload_size);
           };
 
@@ -176,15 +185,29 @@ namespace PAMI
                                                           uint8_t               hintsE,
                                                           pami_event_function   local_fn,
                                                           void                * cookie,
-                                                          uint32_t              routingIndex)
+                                                          uint32_t              routingIndex,
+                                                          uint32_t              onALine)
           {
             TRACE_FN_ENTER();
 
-            // The routing index is used to find the routing value to be used.
-            // The routing value is bit mask to be set into the descriptor for the dynamic
-            // routing zone, or 0xFF for deterministic routing.  Deterministic routing
-            // is already set into the descriptor.
-            uint8_t  routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+            // Determine the routing value (deterministic or dynamic zone 0,1,2,or 3).
+            // When the dest is on a line with us, use deterministic.
+            // Otherwise, when the msg size <= smallRoutingSizeThreshold, use the
+            // small routing value (see PAMI_ROUTING).
+            // Otherwise, use the routing determined by the flexability metric.
+            uint8_t routingValue=0xFF; // Set deterministic.  Note that determinisitic is
+                                       // already set into the descriptor.
+            if ( onALine == 0 ) // Not on a line?
+            {
+              if ( bytes <= _smallRoutingSize )
+              {
+                routingValue = _smallRouting;
+              }
+              else
+              {
+                routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+              }
+            }
 
             uint64_t numCounterPools = _context.getNumCounterPools();
             uint64_t poolID = 0;
@@ -306,7 +329,8 @@ namespace PAMI
 							       uint64_t              remote_src_pa,
 							       size_t                bytes,
 							       uint64_t              map,
-                                                               uint32_t              routingIndex)
+                                                               uint32_t              routingIndex,
+                                                               uint32_t              onALine)
           {
             TRACE_FN_ENTER();
 
@@ -331,12 +355,21 @@ namespace PAMI
             // Set the pinned fifo/map information
             desc->setTorusInjectionFIFOMap (map);
 
-            // Set routing and zone.
-            // The routing index is used to find the routing value to be used.
-            // The routing value is bit mask to be set into the descriptor for the dynamic
-            // routing zone, or 0xFF for deterministic routing.  Deterministic routing
-            // is already set into the descriptor.
-            uint32_t routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+            // Determine the routing value (deterministic or dynamic zone 0,1,2,or 3).
+            // When the dest is on a line with us, use deterministic.
+            // Otherwise, when the msg size <= smallRoutingSizeThreshold, use the
+            // small routing value (see PAMI_ROUTING).
+            // Otherwise, use the routing determined by the flexability metric.
+            uint8_t routingValue=0xFF; // Set deterministic.  Note that determinisitic is
+                                       // already set into the descriptor.
+            if ( onALine == 0 ) // Not on a line?
+            {
+              if ( bytes <= _smallRoutingSize )
+                routingValue = _smallRouting;
+              else
+                routingValue = _flexabilityMetricRoutingOptions[routingIndex];
+            }
+
             if ( routingValue != 0xFF ) // Not deterministic routing?
             {
               desc->setRouting ( MUHWI_PACKET_USE_DYNAMIC_ROUTING );
@@ -429,6 +462,10 @@ namespace PAMI
           //       3                MUHWI_PACKET_ZONE_ROUTING_3
           //       4                0xFF (Deterministic Routing)
           uint8_t _flexabilityMetricRoutingOptions[2];
+
+          // Routing based on message size.
+          size_t  _smallRoutingSize;
+          uint8_t _smallRouting;
 
       }; // PAMI::Device::MU::DmaModelMemoryFifoCompletion class
     };   // PAMI::Device::MU namespace

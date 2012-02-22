@@ -53,6 +53,8 @@ namespace PAMI
   ///     the flexability metric.  __global.getFlexabilityMetricRoutingOptions()
   ///     returns a 2 element array containing the routings.  This bit is used
   ///     as an index into that array.
+  /// 5.  The next highest-order bit of the B coordinate is used to indicate
+  ///     whether our node and the destination node are on a network line.
   ///
   /// Here's a picture of the bits:
   ///
@@ -63,7 +65,9 @@ namespace PAMI
   /// 2        First bit of the pinFifo value
   /// 3-7      A coordinate
   /// 8        Second bit of the pinFifo value
-  /// 9-13     B coordinate
+  /// 9        0=not on a network line
+  ///          1=on a network line
+  /// 10-13    B coordinate
   /// 14       Third bit of the pinFifo value
   /// 15       Routing bit.  0=Use routing 0.  1=Use routing 1.  See above.
   /// 16-19    C coordinate

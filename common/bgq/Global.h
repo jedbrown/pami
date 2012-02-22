@@ -283,6 +283,30 @@ namespace PAMI
         return _flexabilityMetricRangeRouting;
       }
 
+      /// \brief Get Small Routing Size
+      ///
+      /// When the message size is <= this value, the small routing value
+      /// determines the routing for the message.
+      ///
+      /// \ref getSmallRouting()
+      ///
+      inline size_t getSmallRoutingSize()
+      {
+        return _smallRoutingSize;
+      }
+
+      /// \brief Get Small Routing
+      ///
+      /// When the message size <= small routing size, this routing value
+      /// is used to route the message.
+      ///
+      /// \ref getSmallRoutingSize()
+      ///
+      inline unsigned int getSmallRouting()
+      {
+        return _smallRouting;
+      }
+
     private:
 
       inline size_t initializeMapCache (BgqJobPersonality  & personality,
@@ -451,12 +475,34 @@ namespace PAMI
                                            size_t Csize,
                                            size_t Dsize );
 
+      /// \brief Determine Whether Two Nodes are on a Line
+      ///
+      /// Our node's ABCDE coords are compared with the dest node's ABCDE coords
+      /// to determine if the two nodes are on a line.  That is, they only differ
+      /// in one dimension.
+      ///
+      /// \retval  0  Not on a line.
+      /// \retval  1  On a line.
+      ///
+      inline unsigned int getOnALine ( size_t srcAcoord,
+                                       size_t srcBcoord,
+                                       size_t srcCcoord,
+                                       size_t srcDcoord,
+                                       size_t srcEcoord,
+                                       size_t destAcoord,
+                                       size_t destBcoord,
+                                       size_t destCcoord,
+                                       size_t destDcoord,
+                                       size_t destEcoord );
+
       bgq_mapcache_t   _mapcache;
       size_t           _size;
       bool _useshmem;
       bool _useMU;
       bool _isCommAgentRunning;
-      CommAgent_Control_t _commAgentControl;       // Comm Agent control struct.
+      CommAgent_Control_t _commAgentControl;          // Comm Agent control struct.
+      size_t       _smallRoutingSize;                 // Small routing size.
+      unsigned int _smallRouting;                     // Routing to use when message <= _smallRoutingSize.
       float        _flexabilityMetricRange[2];        // Flexability Metric low/high range values.
       unsigned int _flexabilityMetricRangeRouting[2]; // Routing (0,1,2,3,4) when in and out of range.
   }; // PAMI::Global
@@ -598,8 +644,18 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 /// messages that are large enough to use the rendezvous protocol (larger than
 /// the eager limit (PAMID_EAGER) ).
 ///
-/// The complete syntax is <tt> PAMI_ROUTING=[low:high][,[in][,out]] </tt>
+/// The complete syntax is
+/// <tt> PAMI_ROUTING=[size][,[small][,[low:high][,[in][,out]]]] </tt>
 ///
+/// When the source and destination nodes are on a network line (their ABCDE
+/// coordinates differ in at most 1 dimension), deterministic routing is always
+/// used.  PAMI_ROUTING does not override this.
+///
+/// When the message size is less than or equal to <tt>size</tt>, PAMI uses the
+/// <tt>small</tt> network routing (see below for possible values).
+///
+/// When the message size is larger than <tt>size</tt>, PAMI uses the
+/// "flexability metric" to determine the network routing as follows:
 /// <tt>low:high</tt> is the "flexability metric" range.  The flexability metric
 /// guages the routing flexability between a given source node and destination
 /// node.  Values for "low" and "high" are each floating point numbers ranging
@@ -613,8 +669,10 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 ///
 /// <tt>in</tt> is the network routing to be used for a message transfer
 /// between two nodes when their flexability metric is between "low" and
-/// "high", and <tt>out</tt> is the network routing otherwise.  The values for
-/// "in" and "out" may each be one of the following values:
+/// "high", and <tt>out</tt> is the network routing otherwise.  
+///
+/// The values for <tt>in</tt>, <tt>out</tt>, and <tt>small</tt>  may each be
+/// one of the following values:
 /// - 0: Dynamic routing zone 0.
 /// - 1: Dynamic routing zone 1.
 /// - 2: Dynamic routing zone 2.
@@ -622,26 +680,26 @@ bool PAMI::Global::paceRgets( bool   doRgetPacing,
 /// - 4: Deterministic routing.
 ///
 /// \verbatim
-/// Default flexability metric range, based upon system size:
+/// Default values based upon system size:
 ///
-/// BLOCK SIZE           Flexability Metric Range   Routing when   Routing when 
-///                      low:high                   "in" Range     "out" of Range
-/// ------------------   ------------------------   ------------   --------------
-///  32 <= Nodes <   64      1.5 - 3.5                    3              3
-///  64 <= Nodes <  128      1.5 - 3.5                    3              3
-/// 128 <= Nodes <  256      1.5 - 3.5                    3              3
-/// 256 <= Nodes <  512      1.5 - 3.5                    1              3
-/// 512 <= Nodes < 1024      1.5 - 3.5                    3              3
-///   1 <= Racks <  2        1.5 - 3.5                    1              3
-///   2 <= Racks <  4        1.0 - 3.5                    3              0
-///   4 <= Racks <  8        1.0 - 3.5                    3              0
-///   8 <= Racks < 16        1.0 - 3.5                    3              0
-///  16 <= Racks < 32        1.0 - 3.5                    3              0
-///  32 <= Racks < 48        1.0 - 3.5                    3              0
-///  48 <= Racks < 64        1.0 - 3.5                    3              0
-///  64 <= Racks < 80        1.0 - 3.5                    3              0
-///  80 <= Racks < 96        1.0 - 3.5                    3              0
-///  96 <= Racks             1.0 - 3.5                    3              0
+/// BLOCK SIZE           Size   Small   Flexability Metric Range   Routing when   Routing when 
+///                                     low:high                   "in" Range     "out" of Range
+/// ------------------   -----  -----   ------------------------   ------------   --------------
+///  32 <= Nodes <   64  65536    4         1.5 - 3.5                    3              3
+///  64 <= Nodes <  128  65536    4         1.5 - 3.5                    3              3
+/// 128 <= Nodes <  256  65536    4         1.5 - 3.5                    3              3
+/// 256 <= Nodes <  512  65536    4         1.5 - 3.5                    1              3
+/// 512 <= Nodes < 1024  65536    4         1.5 - 3.5                    3              3
+///   1 <= Racks <  2    65536    4         1.5 - 3.5                    1              3
+///   2 <= Racks <  4    65536    4         1.0 - 3.5                    3              0
+///   4 <= Racks <  8    65536    4         1.0 - 3.5                    3              0
+///   8 <= Racks < 16    65536    4         1.0 - 3.5                    3              0
+///  16 <= Racks < 32    65536    4         1.0 - 3.5                    3              0
+///  32 <= Racks < 48    65536    4         1.0 - 3.5                    3              0
+///  48 <= Racks < 64    65536    4         1.0 - 3.5                    3              0
+///  64 <= Racks < 80    65536    4         1.0 - 3.5                    3              0
+///  80 <= Racks < 96    65536    4         1.0 - 3.5                    3              0
+///  96 <= Racks         65536    4         1.0 - 3.5                    3              0
 /// \endverbatim
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -681,6 +739,36 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
                                          { 3, 0 },   /* 64 racks */
                                          { 3, 0 },   /* 80 racks */
                                          { 3, 0 } }; /* 96 racks */
+  size_t defaultSize[15] = { 65536,  /*    32    */
+                             65536,  /*    64    */
+                             65536,  /*   128    */
+                             65536,  /*   256    */
+                             65536,  /*   512    */
+                             65536,  /*  1 rack  */
+                             65536,  /*  2 racks */
+                             65536,  /*  4 racks */
+                             65536,  /*  8 racks */
+                             65536,  /* 16 racks */
+                             65536,  /* 32 racks */
+                             65536,  /* 48 racks */
+                             65536,  /* 64 racks */
+                             65536,  /* 80 racks */
+                             65536}; /* 96 racks */
+  unsigned int defaultSmall[15] = { 4,  /*    32    */
+                                    4,  /*    64    */
+                                    4,  /*   128    */
+                                    4,  /*   256    */
+                                    4,  /*   512    */
+                                    4,  /*  1 rack  */
+                                    4,  /*  2 racks */
+                                    4,  /*  4 racks */
+                                    4,  /*  8 racks */
+                                    4,  /* 16 racks */
+                                    4,  /* 32 racks */
+                                    4,  /* 48 racks */
+                                    4,  /* 64 racks */
+                                    4,  /* 80 racks */
+                                    4}; /* 96 racks */
 
   // Compute block size
   size_t blockSize;
@@ -708,12 +796,14 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
   if ( blockSize <  256    ) index = 2;
   if ( blockSize <  128    ) index = 1;
   if ( blockSize <   64    ) index = 0;
+  _smallRoutingSize = defaultSize[index]; // Small routing size value.
+  _smallRouting     = defaultSmall[index];// Small routing when message <= _smallRoutingSize.
   _flexabilityMetricRange[0] = defaultFlexabilityMetricRange[index][0]; // Flexability Metric low  range value.
   _flexabilityMetricRange[1] = defaultFlexabilityMetricRange[index][1]; // Flexability Metric high range value.
   _flexabilityMetricRangeRouting[0] = defaultRouting[index][0]; // Routing (0,1,2,3,4) when in range.
   _flexabilityMetricRangeRouting[1] = defaultRouting[index][1]; // Routing (0,1,2,3,4) when in range.
 
-  TRACE_ERR((stderr,"Default flexability range = %g - %g, routing = %u - %u\n",_flexabilityMetricRange[0],_flexabilityMetricRange[1],_flexabilityMetricRangeRouting[0],_flexabilityMetricRangeRouting[1]));
+  TRACE_ERR((stderr,"Default small routing size = %zu, small routing = %u, flexability range = %g - %g, routing = %u - %u\n",_smallRoutingSize,_smallRouting,_flexabilityMetricRange[0],_flexabilityMetricRange[1],_flexabilityMetricRangeRouting[0],_flexabilityMetricRangeRouting[1]));
 
   // Get the PAMI_ROUTING env var.
   char *envVar;
@@ -742,12 +832,82 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
 
   char *currentChar = envVarCopy;
 
-  // Parse the env var:  range,unsigned,unsigned
-  //
-  // First, handle the Flexability Metric range in this format: float:float
+  // Parse the env var:  unsigned long,unsigned,range,unsigned,unsigned
 
+  // First, handle the Small Routing Size.
   char *v;           // "v" for "value"
   unsigned int vLen; // Length of value
+  v = currentChar;   // Point to first character of the "size" value.
+  vLen = 0;
+  while ( ( *currentChar != ','  ) &&
+          ( *currentChar != '\0' ) )
+  {
+    currentChar++;
+    vLen++;
+  }
+
+  // If there is no "size" value...
+  if ( vLen == 0 )
+  {
+    // If remainder of env var is empty, return with defaults set.
+    if ( *currentChar == '\0' )
+    {
+      return;
+    }
+
+    // "size" value is empty and we hit a comma.  Use defaults for "size" routing value.
+    currentChar++;
+  }
+  else
+  {
+    // "size" routing value is not empty.  Extract it.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _smallRoutingSize = strtoul( v, NULL, 10 );
+    PAMI_assert_alwaysf( (errno==0) && (_smallRoutingSize >= 0),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Small Routing Size overridden to %zu\n",_smallRoutingSize));
+
+    currentChar++;
+  }
+
+  // Next, handle the Small Routing Value.
+  v = currentChar;   // Point to first character of the "small" value.
+  vLen = 0;
+  while ( ( *currentChar != ','  ) &&
+          ( *currentChar != '\0' ) )
+  {
+    currentChar++;
+    vLen++;
+  }
+
+  // If there is no "small" value...
+  if ( vLen == 0 )
+  {
+    // If remainder of env var is empty, return with defaults set.
+    if ( *currentChar == '\0' )
+    {
+      return;
+    }
+
+    // "small" value is empty and we hit a comma.  Use defaults for "small" routing value.
+    currentChar++;
+  }
+  else
+  {
+    // "small" routing value is not empty.  Extract it.
+    *currentChar = '\0';      // Null terminate the value string.
+    errno=0;
+    _smallRouting = strtoul( v, NULL, 10 );
+    PAMI_assert_alwaysf( (errno==0) && (_smallRouting >= 0) && (_smallRouting <= 4),"Incorrect PAMI_ROUTING env var");
+
+    TRACE_ERR((stderr,"Small Routing overridden to %u\n",_smallRouting));
+
+    currentChar++;
+  }
+
+  //
+  // Next, handle the Flexability Metric range in this format: float:float
   v = currentChar;   // Point to first character of the range
   vLen = 0;
   while ( ( *currentChar != ','  ) &&
@@ -806,7 +966,7 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
     currentChar++;
   }
 
-  // Second, handle the "in" routing value.
+  // Next, handle the "in" routing value.
   v = currentChar;   // Point to first character of the "in" routing value.
   vLen = 0;
   while ( ( *currentChar != ','  ) &&
@@ -841,7 +1001,7 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
     currentChar++;
   }
 
-  // Third, handle the "out" routing value.
+  // Next, handle the "out" routing value.
   v = currentChar;   // Point to first character of the "out" routing value.
   vLen = 0;
   while ( ( *currentChar != ','  ) &&
@@ -934,6 +1094,38 @@ unsigned int PAMI::Global::getFlexability ( size_t srcAcoord,
 
   if ( ( flex > _flexabilityMetricRange[0] ) &&
        ( flex < _flexabilityMetricRange[1] ) )
+    return 0;
+  else
+    return 1;
+}
+
+/// \brief Determine Whether Two Nodes are on a Line
+///
+/// Our node's ABCDE coords are compared with the dest node's ABCDE coords
+/// to determine if the two nodes are on a line.  That is, they only differ
+/// in one dimension.
+///
+/// \retval  0  Not on a line.
+/// \retval  1  On a line.
+///
+unsigned int PAMI::Global::getOnALine ( size_t srcAcoord,
+                                        size_t srcBcoord,
+                                        size_t srcCcoord,
+                                        size_t srcDcoord,
+                                        size_t srcEcoord,
+                                        size_t destAcoord,
+                                        size_t destBcoord,
+                                        size_t destCcoord,
+                                        size_t destDcoord,
+                                        size_t destEcoord )
+{
+  unsigned int count=0;
+  if ( srcAcoord != destAcoord ) count++;
+  if ( srcBcoord != destBcoord ) count++;
+  if ( srcCcoord != destCcoord ) count++;
+  if ( srcDcoord != destDcoord ) count++;
+  if ( srcEcoord != destEcoord ) count++;
+  if ( count > 1 ) 
     return 0;
   else
     return 1;
@@ -1185,6 +1377,14 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
                   if ( routing )
                     mapcache->torus.task2coords[i].raw |= 0x00010000;
                   TRACE_ERR((stderr,"Routing based on flex = %u\n",routing));
+
+                  // Determine whether our task and the dest task are on a network line.
+                  unsigned int onALine;
+                  onALine = getOnALine ( aCoord,bCoord,cCoord,dCoord,eCoord,
+                                         a,b,c,d,e );
+                  if ( onALine )
+                    mapcache->torus.task2coords[i].raw |= 0x00400000;
+                  TRACE_ERR((stderr,"On a Line = %u\n",onALine));
 		}
 
               // Set the bit corresponding to the physical node of this rank,
