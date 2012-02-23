@@ -85,7 +85,16 @@ public:
     T_Geometry  *g    = (T_Geometry*)geometry;
     fca_comm_t  *comm = (fca_comm_t*)(g->getKey(this->_context_id,
                                                 Geometry::CKEY_FCAGEOMETRYINFO));
-    T_Composite::metadata(mdata, comm);
+    fca_comm_caps_t comm_caps;
+    FCA_Comm_get_caps(comm, &comm_caps);
+
+    T_Composite::metadata(mdata);
+    mdata->check_perf.values.hw_accel     = 1;
+    mdata->range_lo                       = 0;
+    mdata->range_hi                       = comm_caps.max_payload;
+    mdata->range_lo_perf                  = 0;
+    mdata->range_hi_perf                  = comm_caps.max_payload;
+
   }
   virtual void returnComposite(T_Composite *composite)
     {
@@ -203,16 +212,11 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
-      fca_comm_caps_t comm_caps;
-      FCA_Comm_get_caps(comm, &comm_caps);
       new(m) PAMI::Geometry::Metadata(myName());
       m->check_correct.values.alldtop   = 0;
       m->check_fn                       = op_dt_metadata_function<pami_reduce_t>;
-      m->check_perf.values.hw_accel     = 1;
-      m->range_lo_perf                  = 0;
-      m->range_hi_perf                  = comm_caps.max_payload;
     }
   static inline const char *myName()
     {
@@ -254,16 +258,11 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
-      fca_comm_caps_t comm_caps;
-      FCA_Comm_get_caps(comm, &comm_caps);
       new(m) PAMI::Geometry::Metadata(myName());
       m->check_correct.values.alldtop   = 0;
       m->check_fn                       = op_dt_metadata_function<pami_allreduce_t>;
-      m->check_perf.values.hw_accel     = 1;
-      m->range_lo_perf                  = 0;
-      m->range_hi_perf                  = comm_caps.max_payload;
     }
   static inline const char *myName()
     {
@@ -305,10 +304,9 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata(myName());
-      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -344,10 +342,9 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata(myName());
-      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -382,10 +379,9 @@ public:
     int rc = FCA_Do_allgatherv(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d",rc);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata(myName());
-      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -423,10 +419,9 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
+  static inline void metadata(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata(myName());
-      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
