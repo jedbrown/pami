@@ -307,6 +307,10 @@ namespace PAMI
         return _smallRouting;
       }
 
+      /// \brief Get Rget Pacing Size
+      ///
+      inline size_t getRgetPacingSize() { return _rgetPacingSize; }
+
     private:
 
       inline size_t initializeMapCache (BgqJobPersonality  & personality,
@@ -349,7 +353,6 @@ namespace PAMI
       ///          1 if the block size is larger than 1 rack.
       ///
       /// \see \ref COMMAGENT_RGETPACING
-      /// \see \ref COMMAGENT_RGETPACINGSIZE
       ///
       /// \env{rgetpacing,PAMI_RGETPACINGHOPS}
       /// Messages between nodes that are more than this
@@ -365,6 +368,11 @@ namespace PAMI
       /// means that messages between these nodes will be considered for pacing.
       ///
       /// \default 1
+      ///
+      /// \env{rgetpacing,PAMI_RGETPACINGSIZE}
+      /// Messages exceeding this size in bytes are considered for pacing.
+      ///
+      /// \default 65536
       ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -389,13 +397,16 @@ namespace PAMI
       ///                             eligible for pacing.
       /// \param[out]  dims           If our node and the dest coords differ in "dims" 
       ///                             dimensions, rgets may be eliglble for pacing.
+      /// \param[out]  size           Rget Pacing Size threshold, above which messages
+      ///                             are considered for pacing.
       ///
       /// \see paceRgets()
       ///
       inline void initializeRgetPacing ( size_t blockSize,
                                          bool   &doRgetPacing,
 					 size_t &hops,
-					 size_t &dims );
+					 size_t &dims,
+                                         size_t &size);
 
       /// \brief Determine Whether to Pace Remote Gets
       ///
@@ -501,6 +512,7 @@ namespace PAMI
       bool _useMU;
       bool _isCommAgentRunning;
       CommAgent_Control_t _commAgentControl;          // Comm Agent control struct.
+      size_t       _rgetPacingSize;                   // Message size threshold for rget pacing.
       size_t       _smallRoutingSize;                 // Small routing size.
       unsigned int _smallRouting;                     // Routing to use when message <= _smallRoutingSize.
       float        _flexabilityMetricRange[2];        // Flexability Metric low/high range values.
@@ -543,7 +555,8 @@ void PAMI::Global::initializeCommAgent()
 void PAMI::Global::initializeRgetPacing ( size_t blockSize,
                                           bool   &doRgetPacing,
 					  size_t &hops,
-					  size_t &dims )
+                                          size_t &dims,
+					  size_t &size )
 {
   char *s;
   unsigned long v;
@@ -556,6 +569,7 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
   doRgetPacing = (blockSize > 1024) ? true : false;
   hops         = 4;
   dims         = 1;
+  size         = 65536;
 
   s = getenv( "PAMI_RGETPACING" );
   if ( s )
@@ -580,7 +594,14 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
       v = strtoul( s, 0, 10 );
       dims = (size_t)v;
     }
-  TRACE_ERR((stderr,"InitializeRgetPacing: doRgetPacing=%d, hops=%zu, dims=%zu\n",doRgetPacing,hops,dims));
+
+  s = getenv( "PAMI_RGETPACINGSIZE" );
+  if ( s )
+    {
+      v = strtoul( s, 0, 10 );
+      size = (size_t)v;
+    }
+  TRACE_ERR((stderr,"InitializeRgetPacing: doRgetPacing=%d, hops=%zu, dims=%zu, size=%zu\n",doRgetPacing,hops,dims,size));
 }
 
 
@@ -1307,7 +1328,7 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
 	  size_t rgetPacingHops;
 	  size_t rgetPacingDims;
 	  initializeRgetPacing( aSize * bSize * cSize * dSize * eSize,
-                                doRgetPacing, rgetPacingHops, rgetPacingDims );
+                                doRgetPacing, rgetPacingHops, rgetPacingDims, _rgetPacingSize );
 	  
           /* Obtain the following information from the _mapcache:
            * 1. Number of active ranks in the partition.

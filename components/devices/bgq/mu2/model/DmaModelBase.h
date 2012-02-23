@@ -255,6 +255,7 @@ namespace PAMI
 
           MU::Context          & _context;
           MUHWI_Destination_t  * _myCoords;
+          size_t                 _rgetPacingSize;
 
           ///
           /// \brief Local completion event callback for multiple sub-events
@@ -327,6 +328,8 @@ namespace PAMI
         TRACE_FORMAT("sizeof(state_t) == %ld, sizeof(get_state_t) = %ld, sizeof(put_state_t) = %ld, T_Model::payload_size = %zu", sizeof(state_t), sizeof(get_state_t), sizeof(put_state_t), T_Model::payload_size);
 
         _myCoords = __global.mapping.getMuDestinationSelf();
+
+        _rgetPacingSize = __global.getRgetPacingSize();
 
         // Zero-out the descriptor models before initialization
         memset((void *)&_dput, 0, sizeof(_dput));
@@ -946,15 +949,10 @@ namespace PAMI
         else
           { // Not special E dimension case
 	    
-	    // If rget pacing is eligible between these two nodes,  route the rget requests 
-	    // to the agent for processing.  Because this is an "ordered" model, we must 
-	    // ensure that all rgets stay in order.  Thus, all rgets that are eligible for
-	    // pacing must go to the agent for processing.  The agent may decide, based on
-	    // the message length, whether or not to pace it.  But in any case, the agent
-	    // will process the requests in order, paced or not.
-	    // Note: When rgets are sent to the agent for processing, they will be
-	    // dynamically routed.  So, the normal memory fifo completion is used.
-	    if ( unlikely ( paceRgetsToThisDest ) )
+            // If rget pacing is eligible between these two nodes, and the message size
+            // exceeds the _rgetPacingSize threshold,  route the rget requests 
+            // to the agent for processing.
+	    if ( unlikely ( (paceRgetsToThisDest) && (bytes > _rgetPacingSize ) ) )
 	      {
 		int rc;
 		// Need to pace this rget.  Prepare the descriptors in the 
@@ -1254,23 +1252,25 @@ namespace PAMI
 
         // We are expecting the following completion callbacks as a result of
         // the fence activity:
-        // 1.  If dest is not nearestNeighborInE and not eligible for rget pacing,
-        //     1. Dput completion
-        //     2. Rget completion
-        //        a. memory fifo completion
-        //        b. counter completion, added in later if necessary
-        // 2.  If dest is nearestNeighborInE and not eligible for rget pacing,
-        //     1. Dput completion
-        //     2. Rget E+ completion (memory fifo completion only)
-        //     3. Rget E- completion (memory fifo completion only)
-        // 3.  If dest is not nearestNeighborInE, but is eligible for rget pacing,
-        //     1. Dput completion
-        //     2. Rget completion (via the agent).
-        //     If dest is eligible for rget pacing, it will not be a nearestNeighborInE.
-        // So, the following calculates how many completions are expected...
+        // - Dput completion (always) (active initialized to 1).
+        // - if nearestNeighborInE, E+ and E- completion (active incremented by 2).
+        // - else
+        //   - if dest is eligible for pacing, commAgent completion (active incremented by 1).
+        //   - memory fifo completion (active incremented by 1).
+        //   - if there are dynamic routing counters still active, counter completion
+        //     (active incremented by number of counter pools with active counters).
+        // So, the following calculates how many completions are expected (counter
+        // completion added in later).
 
-        fence_state->multi.active = 2 + is_nearest_neighbor_in_e;
+        fence_state->multi.active = 1;
+        if ( is_nearest_neighbor_in_e ) fence_state->multi.active += 2;
+        else
+        {
+          if ( paceRgetsToThisDest ) fence_state->multi.active++;
+          fence_state->multi.active++;
+        }
 
+        // Dput Completion....
         _remoteCompletion.inject( fence_state->memfifo_remote_completion_state,
                                   channel,
                                   multiComplete,
@@ -1472,13 +1472,9 @@ namespace PAMI
 	     int rc;
 	     rc = _context.commAgent_RemoteGetPacing_SubmitWorkRequest( &workPtr->request.rget );
 	     PAMI_assert_debug ( rc == 0 );
-
-	     // The completion callback was not invoked; return false.
-	     TRACE_FN_EXIT();
-	     return false;
 	   }
-	   else
-	   {// Not eligible for rget pacing
+
+	   {
             
             // Set up to monitor counter completion, if there are any counters
             // waiting for completion.  Do this by 
@@ -1514,7 +1510,7 @@ namespace PAMI
               fence_state->multi.toBeFreed = fence_state->counterPoolInfo;
               fence_state->multi.mm        = __global.heap_mm;
             }
-
+            // Memfifo completion....
             // Determine the remote pinning information
             size_t rfifo = _context.pinFifoToSelf (target_task, map);
 
@@ -1632,7 +1628,7 @@ namespace PAMI
             // The completion callback was not invoked; return false.
             TRACE_FN_EXIT();
             return false;
-	   } // End: Not eligible for rget pacing
+	   } // End: Counter and Memfifo Completion
           } // End: Not special E dimension case
 
         TRACE_FN_EXIT();
