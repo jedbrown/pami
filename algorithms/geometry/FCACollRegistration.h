@@ -79,7 +79,7 @@ public:
         
         // Fill in FCA Init Spec
         // use default config for now
-        _fca_init_spec.element_type = FCA_ELEMENT_RANK;
+        _fca_init_spec.element_type  = FCA_ELEMENT_RANK;
         _fca_init_spec.job_id        = _Lapi_env.MP_partition;
         _fca_init_spec.rank_id       = _Lapi_env.MP_child;
         _fca_init_spec.progress.func = NULL;
@@ -87,7 +87,14 @@ public:
         _fca_init_spec.dev_selector  = NULL;
         _fca_init_spec.config        = FCA_Default_config;
 
-        FCA_Init(&_fca_init_spec, &_fca_context);
+        int ret = FCA_Init(&_fca_init_spec, &_fca_context);
+        if (ret < 0) {
+            printf("fca_init failed with rc %d [%s]\n", ret, FCA_Strerror(ret));
+            exit(0);
+        } else {
+            // tmp: for debugging purpose
+            printf("FCA Init succeeded\n");
+        }
         _enabled=true;
       }
   }

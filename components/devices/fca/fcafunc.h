@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "components/devices/fca/fca_api.h"
+#include "components/devices/fca/core/fca_errno.h"
 
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
@@ -38,6 +39,7 @@ const char *FCA_cmd_list[] =
   "fca_translate_mpi_op",
   "fca_translate_mpi_dtype",
   "fca_get_dtype_size",
+  "fca_strerror",
   "fca_default_config"
 };
 
@@ -64,6 +66,7 @@ enum
   I_Translate_mpi_op,
   I_Translate_mpi_dtype,
   I_Get_dtype_size,
+  I_Strerror,
   I_Default_config
 };
 
@@ -91,6 +94,7 @@ public:
   typedef       int   (fca_translate_mpi_op_handler_t)(char *mpi_op_str);
   typedef       int   (fca_translate_mpi_dtype_handler_t)(char *mpi_dtype_str);
   typedef       int   (fca_get_dtype_size_handler_t)(enum fca_reduce_dtype_t dtype);
+  typedef const char *(fca_strerror_handler_t)(int error);
   typedef fca_config_t fca_config_t_value_t;
 
   static FCAFunc *getInstance();
@@ -116,6 +120,7 @@ public:
   int             Translate_mpi_op(char *mpi_op_str);
   int             Translate_mpi_dtype(char *mpi_dtype_str);
   int             Get_dtype_size(enum fca_reduce_dtype_t dtype);
+  const char     *Strerror(int error);
 private:
   FCAFunc();
   ~FCAFunc();
@@ -144,6 +149,7 @@ private:
   fca_translate_mpi_op_handler_t    *translate_mpi_op_handler;
   fca_translate_mpi_dtype_handler_t *translate_mpi_dtype_handler;
   fca_get_dtype_size_handler_t      *get_dtype_size_handler;
+  fca_strerror_handler_t            *strerror_handler;
 public:
   fca_config_t_value_t              *config_t_value;
 };
@@ -171,6 +177,7 @@ inline FCAFunc::FCAFunc():
   translate_mpi_op_handler(NULL),
   translate_mpi_dtype_handler(NULL),
   get_dtype_size_handler(NULL),
+  strerror_handler(NULL),
   config_t_value(NULL)
 {
 }
@@ -252,6 +259,7 @@ inline int FCAFunc::Load()
   translate_mpi_op_handler    = (fca_translate_mpi_op_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Translate_mpi_op]);
   translate_mpi_dtype_handler = (fca_translate_mpi_dtype_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Translate_mpi_dtype]);
   get_dtype_size_handler      = (fca_get_dtype_size_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_dtype_size]);
+  strerror_handler            = (fca_strerror_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Strerror]);
   config_t_value              = (fca_config_t_value_t *)(uintptr_t)import(FCA_cmd_list[I_Default_config]);
 
   
@@ -277,6 +285,7 @@ inline int FCAFunc::Load()
   FCA_CHECK_FN(translate_mpi_op_handler);
   FCA_CHECK_FN(translate_mpi_dtype_handler);
   FCA_CHECK_FN(get_dtype_size_handler);
+  FCA_CHECK_FN(strerror_handler);
   // It may be OK for this to be NULL
   FCA_CHECK_FN(config_t_value);
 #undef FCA_CHECK_FN;
@@ -368,6 +377,10 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 {
   return(get_dtype_size_handler(dtype));
 }
+inline const char * FCAFunc::Strerror(int error)
+{
+  return(strerror_handler(error));
+}
 
 #ifdef FCA_DLOPEN
 
@@ -394,6 +407,7 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Translate_mpi_op    FCAFunc::getInstance()->Translate_mpi_op
 #define FCA_Translate_mpi_dtype FCAFunc::getInstance()->Translate_mpi_dtype
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
+#define FCA_Strerror            FCAFunc::getInstance()->Strerror
 #define FCA_Default_config      (*(FCAFunc::getInstance()->config_t_value))
 
 #include "components/devices/fca/fcafunc.cc"
@@ -421,6 +435,7 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Translate_mpi_op    fca_translate_mpi_op
 #define FCA_Translate_mpi_dtype fca_translate_mpi_dtype
 #define FCA_Get_dtype_size      fca_get_dtype_size
+#define FCA_Strerror            fca_strerror
 #define FCA_Default_config      fca_default_config
 
 #endif //FCA_DLOPEN

@@ -275,7 +275,7 @@ public:
       uintptr_t         dt,op;
       PAMI::Type::TypeFunc::GetEnums(cmd->stype,cmd->op,
                                      dt,op);
-      _spec.root     = -1; // ? this ok?
+      _spec.root     = -1; // will be ignored in FCA
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
       _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
@@ -356,7 +356,7 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allgather_t *cmd = &(xfer->cmd.xfer_allgather);
-      _spec.root            = -1;  // this OK?
+      _spec.root            = -1;  // will be ignored in FCA
       _spec.sbuf            = cmd->sndbuf;
       _spec.rbuf            = cmd->rcvbuf;
       _spec.size            = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
@@ -394,7 +394,7 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allgatherv_int_t *cmd = &(xfer->cmd.xfer_allgatherv_int);
-      _spec.root             = -1;  // this OK?
+      _spec.root             = -1;  // will be ignored in FCA
       _spec.sbuf             = cmd->sndbuf;
       _spec.rbuf             = cmd->rcvbuf;
       _spec.sendsize         = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
