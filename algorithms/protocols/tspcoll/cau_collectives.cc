@@ -59,7 +59,8 @@ void* xlpgas::CAUReduce<T_NI>::recv_reduce(lapi_handle_t *hndl, void *uhdr, uint
     assert( *uhdr_len == sizeof(reduce_hdr) );
 
     int ctxt = 0;//reduce_hdr->dest_ctxt;
-    void * base = xlpgas::CollectiveManager<T_NI>::instance(ctxt)->find (reduce_hdr.kind,reduce_hdr.tag);
+    xlpgas::CollectiveManager<T_NI> *cm = (xlpgas::CollectiveManager<T_NI> *)__global._id_to_collmgr_table[*hndl];
+    void * base = cm->find (reduce_hdr.kind,reduce_hdr.tag);
     if (base == NULL){
       xlpgas_fatalerror (-1, "%d: incoming: cannot find coll=<%d,%d>",
 			 XLPGAS_MYNODE, reduce_hdr.kind, reduce_hdr.tag);
@@ -193,7 +194,8 @@ void* xlpgas::CAUBcast<T_NI>::recv_mcast(lapi_handle_t *hndl, void *uhdr, uint *
     mcast_hdr_t  &mcast_hdr = *(mcast_hdr_t *)uhdr;
     assert( *uhdr_len == sizeof(mcast_hdr) );
     int ctxt = 0;//reduce_hdr->dest_ctxt;
-    void * base = xlpgas::CollectiveManager<T_NI>::instance(ctxt)->find (mcast_hdr.kind,mcast_hdr.tag);
+    xlpgas::CollectiveManager<T_NI> *cm = (xlpgas::CollectiveManager<T_NI> *)__global._id_to_collmgr_table[*hndl];
+    void * base = cm->find (mcast_hdr.kind,mcast_hdr.tag);
     if (base == NULL){
       xlpgas_fatalerror (-1, "%d: incoming: cannot find coll=<%d,%d>",
 			 XLPGAS_MYNODE, mcast_hdr.kind, mcast_hdr.tag);

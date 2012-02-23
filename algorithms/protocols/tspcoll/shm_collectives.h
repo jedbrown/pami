@@ -21,8 +21,9 @@ namespace xlpgas{
   struct Wait
   {
     static void wait2() {
+      PAMI_assert(0);
       //printf("replace with dev->advance\n");
-      xlpgas::CollectiveManager<T_NI>::instance(0)->device()->advance();
+      //xlpgas::CollectiveManager<T_NI>::instance(0)->device()->advance();
     }
     static void wait1() { sched_yield(); }
   };

@@ -258,12 +258,9 @@ namespace xlpgas
       /* ---------------- */
       /* external API     */
       /* ---------------- */
-
-      static void Initialize (int ncontexts, CollectiveManager<T_NI>*);
-      static CollectiveManager * instance(int ctxt) { 
-	return _instances[ctxt];
-      }
-
+#ifdef XLPGAS_PAMI_CAU
+      static void InitializeLapi (lapi_handle_t handle, xlpgas::CollectiveManager<T_NI>* cmgr);
+#endif      
       Collective<T_NI> * find (CollectiveKind kind, int tag);
 
       template <class CollDefs>
@@ -744,9 +741,8 @@ namespace xlpgas
       /* data members */
       /* ------------ */
 
-      CollArray_t              * _kindlist[MAXKIND];
-      int                        _ctxt;
-      static std::vector<CollectiveManager*> _instances;
+      CollArray_t                   *_kindlist[MAXKIND];
+      int                            _ctxt;
       PAMI::Device::Generic::Device *_genericDevice;
     private:
       /* ------------ */

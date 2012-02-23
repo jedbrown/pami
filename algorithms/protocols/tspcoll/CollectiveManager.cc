@@ -4,19 +4,16 @@
  */
 #include "algorithms/protocols/tspcoll/Collective.h"
 
-template <class T_NI>
-std::vector<xlpgas::CollectiveManager<T_NI>*> xlpgas::CollectiveManager<T_NI>::_instances;
-
 /* ************************************************************************ */
 /*            Initialize the collective manager singleton                   */
 /* ************************************************************************ */
+#ifdef XLPGAS_PAMI_CAU
 template <class T_NI>
-void xlpgas::CollectiveManager<T_NI>::Initialize (int context_id, xlpgas::CollectiveManager<T_NI>* cmgr)
+void xlpgas::CollectiveManager<T_NI>::InitializeLapi (lapi_handle_t handle, xlpgas::CollectiveManager<T_NI>* cmgr)
 {
-  assert((unsigned)context_id == _instances.size());
-  _instances.push_back(cmgr);
+  __global._id_to_collmgr_table[handle] = cmgr;
 }
-
+#endif
 /* ************************************************************************ */
 /*       Collective life cycle manager: constructor                         */
 /* ************************************************************************ */

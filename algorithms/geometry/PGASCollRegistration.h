@@ -276,8 +276,9 @@ namespace PAMI
 	    SETUPNI_P2P_P2P(_hybrid_shortallreduce);
 	    SETUPNI_P2P_P2P(_hybrid_bcast);
             SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
+            lapi_handle_t hdl = *((lapi_handle_t*)_comm_handle);            
+            _mgr.InitializeLapi(hdl,&_mgr); // Initialize for 1 context
 #endif
-            _mgr.Initialize(context_id,&_mgr); // Initialize for 1 context
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgathervKind,     _allgatherv);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ScatterKind,        _scatter_s);
@@ -435,8 +436,10 @@ namespace PAMI
                 SETUPNI_P2P_P2P(_hybrid_pipelined_bcast);
 #endif
               }
-
-            _mgr.Initialize(context_id,&_mgr); // Initialize for 1 context
+#ifdef XLPGAS_PAMI_CAU            
+            lapi_handle_t hdl = *((lapi_handle_t*)_comm_handle);            
+            _mgr.InitializeLapi(hdl,&_mgr); // Initialize for 1 context
+#endif
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgatherKind,      _allgather);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::AllgathervKind,     _allgatherv);
             _mgr.template multisend_reg<xlpgas::base_coll_defs<T_NI, T_Device_P2P> >(xlpgas::ScatterKind,        _scatter_s);

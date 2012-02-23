@@ -61,7 +61,8 @@ namespace PAMI
   public:
     PAMI::Mapping		                   mapping;
     std::map<lapi_handle_t,void*>                 _context_to_device_table;
-    std::map<lapi_handle_t,std::map<int,void*> > _id_to_device_table;    
+    std::map<lapi_handle_t,std::map<int,void*> > _id_to_device_table;
+    std::map<lapi_handle_t,void* >               _id_to_collmgr_table;
   };   // class Global
 };     // namespace PAMI
 
