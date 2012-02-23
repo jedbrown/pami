@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "fca_api.h"
+#include "components/devices/fca/fca_api.h"
 
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
@@ -396,7 +396,7 @@ inline int FCAFunc::Get_dtype_size(enum fca_reduce_dtype_t dtype)
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
 #define FCA_Default_config      (*(FCAFunc::getInstance()->config_t_value))
 
-#include "fcafunc.cc"
+#include "components/devices/fca/fcafunc.cc"
 
 #else
 // NO DLOPEN + FCA ENABLED PATH

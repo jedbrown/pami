@@ -104,7 +104,7 @@ namespace CCMI{namespace Adaptor{
         virtual Executor::Composite * generate(pami_geometry_t              geometry,
                                                void                      * cmd) = 0;
 
-        virtual void metadata(pami_metadata_t *mdata)=0;
+        virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)=0;
         virtual uint32_t nameHash(int generation_id=-1)
         {
           uint32_t hash =0;          

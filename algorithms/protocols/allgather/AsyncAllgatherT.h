@@ -165,7 +165,7 @@ public:
         CCMI_abort();
     }
 
-    virtual void metadata(pami_metadata_t *mdata)
+    virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
     {
         // TRACE_ADAPTOR((stderr,"%s\n", __PRETTY_FUNCTION__));
         DO_DEBUG((templateName<MetaDataFn>()));

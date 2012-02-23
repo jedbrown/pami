@@ -16,7 +16,7 @@
 
 #include "sys/pami.h"
 
-#ifdef PAMI_USE_FCA
+//#ifdef PAMI_USE_FCA
 
 #include "algorithms/geometry/FCAWrapper.h"
 namespace PAMI{namespace CollRegistration{namespace FCA{
@@ -200,7 +200,7 @@ public:
 }; // CollRegistration
 }; // PAMI
 
-#endif //PAMI_USE_FCA
+//#endif //PAMI_USE_FCA
 #endif
 //
 // astyle info    http://astyle.sourceforge.net

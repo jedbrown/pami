@@ -158,7 +158,7 @@ namespace CCMI
         return(Executor::Composite *)(&cobj->_obj);
       }
 
-      virtual void metadata(pami_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>",this);

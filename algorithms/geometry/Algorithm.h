@@ -37,7 +37,7 @@ public:
   {}
   inline void metadata(pami_metadata_t   *mdata)
   {
-    _factory->metadata(mdata);
+    _factory->metadata(mdata, _geometry);
   }
   inline pami_result_t generate(pami_xfer_t *xfer)
   {

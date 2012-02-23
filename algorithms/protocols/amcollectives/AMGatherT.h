@@ -142,7 +142,7 @@ namespace CCMI
             CCMI_abort();
           }
 
-          virtual void metadata(pami_metadata_t *mdata)
+          virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
           {
             DO_DEBUG((templateName<MetaDataFn>()));
             get_metadata(mdata);

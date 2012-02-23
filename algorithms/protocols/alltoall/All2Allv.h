@@ -304,7 +304,7 @@ namespace CCMI
         return g->comm();
       }
 
-      virtual void metadata(pami_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
       {
         get_metadata(mdata);
         if(_native) _native->metadata(mdata,PAMI_XFER_ALLTOALLV);

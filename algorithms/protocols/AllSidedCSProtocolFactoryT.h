@@ -87,7 +87,7 @@ namespace CCMI
         return(Executor::Composite *)&cobj->_obj;
       }
 
-      virtual void metadata(pami_metadata_t *mdata)
+      virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
       {
         get_metadata(mdata);
         CollectiveProtocolFactory::metadata(mdata,T_XFER_TYPE);

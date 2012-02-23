@@ -1257,7 +1257,7 @@ namespace CCMI
         virtual ~MultiCastComposite2DeviceFactoryT()
         {
         }
-        virtual void metadata(pami_metadata_t *mdata)
+        virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
         {
           get_metadata(mdata);
         }

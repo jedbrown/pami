@@ -223,7 +223,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier
                                           freeFunction,
                                           this);
       }
-    virtual void metadata(pami_metadata_t *mdata)
+    virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
     {
       get_metadata(mdata);
     }

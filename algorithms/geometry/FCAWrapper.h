@@ -58,6 +58,7 @@ protected:
 template <class T_Composite>
 class FCAFactory : public CCMI::Adaptor::CollectiveProtocolFactory
 {
+typedef typename T_Composite::GeometryType T_Geometry;
 public:
   FCAFactory(pami_context_t           ctxt,
              size_t                   ctxt_id,
@@ -68,7 +69,6 @@ public:
   virtual CCMI::Executor::Composite * generate(pami_geometry_t  geometry,
                                                void            *cmd)
   {
-    typedef typename T_Composite::GeometryType T_Geometry;
     T_Composite *c    = (T_Composite*)_alloc.allocateObject();
     pami_xfer_t *xfer = (pami_xfer_t *)cmd;
     T_Geometry  *g    = (T_Geometry*)geometry;
@@ -80,9 +80,12 @@ public:
     c->setxfer(xfer);
     return c;
   }
-  virtual void metadata(pami_metadata_t *mdata)
+  virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry)
   {
-    T_Composite::metadata(mdata);
+    T_Geometry  *g    = (T_Geometry*)geometry;
+    fca_comm_t  *comm = (fca_comm_t*)(g->getKey(this->_context_id,
+                                                Geometry::CKEY_FCAGEOMETRYINFO));
+    T_Composite::metadata(mdata, comm);
   }
   virtual void returnComposite(T_Composite *composite)
     {
@@ -158,6 +161,27 @@ static inline fca_reduce_op_t p_func_to_fca_op(pami_op op)
   return fca_op;
 }
 
+
+template <class T_reduce_type>
+inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
+{
+  T_reduce_type     *reduction = (T_reduce_type*)&in->cmd;
+  metadata_result_t  result    = {0};
+  uintptr_t          op;
+  uintptr_t          dt;
+  PAMI::Type::TypeFunc::GetEnums(reduction->stype,
+                                 reduction->op,
+                                 dt,
+                                 op);
+  fca_reduce_dtype_t fca_dt = p_dtype_to_fca_dtype((pami_dt)dt);
+  fca_reduce_op_t    fca_op = p_func_to_fca_op((pami_op)op);
+  if(fca_op < FCA_OP_MAX && fca_dt < FCA_DTYPE_LAST)
+    result.check.datatype_op = false;
+  else
+    result.check.datatype_op = true;
+
+  return(result);
+}
 // TODO:  convert endpoint based roots to TASKS
 // TODO:  figure out progress function details
 // --------------  FCA Reduce wrapper classes -------------
@@ -179,9 +203,16 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
+      fca_comm_caps_t comm_caps;
+      FCA_Comm_get_caps(comm, &comm_caps);
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_correct.values.alldtop   = 0;
+      m->check_fn                       = op_dt_metadata_function<pami_reduce_t>;
+      m->check_perf.values.hw_accel     = 1;
+      m->range_lo_perf                  = 0;
+      m->range_hi_perf                  = comm_caps.max_payload;
     }
   static inline const char *myName()
     {
@@ -223,9 +254,16 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
+      fca_comm_caps_t comm_caps;
+      FCA_Comm_get_caps(comm, &comm_caps);
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_correct.values.alldtop   = 0;
+      m->check_fn                       = op_dt_metadata_function<pami_allreduce_t>;
+      m->check_perf.values.hw_accel     = 1;
+      m->range_lo_perf                  = 0;
+      m->range_hi_perf                  = comm_caps.max_payload;
     }
   static inline const char *myName()
     {
@@ -267,9 +305,10 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -305,9 +344,10 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -342,9 +382,10 @@ public:
     int rc = FCA_Do_allgatherv(this->_comm, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d",rc);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
@@ -382,9 +423,10 @@ public:
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
-  static inline void metadata(pami_metadata_t *m)
+  static inline void metadata(pami_metadata_t *m, fca_comm_t  *comm)
     {
       new(m) PAMI::Geometry::Metadata(myName());
+      m->check_perf.values.hw_accel     = 1;
     }
   static inline const char *myName()
     {
