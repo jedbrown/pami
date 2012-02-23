@@ -189,6 +189,17 @@ namespace PAMI
           CCMI::ConnectionManager::SimpleConnMgr,
           1>
         MultiCastFactory;
+        void McastMetaData2(pami_metadata_t *m)
+        {
+          new(m) PAMI::Geometry::Metadata("I0:MultiCastComposite:SHMEM:CAU");
+          m->check_perf.values.hw_accel     = 0;
+        }
+        typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT
+        < CCMI::Adaptor::Broadcast::MultiCastComposite2Device<PAMI_GEOMETRY_CLASS,true,false>,
+          McastMetaData2,
+          CCMI::ConnectionManager::SimpleConnMgr,
+          1>
+        MultiCastFactory2;
       };
 
       namespace Allreduce
@@ -350,6 +361,7 @@ namespace PAMI
           _barrier_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_barrier_ni),
           _barrierbsr_reg(context,context_id,mapidtogeometry,&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
           _broadcast_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
+          _broadcast_reg2(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),          
           _allreduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_allreduce_ni),
           _reduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_reduce_ni),
           _csmm(mm),
@@ -748,6 +760,7 @@ namespace PAMI
                   _barrier_reg.setNI(geometry, ni, &_g_barrier_ni);
                   _barrierbsr_reg.setNI(geometry, &_l_barrierbsr_ni, &_g_barrier_ni);
                   _broadcast_reg.setNI(geometry, ni, &_g_broadcast_ni);
+                  _broadcast_reg2.setNI(geometry, ni, &_g_broadcast_ni);                  
                   _allreduce_reg.setNI(geometry, ni,&_g_allreduce_ni);
                   _reduce_reg.setNI(geometry, ni, &_g_reduce_ni);
 
@@ -836,7 +849,7 @@ namespace PAMI
                   else if(singleNode)
                   {
                     ITRC(IT_CAU, "CollReg(phase 1): group_id=%d adding CAU/SHM Broadcast collective to list (singlenode)\n", groupid);
-                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg,_context, _context_id);
+                    geometry->addCollective(PAMI_XFER_BROADCAST,&_broadcast_reg2,_context, _context_id);
                   }
                   
                   // ///////////////////////////////////////////////////////////
@@ -1090,6 +1103,7 @@ namespace PAMI
         Barrier::MultiSyncFactory                                       _barrier_reg;
         Barrier::MultiSyncBSRFactory                                    _barrierbsr_reg;
         Broadcast::MultiCastFactory                                     _broadcast_reg;
+        Broadcast::MultiCastFactory2                                    _broadcast_reg2;
         Allreduce::MultiCombineFactory                                  _allreduce_reg;
         Reduce::MultiCombineFactory                                     _reduce_reg;
 
