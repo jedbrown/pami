@@ -85,7 +85,11 @@ public:
     if(!rc) return;
     else
       {
-        // TODO:  print the FCA Banner and check FCA version
+        // print the FCA Banner and check FCA version
+        printf("FCA version %lu [%s]\n", 
+                FCA_Get_version(),
+                FCA_Get_version_string());
+
         // Fill in FCA Init Spec
         // use default config for now
         _fca_init_spec.element_type  = FCA_ELEMENT_RANK;
@@ -208,9 +212,16 @@ public:
               cs.rank_count    = master_topo->size();
               cs.is_comm_world = 0;
               fca_comm_desc_t *comm_desc = (fca_comm_desc_t*) ptr;
-              FCA_Comm_new(_fca_context,
-                           &cs,
-                           comm_desc);
+              int ret = FCA_Comm_new(_fca_context,
+                                     &cs,
+                                     comm_desc);
+              if (ret < 0) {
+                  printf("FCA_Comm_new failed with rc %d [%s]\n", 
+                          ret, FCA_Strerror(ret));
+              } else {
+                  printf("FCA_Comm_new failed with rc %d [%s]\n",
+                          ret, FCA_Strerror(ret));
+              }
               gi->_amRoot = true;
             }
         }
