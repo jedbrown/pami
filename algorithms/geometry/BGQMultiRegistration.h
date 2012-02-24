@@ -1158,9 +1158,10 @@ namespace PAMI
             if ((result & (0x1 << i)) != 0)
             {
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
-              _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
-              geometry->setKey(context_id,PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
-              TRACE_FORMAT("<%p>(%u)CKEY_MSYNC_CLASSROUTEID %zu", this, __LINE__,(i+1));
+              pami_result_t rc = _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
+	      if (rc == PAMI_SUCCESS)
+		geometry->setKey (context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
+              TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %zu", this, __LINE__,(i+1));
               break;
             }
         }
