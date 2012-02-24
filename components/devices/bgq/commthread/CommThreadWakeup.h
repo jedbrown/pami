@@ -62,10 +62,10 @@ extern PAMI::Device::CommThread::Factory __commThreads;
 /// This is some general documentation about the commthread
 /// environment variables.
 ///
-/// \env{commthread,PAMI_MAX_COMMTHREADS"
-/// Maximum number of commthreads to use.
-/// Note: this must be based on number of processes per node.
-/// \default BG_PROCESSESPERNODE - 1
+/// \env{commthread,PAMI_MAX_COMMTHREADS}
+/// Maximum number of commthreads to create.
+/// This can be used to avoid hardware thread oversubscription.
+/// \default (64 / Ranks-per-Node) - 1
 ///
 /// \env{commthread,PAMI_COMMTHREAD_MAX_LOOPS}
 /// Maximum number of loops through advance done by
