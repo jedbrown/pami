@@ -313,7 +313,7 @@ int main (int argc, char ** argv)
 
               for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
             {
-              long long dataSent = i;
+              size_t dataSent = i * get_type_size(dt_array[dt]);
               int          niter;
 
               if (dataSent < CUTOFF)
@@ -376,7 +376,7 @@ int main (int argc, char ** argv)
               if (task_id == 0)
               {
                  printf("  %11lld %16d %14.1f %12.2f\n",
-                        dataSent,
+                        (long long)dataSent,
                         niter,
                         (double)1e6*(double)dataSent / (double)usec,
                         usec);
