@@ -90,7 +90,7 @@ namespace CCMI
         PAMI::Topology      *_gtopology;
 
         PAMI::PipeWorkQueue _pwq [MAX_CONCURRENT_SCAN];
-        CollHeaderData      _mdata [MAX_CONCURRENT_SCAN];
+        ExtCollHeaderData   _mdata [MAX_CONCURRENT_SCAN];
         pami_multicast_t    _msend [MAX_CONCURRENT_SCAN];
 
         //Private method
@@ -526,7 +526,7 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
  pami_callback_t      * cb_done)
 {
 
-  CollHeaderData *cdata = (CollHeaderData*) & info;
+  ExtCollHeaderData *cdata = (ExtCollHeaderData*) & info;
 
   EXECUTOR_DEBUG((stderr, "Executor::ScanExec::notifyRecv: received from %d phase = %d, count = %d, _endphase = %d\n",
 		          src, cdata->_phase, cdata->_count, (unsigned)_endphase);)

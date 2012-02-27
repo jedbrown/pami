@@ -275,7 +275,7 @@ namespace CCMI
         PAMI_Callback_t       * cb_done)
         {
           TRACE_FN_ENTER();
-          CollHeaderData  *cdata = (CollHeaderData *) info;
+          ExtCollHeaderData  *cdata = (ExtCollHeaderData *) info;
           T_Factory *factory = (T_Factory *) arg;
 	
           PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)

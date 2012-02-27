@@ -169,7 +169,7 @@ namespace CCMI
 
 	Interfaces::NativeInterface     * _native;
 	pami_multicast_t                  _msend;
-	CollHeaderData      _sndInfo __attribute__((__aligned__(16)));
+	ExtCollHeaderData                 _sndInfo __attribute__((__aligned__(16)));
 
 	bool                _postReceives;
         bool                _enablePipelining;
@@ -903,7 +903,7 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::notifyRecv
 {
   TRACE_FN_ENTER();
 
-  CollHeaderData *cdata = (CollHeaderData*) &info;
+  ExtCollHeaderData *cdata = (ExtCollHeaderData*) &info;
   CCMI_assert_debug(cdata);
 
   TRACE_FORMAT ("notifyRecv:<%p> phase:%u root:%u local root:%u src %u,_state->getBytes():%u _state->getPipelineWidth():%u \n",

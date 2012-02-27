@@ -100,13 +100,22 @@ typedef struct _cheader_data
   unsigned        _root;         //root of the collective
   unsigned        _comm;         //communicator
   unsigned        _count;        //count for this collective operation
+  unsigned        _phase;        //phase of the collective
+} CollHeaderData  __attribute__((__aligned__(16)));
+
+//Descriptive quad of data that identifies each [all]reduce collective
+typedef struct _extended_cheader_data
+{
+  unsigned        _root;         //root of the collective
+  unsigned        _comm;         //communicator
+  unsigned        _count;        //count for this collective operation
   unsigned        _phase:12;     //phase of the collective
   unsigned        _iteration:4;  //iteration of the allreduce, otherwise unused
   unsigned        _op:8;         //op code of the allreduce, otherwise unused
   unsigned        _dt:8;         //datatype of the allreduce, otherwise unused
-} CollHeaderData  __attribute__((__aligned__(16)));
+} ExtCollHeaderData  __attribute__((__aligned__(16)));
 
-typedef struct _amcheader_data : _cheader_data
+typedef struct _amcheader_data : _extended_cheader_data
 {
   size_t          _data_size;    // Size of the payload for AM collective
   size_t          _dispatch;     // Dispatch ID for AM collective

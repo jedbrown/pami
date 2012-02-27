@@ -354,7 +354,7 @@ namespace CCMI
             TRACE_FORMAT( "<%p>Allreduce::MultiColorCompositeT::cb_receiveHead peer %zd, conn_id %d\n",
                            arg, peer, conn_id);
             CCMI_assert (info && arg);
-            CollHeaderData  *cdata = (CollHeaderData *) info;
+            ExtCollHeaderData  *cdata = (ExtCollHeaderData *) info;
             CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arg;
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *composite = (Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn> *)

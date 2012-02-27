@@ -296,7 +296,7 @@ namespace CCMI
            pami_callback_t       * cb_done)
           {
             AMReduceFactoryT *factory = (AMReduceFactoryT *) arg;
-            CollHeaderData *cdata = (CollHeaderData *) info;
+            ExtCollHeaderData *cdata = (ExtCollHeaderData *) info;
             T_Composite* composite = NULL;
 
             PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *) factory->getGeometry (ctxt, cdata->_comm);
@@ -427,7 +427,7 @@ namespace CCMI
           }
 
           static inline void prepareReduceExecutor(CCMI::Adaptor::CollOpT<pami_xfer_t, T_Composite> *co,
-                                                   CollHeaderData *cdata,
+                                                   ExtCollHeaderData *cdata,
                                                    size_t bytes,
                                                    bool   is_broadcast)
           {

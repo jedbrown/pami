@@ -515,7 +515,7 @@ public:
 
         AsyncReduceScatterFactoryT *factory = (AsyncReduceScatterFactoryT *) arg;
 
-        CollHeaderData *cdata = (CollHeaderData *) info;
+        ExtCollHeaderData *cdata = (ExtCollHeaderData *) info;
         T_Composite* a_composite = NULL;
 
         int comm = cdata->_comm;

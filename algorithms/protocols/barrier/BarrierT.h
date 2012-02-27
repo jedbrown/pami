@@ -164,7 +164,7 @@ public:
                               PAMI_Callback_t  *     cb_done)
     {
         TRACE_FN_ENTER();
-        CollHeaderData  *cdata = (CollHeaderData *) info;
+        ExtCollHeaderData  *cdata = (ExtCollHeaderData *) info;
         BarrierFactoryT *factory = (BarrierFactoryT *) arg;
         TRACE_FORMAT( "<%p>cdata %p, _comm %u, _count %u, _dt %u, _iteration %u, _op %u, _phase %u,_root %u",factory,cdata, cdata->_comm, cdata->_count, cdata->_dt, cdata->_iteration, cdata->_op, cdata->_phase,cdata->_root);
         *rcvlen    = 0;

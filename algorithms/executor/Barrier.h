@@ -52,7 +52,7 @@ namespace CCMI
         ///when the neighbor's message arrives
         char                   _phasevec[CCMI_BARRIER_MAXPHASES][2];	
 
-        CollHeaderData         _cdata;  /// Info passed as meta data
+        ExtCollHeaderData      _cdata;  /// Info passed as meta data
         pami_multicast_t       _minfo;  /// The multicast info structure	
 
         ///\brief A cache of the barrier schedule
@@ -272,7 +272,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
                                                        pami_callback_t      * cb_done)
 {
   TRACE_FN_ENTER();
-  CollHeaderData *hdr = (CollHeaderData *) (& info);
+  ExtCollHeaderData *hdr = (ExtCollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);
   //Process this message by incrementing the phase vec
   _phasevec[hdr->_phase][hdr->_iteration] --;

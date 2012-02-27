@@ -324,7 +324,7 @@ public:
         AsyncScanFactoryT *factory = (AsyncScanFactoryT *) arg;
         //fprintf(stderr, "%d: <%#.8X>Scan::AsyncScanFactoryT::cb_async() connid %d\n",factory->_native->myrank(), (int)factory, conn_id);
 
-        CollHeaderData *cdata = (CollHeaderData *) info;
+        ExtCollHeaderData *cdata = (ExtCollHeaderData *) info;
         T_Composite* a_composite = NULL;
 
         int comm = cdata->_comm;
