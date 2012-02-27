@@ -18,6 +18,7 @@
 
 #ifdef PAMI_USE_FCA
 
+#include "lapi_itrace.h"
 #include "algorithms/geometry/FCAWrapper.h"
 #include "algorithms/interfaces/GeometryInterface.h"
 namespace PAMI{namespace CollRegistration{namespace FCA{
@@ -86,7 +87,7 @@ public:
     else
       {
         // print the FCA Banner and check FCA version
-        printf("FCA version %lu [%s]\n", 
+        ITRC(IT_FCA, "FCA version %lu [%s]\n", 
                 FCA_Get_version(),
                 FCA_Get_version_string());
 
@@ -103,14 +104,12 @@ public:
         int ret = FCA_Init(&_fca_init_spec, &_fca_context);
         if (ret < 0)
           {
-            printf("fca_init failed with rc %d [%s]\n", ret, FCA_Strerror(ret));
-            exit(0);
+            ITRC(IT_FCA, "FCA_Init failed with rc %d [%s]\n",
+                    ret, FCA_Strerror(ret));
+            return;
           }
-        else
-          {
-            // tmp: for debugging purpose
-            printf("FCA Init succeeded\n");
-          }
+
+        ITRC(IT_FCA, "FCA_Init succeeded\n");
 
         _fca_rank_info = FCA_Get_rank_info(_fca_context, &_fca_rank_info_sz);
         if (_fca_rank_info == NULL)
@@ -146,6 +145,7 @@ public:
   {
     PAMI_assert(context_id == _context_id);
     if(!_enabled) return PAMI_SUCCESS;
+    int rc;
 
     // TODO:  Conditionally insert these algorithms into the list
     // TODO:  Implement metadata and strings
@@ -212,16 +212,16 @@ public:
               cs.rank_count    = master_topo->size();
               cs.is_comm_world = 0;
               fca_comm_desc_t *comm_desc = (fca_comm_desc_t*) ptr;
-              int ret = FCA_Comm_new(_fca_context,
-                                     &cs,
-                                     comm_desc);
-              if (ret < 0) {
-                  printf("FCA_Comm_new failed with rc %d [%s]\n", 
-                          ret, FCA_Strerror(ret));
-              } else {
-                  printf("FCA_Comm_new failed with rc %d [%s]\n",
-                          ret, FCA_Strerror(ret));
+              rc = FCA_Comm_new(_fca_context,
+                                &cs,
+                                comm_desc);
+              if (rc < 0) {
+                  ITRC(IT_FCA, "FCA_Comm_new failed with rc %d [%s]\n", 
+                          rc, FCA_Strerror(rc));
+                  return PAMI_ERROR;
               }
+
+              ITRC(IT_FCA, "FCA_Comm_new succeeded.\n");
               gi->_amRoot = true;
             }
         }
@@ -241,10 +241,16 @@ public:
           is.proc_idx                = local_topo->endpoint2Index(my_endpoint);
           is.num_procs               = local_topo->size();
 
-          FCA_Comm_init(_fca_context,
-                        &is,
-                        &gi->_fca_comm);
+          rc = FCA_Comm_init(_fca_context,
+                             &is,
+                             &gi->_fca_comm);
+          if (rc < 0) {
+              ITRC(IT_FCA, "FCA_Comm_init failed with rc %d [%s]\n", 
+                      rc, FCA_Strerror(rc));
+              return PAMI_ERROR;
+          }
 
+          ITRC(IT_FCA, "FCA_Comm_init succeeded.\n");
         }
         return PAMI_SUCCESS;
         break;
@@ -289,8 +295,13 @@ public:
     FCA_Comm_destroy(gi->_fca_comm);
     if(gi->_amRoot == true)
       {
-        FCA_Comm_end(gi->_registration->getFCAContext(),
-                     gi->_fca_comm_desc.comm_id);
+        int ret = FCA_Comm_end(gi->_registration->getFCAContext(),
+                               gi->_fca_comm_desc.comm_id);
+        if (ret < 0) {
+            ITRC(IT_FCA, "FCA_Comm_end failed with rc=%d [%s]\n",
+                    ret, FCA_Strerror(ret));
+        }
+        ITRC(IT_FCA, "FCA_Comm_end succeeded.\n");
       }
     _geom_allocator.returnObject(gi);
   }

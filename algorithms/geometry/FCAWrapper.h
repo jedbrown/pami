@@ -86,7 +86,10 @@ public:
     fca_comm_t  *comm = (fca_comm_t*)(g->getKey(this->_context_id,
                                                 Geometry::CKEY_FCAGEOMETRYINFO));
     fca_comm_caps_t comm_caps;
-    FCA_Comm_get_caps(comm, &comm_caps);
+    int rc = FCA_Comm_get_caps(comm, &comm_caps);
+    PAMI_assertf(rc == 0, "FCA_Comm_get_caps failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
 
     T_Composite::metadata(mdata);
     mdata->check_perf.values.hw_accel     = 1;
@@ -208,7 +211,10 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_reduce(this->_c, &_spec);
-    PAMI_assertf(rc == 0, "FCA_Do_reduce failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_reduce failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
+
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
@@ -254,7 +260,9 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_all_reduce(this->_comm, &_spec);
-    PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
@@ -300,7 +308,10 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_bcast(this->_comm, &_spec);
-    PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
+
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
@@ -338,7 +349,10 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_allgather(this->_comm, &_spec);
-    PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
+
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
@@ -377,7 +391,9 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_allgatherv(this->_comm, &_spec);
-    PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d [%s]",
+            rc, 
+            FCA_Strerror(rc));
   }
   static inline void metadata(pami_metadata_t *m)
     {
@@ -415,7 +431,10 @@ public:
   virtual void start()
   {
     int rc = FCA_Do_barrier(this->_comm);
-    PAMI_assertf(rc == 0, "FCA_Do_barrier failed with rc=%d",rc);
+    PAMI_assertf(rc == 0, "FCA_Do_barrier failed with rc=%d [%s]",
+            rc,
+            FCA_Strerror(rc));
+
     this->executeDoneCallback();
     this->_f->returnComposite(this);
   }
