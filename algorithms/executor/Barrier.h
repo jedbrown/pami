@@ -95,6 +95,7 @@ namespace CCMI
         /// Static function to be passed into the done of multisend
         static void staticNotifySendDone(pami_context_t context, void *cd, pami_result_t err)
         {
+          (void)context;(void)err;
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p>", cd);
 
@@ -271,6 +272,7 @@ inline void  CCMI::Executor::BarrierExec::notifyRecv  (unsigned             src,
                                                        PAMI::PipeWorkQueue ** pwq,
                                                        pami_callback_t      * cb_done)
 {
+  (void)src;(void)pwq;(void)cb_done;
   TRACE_FN_ENTER();
   ExtCollHeaderData *hdr = (ExtCollHeaderData *) (& info);
   CCMI_assert (hdr->_iteration <= 1);

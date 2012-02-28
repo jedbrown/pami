@@ -102,6 +102,7 @@ namespace PAMI
                                       unsigned     attributes,
                                       void       * cookie)
         {
+          (void)bytes;(void)key;(void)attributes;
           Wakeup::Noop * wakeup = (Wakeup::Noop *) memory;
           size_t i, peers = (size_t) cookie;
 

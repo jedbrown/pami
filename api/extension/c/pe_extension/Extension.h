@@ -25,6 +25,7 @@ namespace PAMI
                                          const char    * name,
                                          pami_result_t & result)
   {
+    (void)client;(void)name;
     result = PAMI_SUCCESS;
     return (void *) 0;
   }
@@ -32,6 +33,7 @@ namespace PAMI
   template <>
   void Extension::closeExtension<2000> (void * cookie, pami_result_t & result)
   {
+    (void)cookie;
     result = PAMI_SUCCESS;
     return;
   }
@@ -39,6 +41,7 @@ namespace PAMI
   template <>
   void * Extension::queryExtension<2000> (const char * name, void * cookie)
   {
+    (void)cookie;
     if (strcasecmp (name, "itrace") == 0)
       return (void *) PAMI::PeExtension::itrace;
 

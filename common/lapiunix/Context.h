@@ -114,6 +114,7 @@ namespace PAMI
                 pami_result_t             & result):
       Send()
       {
+        (void)origin;
         _lapi_state                = device.getState();
         LapiImpl::Context *cp      = (LapiImpl::Context *)_lapi_state;
         internal_rc_t rc = (cp->*(cp->pDispatchSet))(dispatch,
@@ -158,6 +159,7 @@ namespace PAMI
     inline pami_result_t getAttributes (pami_configuration_t  configuration[],
                                         size_t                num_configs)
       {
+        (void)configuration;(void)num_configs;
         PAMI_abort();
         return PAMI_INVAL;
       }
@@ -453,11 +455,11 @@ namespace PAMI
                     PlatformDeviceList                  *devices):
         Interface::Context<PAMI::Context> (client, id),
         _client (client),
+        _context((pami_context_t) this),
+        _contextid (id),
         _clientid (clientid),
         _clientname(clientname),
         _dispatch_id(4095),
-        _context((pami_context_t) this),
-        _contextid (id),
         _pgas_collreg(NULL),
         _p2p_ccmi_collreg(NULL),
         _cau_collreg(NULL),
@@ -569,8 +571,7 @@ namespace PAMI
             result = PAMI_EAGAIN;
             return 0;
           }
-              
-          size_t max_orig = maximum;
+
           while (maximum --)
            {
              size_t events = _devices->advance(_clientid, _contextid);
@@ -828,8 +829,8 @@ namespace PAMI
       inline pami_result_t purge_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_rc_t rc;
-          for (int i=0; i<count; i++) {
+          internal_rc_t rc = SUCCESS;
+          for (int i=0; i<(ssize_t)count; i++) {
               pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
               rc = (cp->*(cp->pPurge))(*tgt, INTERFACE_PAMI);
           }
@@ -839,8 +840,8 @@ namespace PAMI
       inline pami_result_t resume_totask_impl (pami_endpoint_t * dest, size_t count)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)_lapi_state;
-          internal_rc_t rc;
-          for (int i=0; i<count; i++) {
+          internal_rc_t rc = SUCCESS;
+          for (int i=0; i<(ssize_t)count; i++) {
               pami_endpoint_t *tgt = (pami_endpoint_t *)dest + i;
               rc = (cp->*(cp->pResume))(*tgt, INTERFACE_PAMI);
           }
@@ -919,6 +920,7 @@ namespace PAMI
                                                pami_configuration_t  configuration[],
                                                size_t                num_configs)
         {
+          (void)dispatch;
           pami_result_t result = PAMI_SUCCESS;
           size_t i;
           for(i=0; i<num_configs; i++)
@@ -943,6 +945,7 @@ namespace PAMI
                                                 pami_configuration_t  configuration[],
                                                 size_t                num_configs)
         {
+          (void)dispatch;
           pami_result_t result = PAMI_SUCCESS;
           size_t i;
           for(i=0; i<num_configs; i++)

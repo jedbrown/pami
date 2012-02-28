@@ -61,6 +61,7 @@ namespace PAMI
           /// \note This is required to make "C" programs link successfully with virtual destructors
           inline void operator delete(void * p)
           {
+            (void)p;
             PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
           }
 
@@ -109,6 +110,7 @@ namespace PAMI
           virtual pami_result_t getAttributes (pami_configuration_t  configuration[],
                                                size_t                num_configs)
           {
+            (void)configuration;(void)num_configs;
             TRACE_FN_ENTER();
             TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
             TRACE_FN_EXIT();
@@ -117,6 +119,7 @@ namespace PAMI
 
           virtual pami_result_t immediate (pami_send_immediate_t * parameters)
           {
+            (void)parameters;
             TRACE_FN_ENTER();
             TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
             TRACE_FN_EXIT();
@@ -125,6 +128,7 @@ namespace PAMI
 
           virtual pami_result_t simple (pami_send_t * parameters)
           {
+            (void)parameters;
             TRACE_FN_ENTER();
             TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
             TRACE_FN_EXIT();
@@ -133,6 +137,7 @@ namespace PAMI
 
           virtual pami_result_t typed (pami_send_typed_t * parameters)
           {
+            (void)parameters;
             TRACE_FN_ENTER();
             TRACE_FORMAT( "return PAMI_ERROR (%d)", PAMI_ERROR);
             TRACE_FN_EXIT();

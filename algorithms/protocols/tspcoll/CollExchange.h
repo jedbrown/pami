@@ -303,8 +303,6 @@ inline void xlpgas::CollExchange<T_NI>::send (int phase)
   MUTEX_UNLOCK(&_mutex);
 
   assert (_sbuf[phase] != NULL);
-  assert (_sbufln[phase] >= 0);
-
 
   pami_send_t s;//Should remove this when done
   pami_send_event_t   events;
@@ -434,7 +432,7 @@ xlpgas::CollExchange<T_NI>::cb_recvcomplete (void* ctxt, void * arg, pami_result
   MUTEX_LOCK(&base->_mutex);
   base->_recvcomplete[phase]++;
   if(base->_recvcomplete[phase] <= base->_counter) base->kick();
-  else MUTEX_UNLOCK(&base->_mutex);
+  else {MUTEX_UNLOCK(&base->_mutex);}
 
 }
 

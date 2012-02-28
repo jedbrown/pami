@@ -273,18 +273,18 @@ namespace CCMI
             TRACE_FN_ENTER();
             MultiCombineComposite2Device *m = (MultiCombineComposite2Device*) cookie;
             m->_count--;
-            TRACE_FORMAT( "count=%ld", m->_count);
+            TRACE_FORMAT( "count=%zd", m->_count);
 
             if (m->_count == 0)
             {
               m->_fn(context, m->_cookie, result);
-              TRACE_FORMAT( "Delivered Callback Function To User=%ld", m->_count);
+              TRACE_FORMAT( "Delivered Callback Function To User=%zd", m->_count);
               if(m->_temp_results)
                 __global.heap_mm->free(m->_temp_results);
               if(m->_throwaway_results)
                 __global.heap_mm->free(m->_throwaway_results);
             }
-            TRACE_FORMAT( "Phases Left: count=%ld", m->_count);
+            TRACE_FORMAT( "Phases Left: count=%zd", m->_count);
             TRACE_FN_EXIT();
           }
 
@@ -591,7 +591,7 @@ namespace CCMI
             new(&_t_root) PAMI::Topology(cmd->cmd.xfer_reduce.root);
             new(&_t_me)   PAMI::Topology(native_l->endpoint());
 
-            TRACE_FORMAT( "setting up PWQ's %p %p, sbytes=%ld buf=%p:  root=%d, me=%u, amRoot=%d _t_root=%d _t_me=%d _t_root=%p _t_me=%p",
+            TRACE_FORMAT( "setting up PWQ's %p %p, sbytes=%zd buf=%p:  root=%d, me=%u, amRoot=%d _t_root=%d _t_me=%d _t_root=%p _t_me=%p",
                           &_pwq_src, &_pwq_dest, sbytes, cmd->cmd.xfer_reduce.sndbuf,
                           cmd->cmd.xfer_reduce.root, native_l->endpoint(), amRoot,
                           _t_root.index2Endpoint(0),_t_me.index2Endpoint(0),
@@ -653,7 +653,7 @@ namespace CCMI
             }
             PAMI_assert(count < total); // no local master?
             new(&_t_masterproxy) PAMI::Topology(masterNode);
-            TRACE_FORMAT( "<%p>Master Proxy is %ld:", this, masterNode);
+            TRACE_FORMAT( "<%p>Master Proxy is %zd:", this, masterNode);
 
 
             // The "Only Global Master" case
@@ -989,6 +989,7 @@ namespace CCMI
                                            void           *cookie,
                                            pami_result_t   result )
           {
+            (void)context;(void)result;
             TRACE_FN_ENTER();
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
             TRACE_FORMAT( "<%p>bytes produced:%zd buffer:%p",
@@ -1003,6 +1004,7 @@ namespace CCMI
                                     void           *cookie,
                                     pami_result_t   result )
           {
+            (void)context;(void)result;
             TRACE_FN_ENTER();
             TRACE_FORMAT( "<%p>", cookie);
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
@@ -1014,6 +1016,7 @@ namespace CCMI
                                      void           *cookie,
                                      pami_result_t   result )
           {
+            (void)context;(void)result;
             TRACE_FN_ENTER();
             MultiCombineComposite2DeviceNP *m = (MultiCombineComposite2DeviceNP*) cookie;
             TRACE_FORMAT( "<%p>bytes produced:%zd buffer:%p",
@@ -1047,7 +1050,7 @@ namespace CCMI
             TRACE_FN_EXIT();
           }
 #else
-          static void dumpDbuf(double* dbuf,  unsigned count) {}
+          static void dumpDbuf(double* dbuf,  unsigned count) {(void)dbuf;(void)count;}
 #endif
 
         public:
@@ -1079,6 +1082,7 @@ namespace CCMI
               _deviceMcombInfo(NULL),
               _deviceMcastInfo(NULL)
           {
+            (void)cmgr;
             TRACE_FN_ENTER();
             uintptr_t op, dt;
             PAMI::Type::TypeFunc::GetEnums(cmd->cmd.xfer_allreduce.stype,cmd->cmd.xfer_allreduce.op,
@@ -1087,7 +1091,7 @@ namespace CCMI
             TRACE_FORMAT( "<%p>type %#zX/%#zX, count %zu/%zu, op %lu, dt %lu",
                          this, (size_t)cmd->cmd.xfer_allreduce.stype, (size_t)cmd->cmd.xfer_allreduce.rtype,
                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount,
-                          op, dt);
+                          (unsigned long)op, (unsigned long)dt);
 
             DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) TRACE_FORMAT("_topology_l[%u]=%zu, size %zu", j, (size_t)_topology_l->index2Endpoint(j), _topology_l->size()));
 

@@ -37,9 +37,9 @@ class ShmArray : public SharedArray
         }
 
         /* for Checkpoint support */
-        bool Checkpoint(int byte_offset) { return true; } // nothing needed
-        bool Restart   (int byte_offset) { return true; } // nothing needed
-        bool Resume    (int byte_offset) { return true; } // nothing needed
+        bool Checkpoint(int byte_offset) { (void)byte_offset;return true; } // nothing needed
+        bool Restart   (int byte_offset) { (void)byte_offset;return true; } // nothing needed
+        bool Resume    (int byte_offset) { (void)byte_offset;return true; } // nothing needed
 
     private:
         bool                       is_last;

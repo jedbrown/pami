@@ -19,30 +19,37 @@ namespace PAMI {
                 }
 
                 inline pami_result_t init_impl(int num, int key) {
+                  (void)num;(void)key;
                         return PAMI_ERROR;
                 }
 
                 inline void *getWakeupVec_impl(int num) {
+                  (void)num;
                         return NULL;
                 }
 
                 inline pami_result_t wakeup_impl(void *v) {
+                  (void)v;
                         return PAMI_ERROR;
                 }
 
                 inline pami_result_t clear_impl(void *v) {
+                  (void)v;
                         return PAMI_ERROR;
                 }
 
                 inline pami_result_t sleep_impl(void *v) {
+                  (void)v;
                         return PAMI_ERROR;
                 }
 
                 inline pami_result_t trySleep_impl(void *v) {
+                  (void)v;
                         return PAMI_ERROR;
                 }
 
                 inline pami_result_t poll_impl(void *v) {
+                  (void)v;
                         return PAMI_ERROR;
                 }
 

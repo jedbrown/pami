@@ -158,6 +158,7 @@ inline void doDispatch<pami_ambroadcast_t>(pami_xfer_t                  *xfer,
                                            pami_geometry_t               g,
                                            pami_recv_t                  *recv)
 {
+  (void)ctxt;(void)endpoint;(void)g;
   recv->local_fn = xfer->cb_done;
   recv->cookie   = xfer->cookie;
 }
@@ -306,6 +307,7 @@ inline pami_result_t doAction(T_Collective_type *xfer, PAMI_GEOMETRY_CLASS *_geo
 template <>
 inline pami_result_t doAction<pami_barrier_t>(pami_barrier_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)xfer;(void)_geometry;
    //no op
    return PAMI_SUCCESS;
 }
@@ -313,12 +315,14 @@ inline pami_result_t doAction<pami_barrier_t>(pami_barrier_t *xfer, PAMI_GEOMETR
 template <>
 inline pami_result_t doAction<pami_allreduce_t>(pami_allreduce_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
 
 template <>
 inline pami_result_t doAction<pami_broadcast_t>(pami_broadcast_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)xfer;(void)_geometry;
    CHECK_ROOT
    return PAMI_SUCCESS;
 }
@@ -326,6 +330,7 @@ inline pami_result_t doAction<pami_broadcast_t>(pami_broadcast_t *xfer, PAMI_GEO
 template <>
 inline pami_result_t doAction<pami_reduce_t>(pami_reduce_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
@@ -333,12 +338,14 @@ inline pami_result_t doAction<pami_reduce_t>(pami_reduce_t *xfer, PAMI_GEOMETRY_
 template <>
 inline pami_result_t doAction<pami_allgather_t>(pami_allgather_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
 
 template <>
 inline pami_result_t doAction<pami_allgatherv_t>(pami_allgatherv_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL)
      return PAMI_ERROR;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecounts[0], xfer->rdispls[0], 0);
@@ -347,6 +354,7 @@ inline pami_result_t doAction<pami_allgatherv_t>(pami_allgatherv_t *xfer, PAMI_G
 template <>
 inline pami_result_t doAction<pami_allgatherv_int_t>(pami_allgatherv_int_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL)
      return PAMI_ERROR;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecounts[0], xfer->rdispls[0], 0);
@@ -355,6 +363,7 @@ inline pami_result_t doAction<pami_allgatherv_int_t>(pami_allgatherv_int_t *xfer
 template <>
 inline pami_result_t doAction<pami_scatter_t>(pami_scatter_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
@@ -362,6 +371,7 @@ inline pami_result_t doAction<pami_scatter_t>(pami_scatter_t *xfer, PAMI_GEOMETR
 template <>
 inline pami_result_t doAction<pami_scatterv_t>(pami_scatterv_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    if(xfer->stypecounts == NULL || xfer->sdispls == NULL)
      return PAMI_ERROR;
@@ -371,6 +381,7 @@ inline pami_result_t doAction<pami_scatterv_t>(pami_scatterv_t *xfer, PAMI_GEOME
 template <>
 inline pami_result_t doAction<pami_scatterv_int_t>(pami_scatterv_int_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    if(xfer->stypecounts == NULL || xfer->sdispls == NULL)
      return PAMI_ERROR;
@@ -380,6 +391,7 @@ inline pami_result_t doAction<pami_scatterv_int_t>(pami_scatterv_int_t *xfer, PA
 template <>
 inline pami_result_t doAction<pami_gather_t>(pami_gather_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
@@ -387,6 +399,7 @@ inline pami_result_t doAction<pami_gather_t>(pami_gather_t *xfer, PAMI_GEOMETRY_
 template <>
 inline pami_result_t doAction<pami_gatherv_t>(pami_gatherv_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL)
      return PAMI_ERROR;
@@ -396,6 +409,7 @@ inline pami_result_t doAction<pami_gatherv_t>(pami_gatherv_t *xfer, PAMI_GEOMETR
 template <>
 inline pami_result_t doAction<pami_gatherv_int_t>(pami_gatherv_int_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    CHECK_ROOT
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL)
      return PAMI_ERROR;
@@ -405,12 +419,14 @@ inline pami_result_t doAction<pami_gatherv_int_t>(pami_gatherv_int_t *xfer, PAMI
 template <>
 inline pami_result_t doAction<pami_alltoall_t>(pami_alltoall_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
 
 template <>
 inline pami_result_t doAction<pami_alltoallv_t>(pami_alltoallv_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL || xfer->stypecounts == NULL || xfer->sdispls == NULL)
      return PAMI_ERROR;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecounts[0], xfer->rdispls[0], xfer->sdispls[0]);
@@ -419,6 +435,7 @@ inline pami_result_t doAction<pami_alltoallv_t>(pami_alltoallv_t *xfer, PAMI_GEO
 template <>
 inline pami_result_t doAction<pami_alltoallv_int_t>(pami_alltoallv_int_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    if(xfer->rtypecounts == NULL || xfer->rdispls == NULL || xfer->stypecounts == NULL || xfer->sdispls == NULL)
      return PAMI_ERROR;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecounts[0], xfer->rdispls[0], xfer->sdispls[0]);
@@ -427,12 +444,14 @@ inline pami_result_t doAction<pami_alltoallv_int_t>(pami_alltoallv_int_t *xfer, 
 template <>
 inline pami_result_t doAction<pami_scan_t>(pami_scan_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rtypecount, 0, 0);
 }
 
 template <>
 inline pami_result_t doAction<pami_reduce_scatter_t>(pami_reduce_scatter_t *xfer, PAMI_GEOMETRY_CLASS *_geometry)
 {
+  (void)_geometry;
    return copyData((void*)xfer->sndbuf, (TypeCode*)xfer->stype, (void*)xfer->rcvbuf, (TypeCode*)xfer->rtype, xfer->rcounts[0], 0, 0);
 }
 

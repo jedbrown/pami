@@ -127,7 +127,6 @@ class CAUMultisyncModel : public Interface::MultisyncModel<CAUMultisyncModel<T_D
                                         PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID);
     T_Message          *m   = (T_Message *)gi->_postedBar.findAndDelete(seqno);
     lapi_return_info_t *ri  = (lapi_return_info_t *) retinfo;
-    cau_reduce_op_t     red;
     // If no message was found, return, because we aren't ready to broadcast
     // Push a new message to the unexpected queue
     TRACE((stderr, "cau_red_handler: found and delete seqno=%d\n", seqno));

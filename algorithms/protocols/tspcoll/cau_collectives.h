@@ -70,7 +70,9 @@ namespace xlpgas{
     case PAMI_UNSIGNED_LONG_LONG:   cau_op.operand_type = CAU_UNSIGNED_LONGLONG; break;
     case PAMI_DOUBLE:    cau_op.operand_type = CAU_DOUBLE; break;
     case PAMI_FLOAT:    cau_op.operand_type = CAU_FLOAT; break;
-    default: xlpgas_fatalerror (-1,"xlpgas::cau_fast_allreduce :: data type not supported");
+    default:
+      cau_op.operand_type=0;
+      xlpgas_fatalerror (-1,"xlpgas::cau_fast_allreduce :: data type not supported");
     }
 
   switch(op) {
@@ -81,6 +83,7 @@ namespace xlpgas{
     case PAMI_MIN:    cau_op.operation = CAU_MIN; break;
     case PAMI_NOOP:   cau_op.operation = CAU_NOP; break;
     default:
+      cau_op.operation=0;
       xlpgas_fatalerror (-1, "xlpgas::cau_fast_allreduce :: OP not implemented");
     }
   return cau_op;
@@ -182,7 +185,7 @@ namespace xlpgas{
   template <class T>
   void _spread_data(int64_t* data, size_t nelems){
     T* ud = (T*)data;
-    for (int s=0;s<nelems;++s) {
+    for (int s=0;s<(int)nelems;++s) {
       data[nelems - s - 1] = ud[nelems-s-1];
     }
   }
@@ -190,7 +193,7 @@ namespace xlpgas{
   template <class T>
   void _compact_data(int64_t* data, size_t nelems){
     T* ud = (T*)data;
-    for (int s=0;s<nelems;++s) {
+    for (int s=0;s<(int)nelems;++s) {
       ud[s] = data[s];
     }
   }

@@ -78,6 +78,7 @@ namespace CCMI
 
         void operator delete(void * p)
         {
+          (void)p;
           CCMI_abort();
         }
 

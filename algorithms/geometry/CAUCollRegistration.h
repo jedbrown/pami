@@ -55,14 +55,13 @@ namespace PAMI
                                                uint32_t        geometry_id,
                                                PAMI::Topology *topology)
       {
-        uint32_t rc  =0;
         uint32_t hash=0;
         init_hash(&hash);
         // We don't really need the job id, but this generates
         // a per-job hash for the low bits
         update_hash(&hash, (char*)&job_id, sizeof(job_id));
         update_hash(&hash, (char*)&geometry_id, sizeof(geometry_id));
-        for (int i = 0; i < topology->size(); i ++)
+        for (int i = 0; i < (int)topology->size(); i ++)
           {
             pami_endpoint_t endpoint = topology->index2Endpoint(i);
             update_hash(&hash, (char*)&endpoint, sizeof(endpoint));
@@ -122,6 +121,7 @@ namespace PAMI
         }
         extern inline bool hybrid_analyze (PAMI_GEOMETRY_CLASS *geometry)
         {
+          (void)geometry;
           return true;
         }
 
@@ -432,22 +432,21 @@ namespace PAMI
           {
             PAMI::Topology *master_topo       = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
             uint            num_master_tasks  = master_topo->size();
-            bool            participant       = master_topo->isEndpointMember(_my_endpoint);
             GeometryInfo   *geometryInfo      = (GeometryInfo*)geometry->getKey(_context_id,Geometry::PAMI_CKEY_GEOMETRYINFO);
-            pami_result_t rc = __global.heap_mm->memalign((void **)&geometryInfo->_cau_task_list, 16, num_master_tasks*sizeof(uint32_t));
+            pami_result_t rc = __global.heap_mm->memalign((void **)&geometryInfo->_cau_task_list, 16, num_master_tasks*sizeof(uint32_t));(void)rc;
             PAMI_assertf(rc == PAMI_SUCCESS && geometryInfo->_cau_task_list!= NULL,
                          "Fatal:  Unable to allocate CAU task list\n");
-            for(int i=0;i<num_master_tasks;i++)
+            for(int i=0;i<(int)num_master_tasks;i++)
               {
                 pami_task_t task; size_t offset;
                 pami_endpoint_t ep = master_topo->index2Endpoint(i);
                 PAMI_ENDPOINT_INFO(ep, task, offset);
                 geometryInfo->_cau_task_list[i] = ep;
               }
-            int             myrc  = lapi_cau_group_create(_lapi_handle,
-                                                          geometryInfo->_unique_key,
-                                                          num_master_tasks,
-                                                          geometryInfo->_cau_task_list);
+            lapi_cau_group_create(_lapi_handle,
+                                  geometryInfo->_unique_key,
+                                  num_master_tasks,
+                                  geometryInfo->_cau_task_list);
             *cau_gi = (PAMI::Device::CAUGeometryInfo *)_cau_geom_allocator.allocateObject();
             new(*cau_gi)PAMI::Device::CAUGeometryInfo(geometryInfo->_unique_key,geometry->comm());
             geometry->setKey(_context_id,Geometry::CKEY_MCAST_CLASSROUTEID,*cau_gi);
@@ -459,10 +458,7 @@ namespace PAMI
                               T_LocalNI_AM                 **ni,
                               T_LocalModel                 **local_model,
                               void                          *ctrlstr)
-          
           {
-            PAMI::Topology *master_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX));
-            GeometryInfo   *geometryInfo  = (GeometryInfo*)geometry->getKey(_context_id,Geometry::PAMI_CKEY_GEOMETRYINFO);
             PAMI::Topology *local_topo    = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
             *local_model  = (T_LocalModel*)_model_allocator.allocateObject();
             new(*local_model)T_LocalModel(&_local_devs, geometry->comm(), _my_endpoint, local_topo, &_csmm, ctrlstr);
@@ -482,8 +478,6 @@ namespace PAMI
                               void                           *shmem_addr)
           {
             PAMI::Topology *local_topo   = (PAMI::Topology *) (geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX));
-
-            GeometryInfo   *geometryInfo = (GeometryInfo*)geometry->getKey(_context_id, Geometry::PAMI_CKEY_GEOMETRYINFO);
             *bsr_gi                      = (PAMI::Device::BSRGeometryInfo *)_bsr_geom_allocator.allocateObject();
             uint            member_id    = local_topo->endpoint2Index(_my_endpoint);
             Memory::sync();
@@ -669,7 +663,7 @@ namespace PAMI
                   uint            num_tasks        = geometry->size();
                   uint            num_master_tasks = master_topo->size();
                   uint            num_local_tasks  = local_topo->size();
-                  uint            groupid          = geometry->comm();
+                  uint            groupid          = geometry->comm();(void)groupid;
                   bool            participant      = master_topo->isEndpointMember(_my_endpoint);
                   GeometryInfo   *geometryInfo     = (GeometryInfo*)geometry->getKey(_context_id, Geometry::PAMI_CKEY_GEOMETRYINFO);
                   uint            master_rank      = ((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX))->index2Endpoint(0);
@@ -1010,7 +1004,7 @@ namespace PAMI
             GeometryInfo *gi = (GeometryInfo*) data;
 
 
-            int commid = gi->_geometry->comm();
+            int commid = gi->_geometry->comm();(void)commid;
             ITRC(IT_CAU|IT_BSR, "CollReg:  cleanupCallback:  ctxt=%p geometry id=%d key=%x cau_info=%p, gi->_keyAllocated=%d\n",
                  ctxt, commid, gi->_unique_key, gi->_cau_info, gi->_keyAllocated);
             if(gi->_cau_info)

@@ -238,6 +238,10 @@ namespace CCMI
             hdr._phase = 0;
             hdr._data_size  = bytes;
             hdr._dispatch   = amg_xfer->dispatch;
+#if !defined(__64BIT__)
+            hdr.unused[0]  = 0;
+            hdr.unused[1]  = 0;
+#endif
 
             a_composite->setContext (this->_context);
             a_composite->scatterExecutor().setCollHeader (hdr);

@@ -123,20 +123,20 @@ inline
 SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
         unsigned int job_key, void* shm_block, size_t shm_block_sz):
     SyncGroup(mem_id, mem_cnt),
+    s_state(ORIG_ST),
     is_leader(mem_id == 0),
     job_key(job_key),
     seq(0),
-    sa(NULL),
     bsr_sa(NULL),
     shm_sa(NULL),
+    sa(NULL),
     nb_barrier_stage(2),
-    s_state(ORIG_ST),
     bsr_ctrl_block(NULL),
     bsr_ctrl_block_sz(0),
     shmarray_ctrl_block(NULL),
     shmarray_ctrl_block_sz(0),
-    sa_type(SA_TYPE_NONE),
-    done_mask(mem_id+1)
+    done_mask(mem_id+1),
+    sa_type(SA_TYPE_NONE)
 {
     assert(member_cnt > 0);
     // modify seq, the init value is 0 for all tasks
@@ -166,7 +166,8 @@ SaOnNodeSyncGroup::SaOnNodeSyncGroup(unsigned int mem_id, unsigned int mem_cnt,
 
     /* increment reference count */
     int ref = fetch_and_add((atomic_p)&ctrl_block->ref_cnt, 1);
-    ASSERT(ref <= member_cnt);
+    (void)ref;
+    ASSERT(ref <= (int)member_cnt);
 };
 
 /*!

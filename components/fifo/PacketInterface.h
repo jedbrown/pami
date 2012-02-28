@@ -40,7 +40,7 @@ namespace PAMI
           /// C++ code using templates to specify the packet may safely access the
           /// 'header_size' static constant.
           ///
-          static const size_t getHeaderSize ();
+          static size_t getHeaderSize ();
 
           ///
           /// \brief Number of available bytes in each packet payload for application data
@@ -52,7 +52,7 @@ namespace PAMI
           /// C++ code using templates to specify the packet may safely access the
           /// 'payload_size' static constant.
           ///
-          static const size_t getPayloadSize ();
+          static size_t getPayloadSize ();
 
           Packet () {};
           ~Packet () {};
@@ -103,13 +103,13 @@ namespace PAMI
       };
 
       template <class T_Packet>
-      const size_t Packet<T_Packet>::getHeaderSize ()
+      size_t Packet<T_Packet>::getHeaderSize ()
       {
         return T_Packet::header_size;
       }
 
       template <class T_Packet>
-      const size_t Packet<T_Packet>::getPayloadSize ()
+      size_t Packet<T_Packet>::getPayloadSize ()
       {
         return T_Packet::payload_size;
       }

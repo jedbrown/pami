@@ -75,6 +75,7 @@ typedef struct
   pami_network network; /**< Network type for the coordinates */
   union
   {
+    int no_network;
     struct
     {
       size_t coords[PAMI_MAX_DIMS];

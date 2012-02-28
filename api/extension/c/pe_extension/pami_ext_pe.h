@@ -175,8 +175,8 @@ extern "C"
    */
   typedef struct
   {
-    const size_t        client_num;  
-    const pami_client_t clients[1];
+    size_t        client_num;
+    pami_client_t clients[1];
   } pami_active_client_t; 
   
   /** \} */ /* end of "act_clients" group */
@@ -196,8 +196,8 @@ extern "C"
    */
   typedef struct
   {
-    const size_t         context_num;  
-    const pami_context_t contexts[1];
+    size_t         context_num;
+    pami_context_t contexts[1];
   } pami_active_context_t; 
   
   /** \} */ /* end of "act_clients" group */

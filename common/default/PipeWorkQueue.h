@@ -233,7 +233,7 @@ public:
 	///
 	/// \brief Virtual destructors make compilers happy.
 	///
-	inline void operator delete(void *p) { }
+	inline void operator delete(void *p) { (void)p;}
 	~PipeWorkQueue() {
 		// need ref count so we know when to free...
 		if (_sharedqueue != &this->__sq) {
@@ -360,6 +360,7 @@ public:
 	/// \return	success of the import operation
 	///
 	inline pami_result_t import_impl(pami_pipeworkqueue_ext_t *import) {
+                (void)import;
 		// import is not supported for this class
 		return PAMI_ERROR;
 	}
@@ -369,6 +370,7 @@ public:
 	/// \param[in] vec	Opaque wakeup vector parameter
 	///
 	inline void setConsumerWakeup_impl(void *vec) {
+                (void)vec;
 #ifdef ENABLE_WAKEUP
 		_sharedqueue->_u._s.consumerWakeVec = vec;
 		// It's possible that bytes have already been produced.
@@ -385,6 +387,7 @@ public:
 	/// \param[in] vec	Opaque wakeup vector parameter
 	///
 	inline void setProducerWakeup_impl(void *vec) {
+          (void)vec;
 	       //_sharedqueue->_u._s.producerWakeVec = vec;
 	}
 

@@ -109,14 +109,17 @@ public:
 	}
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+                (void)mm;
 		return true;
 	}
 
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+                (void)mm;
 		return true;
 	}
 
 	inline void init(PAMI::Memory::MemoryManager *mm, const char *key) {
+                (void)mm;(void)key;
 		_head = NULL;
 		_tail = NULL;
 		_size = 0;
@@ -305,6 +308,7 @@ public:
 
 	/// \copydoc PAMI::Interface::QueueInfoInterface::dump
 	inline void dump_impl(const char *str, int n) {
+                (void)n;
 		fprintf(stderr, "%s: PAMI::Queue %p %p %zd\n", str, _head, _tail, _size);
 	}
 

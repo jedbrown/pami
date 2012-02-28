@@ -240,11 +240,15 @@ namespace CCMI
             hdr._comm  = geometry->comm();
             hdr._count = amr_xfer->headerlen; // Broadcast executor does not set count, so set manually
             hdr._phase = 0;
+            hdr._iteration = 0;
             hdr._data_size  = bytes;
             hdr._dispatch   = amr_xfer->dispatch;
             hdr._dt    = (pami_dt) dt;
             hdr._op    = (pami_op) op;
-
+#if !defined(__64BIT__)
+            hdr.unused[0] = 0;
+            hdr.unused[1] = 0;
+#endif
             a_composite->setContext (this->_context);
             CCMI::Executor::BroadcastExec<T_Conn, AMCollHeaderData> &bexec = a_composite->broadcastExecutor();
             bexec.setCollHeader(hdr);

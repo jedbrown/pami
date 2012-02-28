@@ -42,7 +42,7 @@ namespace PAMI
     } attribute_t;
 
     template <unsigned T_Attribute>
-    static const bool supports ()
+    static  bool supports ()
     {
       return false;
     };
@@ -58,7 +58,7 @@ namespace PAMI
       sync<0> ();
     };
 
-    template <> const bool supports <full_sync> () { return true; };
+    template <> bool supports <full_sync> () { return true; };
 
   };
 };

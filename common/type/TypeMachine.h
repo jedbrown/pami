@@ -241,7 +241,7 @@ namespace PAMI
 
     inline void TypeMachine::SetCopyFunc(TypeFunc::CopyFunction new_copy_func, void *new_cookie)
     {
-        const uintptr_t fn = (const uintptr_t) new_copy_func;
+        uintptr_t fn = (uintptr_t) new_copy_func;
 
         TypeCode * t = type;
         if (orig_type != NULL)

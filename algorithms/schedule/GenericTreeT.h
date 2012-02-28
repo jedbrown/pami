@@ -1453,6 +1453,7 @@ namespace CCMI
 
         void init (int root, int op, int &startphase, int &nphases, int &maxranks)
         {
+          (void)root;(void)op;
           startphase = 0;
           nphases   = _nranks - 1;
           maxranks  = 1;
@@ -1496,6 +1497,7 @@ namespace CCMI
 
         void init (int root, int op, int &startphase, int &nphases, int &maxranks)
         {
+          (void)root;(void)op;
           startphase = 0;
           nphases   = _nranks - 1;
           maxranks  = 1;

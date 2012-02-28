@@ -77,6 +77,7 @@ namespace PAMI
               /// \note This is required to make "C" programs link successfully with virtual destructors
               inline void operator delete (void * p)
               {
+                (void)p;
                 PAMI_abortf("%s<%d>\n", __FILE__, __LINE__);
               }
 
@@ -91,6 +92,7 @@ namespace PAMI
               ///
               inline pami_context_t postNext (bool something)
               {
+                (void)something;
                 TRACE_ERR((stderr, ">> SendQueue::Message::postNext(%d)\n", something));
                 PAMI_assert_debug (_genericdevice != NULL);
 

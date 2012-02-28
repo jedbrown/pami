@@ -548,11 +548,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
           EXECUTOR_DEBUG((stderr, "Executor::ScanExec::notifyRecv: Packet arrived before recv posted."
 			          " phase  = %d, _buflen = %d, _srclens[%d] = %d, _srcranks[%d] = %d\n",
                           cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
-#if ASSERT_LEVEL > 0
-          unsigned srcindex = _gtopology->endpoint2Index(_srcranks[i]);
-          unsigned dist     = (_myindex + _gtopology->size() - srcindex) % _gtopology->size();
-          CCMI_assert(_myindex - dist  >= 0);
-#endif
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
           recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0, _stype, _rtype);
           recvstr->pwq.reset();

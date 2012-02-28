@@ -70,6 +70,7 @@ public:
 	// is this neded? do we always ensure memory is zero?
 	static void memzero(void *mem, size_t bytes, const char *key,
 					unsigned attrs, void *cookie) {
+          (void)key;(void)attrs;(void)cookie;
 		memset(mem, 0, bytes);
 	}
 protected:
@@ -152,7 +153,9 @@ protected:
 		inline size_t userSize() { return _userSize; }
 		inline size_t rawSize() { return _rawSize; }
 
-		inline void setMem(void *mem, size_t len, size_t aln) { }
+		inline void setMem(void *mem, size_t len, size_t aln) {
+                  (void)mem;(void)len;(void)aln;
+                }
 		inline void setMem(size_t off, size_t len, size_t pad) {
 			_userSize = len;
 			_offset = off;
@@ -193,7 +196,9 @@ protected:
 		inline void *rawMem() { return _mem; }
 		inline size_t rawSize() { return _size; }
 
-		inline void setMem(size_t off, size_t len, size_t pad) { }
+		inline void setMem(size_t off, size_t len, size_t pad) {
+                  (void)off;(void)len;(void)pad;
+                }
 		inline void setMem(void *mem, size_t len, size_t aln) {
 			_mem = mem;
 			_size = maxSize(len, aln); // assumed "real" length of 'mem'...
@@ -363,7 +368,7 @@ protected:
 			return PAMI_SUCCESS;
 		}
 	public:
-		static const size_t MAX_NUM_META() {
+		static  size_t MAX_NUM_META() {
 			size_t x;
 			size_t y = 0;
 			for (x = 0; x < MMMAX_N_META; ++x) {

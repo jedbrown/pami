@@ -549,6 +549,7 @@ namespace CCMI
 inline CCMI::Schedule::RingSchedule::RingSchedule
 (pami_endpoint_t my_ep, PAMI::Topology *topology, unsigned c)
 {
+  (void)c;
   TRACE_FN_ENTER();
   _topology = topology;
   configure (my_ep, topology->size());

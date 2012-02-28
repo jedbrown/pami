@@ -135,7 +135,7 @@ namespace CCMI
                        char                                  * dst)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, stypecount * stype->GetDataSize());
+        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, (unsigned long)stypecount * stype->GetDataSize());
         pwcfn (topology, stypecount * stype->GetDataSize(), _colors, _numColors);
         //printf ("Using %d colors, %d\n", _numColors, _colors[0]);
         if (_numColors > NUMCOLORS)
@@ -205,7 +205,7 @@ namespace CCMI
                   char                                  * dst)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, stypecount * stype->GetDataSize());
+        TRACE_FORMAT("<%p> root %u, bytes %lu", this,root, (unsigned long)stypecount * stype->GetDataSize());
         _doneCount = 0;
 	
 	if (_bytes != (stypecount * stype->GetDataSize()) || _root != root) {

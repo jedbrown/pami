@@ -49,12 +49,14 @@ namespace CCMI
         virtual unsigned getConnectionId_impl (unsigned comm, unsigned root,
                                                unsigned color, unsigned phase, unsigned dst = (unsigned) - 1)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)dst;
           return _connid;
         }
 
         virtual unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
                                                    unsigned src, unsigned phase, unsigned color)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)src;
           return _connid;
         }
 

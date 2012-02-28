@@ -46,6 +46,7 @@ namespace CCMI
                                               unsigned phase,
                                               unsigned dst = (unsigned) - 1)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)dst;
           return __global.mapping.task();
         }
 
@@ -55,6 +56,7 @@ namespace CCMI
                                                   unsigned phase,
                                                   unsigned color)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)src;
           return src;
         }
 

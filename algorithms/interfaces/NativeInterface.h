@@ -55,24 +55,28 @@ public:
   virtual pami_result_t setMulticastDispatch(pami_dispatch_multicast_function fn,
                                              void *cookie)
     {
+      (void)fn;(void)cookie;
       //PAMI_abort();
       return PAMI_ERROR;
     }
   virtual pami_result_t setManytomanyDispatch(pami_dispatch_manytomany_function fn,
                                               void *cookie)
     {
+      (void)fn;(void)cookie;
       //PAMI_abort();
       return PAMI_ERROR;
     }
   virtual pami_result_t setSendDispatch(pami_dispatch_p2p_function fn,
                                         void *cookie)
     {
+      (void)fn;(void)cookie;
       //PAMI_abort();
       return PAMI_ERROR;
     }
   virtual pami_result_t setSendPWQDispatch(pami_dispatch_p2p_function fn,
                                            void *cookie)
     {
+      (void)fn;(void)cookie;
       //PAMI_abort();
       return PAMI_ERROR;
     }
@@ -83,6 +87,7 @@ public:
   virtual pami_result_t manytomany(pami_manytomany_t *m2minfo, void *devinfo = NULL) = 0;
   virtual pami_result_t send (pami_send_t * parameters)
     {
+      (void)parameters;
       PAMI_abort();
       return PAMI_ERROR;
     }
@@ -94,13 +99,19 @@ public:
                                 PAMI::PipeWorkQueue *pwq,
                                 pami_send_event_t   *events)
     {
+      (void)context;(void)dest;(void)header_length;(void)header;
+      (void)length;(void)pwq;(void)events;
       PAMI_abort();
       return PAMI_ERROR;
     }
   ///
   /// \brief NI hook to override metadata for collective
   ///
-  virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t) {/* no override */};
+  virtual void metadata(pami_metadata_t *m, pami_xfer_type_t t)
+  {
+    (void)m;(void)t;
+    /* no override */
+  };
 
   ///
   /// \brief post a work function to be executed on the
@@ -113,6 +124,8 @@ public:
                          pami_work_function     fn,
                          void                 * clientdata)
     {
+      (void)context;(void)color;(void)work;(void)fn;
+      (void)clientdata;
       CCMI_abort();
     }
 protected:

@@ -233,7 +233,7 @@ ClassDump & operator<< (ClassDump &dump, const SaOnNodeSyncGroup &s) {
 bool SaOnNodeSyncGroup::Checkpoint() {
     assert (false == ckpt_info.in_checkpoint);
     ckpt_info.in_checkpoint = true;
-    int last_cnt = fetch_and_add((atomic_p)&(ctrl_block->ckpt_ref_cnt), 1);
+    int last_cnt = fetch_and_add((atomic_p)&(ctrl_block->ckpt_ref_cnt), 1);(void)last_cnt;
     ITRC(IT_INITTERM,
             "SaOnNodeSyncGroup::Checkpoint() cnt=%d state=%d in_term=%d "
             "sa=%p bsr_sa=%p shm_sa=%p mem_id=%d\n",
@@ -264,7 +264,7 @@ bool SaOnNodeSyncGroup::Checkpoint() {
 
 template <bool FOR_RESUME>
 void SaOnNodeSyncGroup::ReInitSa() {
-    const char *action = (FOR_RESUME)?"Resume":"Restart";
+  const char *action = (FOR_RESUME)?"Resume":"Restart";(void)action;
     if (bsr_sa) {
         if (ctrl_block->in_term) {
             /*

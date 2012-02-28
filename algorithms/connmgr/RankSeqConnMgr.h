@@ -62,6 +62,7 @@ namespace CCMI
         unsigned getConnectionId_impl (unsigned comm, unsigned root, unsigned color,
                                        unsigned phase, unsigned dst)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)dst;
           if (_connid != (unsigned) - 1) return _connid;
 
           unsigned cid = (((root & _rankmask) << _seqbits) | ((_rank_seq_map[root] & _seqmask)));
@@ -71,6 +72,7 @@ namespace CCMI
         unsigned getRecvConnectionId_impl (unsigned comm, unsigned root, unsigned src, unsigned phase,
                                            unsigned color)
         {
+          (void)comm;(void)root;(void)color;(void)phase;(void)src;
           if (_connid != (unsigned) - 1) return _connid;
 
           unsigned cid = (((src & _rankmask) << _seqbits) | ((_rank_seq_map[src] & _seqmask)));

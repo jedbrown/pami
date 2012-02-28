@@ -107,7 +107,6 @@ namespace PAMI
           {
             PAMI_assert_debugf(producers > 0, "WorkQueue requires at least one producer, got %d\n", producers);
             PAMI_assert_debugf(producers <= PAMI_MAX_PROC_PER_NODE, "WorkQueue producers must be less than %d, got %d\n", PAMI_MAX_PROC_PER_NODE, producers);
-            PAMI_assert_debugf(producer >= 0, "WorkQueue producer number must be positive, got %d\n", producer);
             PAMI_assert_debugf(producer < producers, "WorkQueue producer number must be less than producers (%d !< %d)\n", producer, producers);
 
             _producers = producers;
@@ -131,7 +130,6 @@ namespace PAMI
           {
             PAMI_assert_debugf(consumers > 0, "WorkQueue requires at least one consumer, got %d\n", consumers);
             PAMI_assert_debugf(consumers <= PAMI_MAX_PROC_PER_NODE, "WorkQueue consumers must be less than %d, got %d\n", PAMI_MAX_PROC_PER_NODE, consumers);
-            PAMI_assert_debugf(consumer >= 0, "WorkQueue consumer number must be positive, got %d\n", consumer);
             PAMI_assert_debugf(consumer < consumers, "WorkQueue consumer number must be less than consumers (%d !< %d)\n", consumer, consumers);
 
             _consumers = consumers;

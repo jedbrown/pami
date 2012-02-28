@@ -16,53 +16,59 @@ namespace PAMI
     {
       static void error (void *to, void *from, size_t size, void *cookie)
       {
+        // Avoid unused warnings
+        (void)to;(void)from;(void)size;(void)cookie;
         // Bad!
         abort();
       };
 
       template <typename T>
       static void copy (void *to, void *from, size_t bytes, void *cookie) {
+        (void)cookie;
         // just use memcpy
         memcpy(to, from, bytes);
       }
 
-      static void noop (void *to, void *from, size_t bytes, void *cookie) {};
+      static void noop (void *to, void *from, size_t bytes, void *cookie)
+      {
+        (void)to;(void)from;(void)bytes;(void)cookie;
+      };
 
       template <typename T>
-      static void max (void *to, void *from, size_t bytes, void *cookie) { Math::max<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void max (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::max<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void min (void *to, void *from, size_t bytes, void *cookie) { Math::min<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void min (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::min<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void sum (void *to, void *from, size_t bytes, void *cookie) { Math::sum<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void sum (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::sum<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void prod (void *to, void *from, size_t bytes, void *cookie) { Math::prod<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void prod (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::prod<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void land (void *to, void *from, size_t bytes, void *cookie) { Math::land<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void land (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::land<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void lor (void *to, void *from, size_t bytes, void *cookie) { Math::lor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void lor (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::lor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void lxor (void *to, void *from, size_t bytes, void *cookie) { Math::lxor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void lxor (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::lxor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void band (void *to, void *from, size_t bytes, void *cookie) { Math::band<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void band (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::band<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void bor (void *to, void *from, size_t bytes, void *cookie) { Math::bor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void bor (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::bor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void bxor (void *to, void *from, size_t bytes, void *cookie) { Math::bxor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void bxor (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::bxor<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void maxloc (void *to, void *from, size_t bytes, void *cookie) { Math::maxloc<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void maxloc (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::maxloc<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <typename T>
-      static void minloc (void *to, void *from, size_t bytes, void *cookie) { Math::minloc<T>((T*)to, (T*)from, bytes/sizeof(T)); }
+      static void minloc (void *to, void *from, size_t bytes, void *cookie) { (void)cookie;Math::minloc<T>((T*)to, (T*)from, bytes/sizeof(T)); }
 
       template <>
       inline void sum< TypeCode::primitive_complex_t<float> > (void   * dst,
@@ -70,6 +76,7 @@ namespace PAMI
                                                                size_t   bytes,
                                                                void   * cookie)
       {
+        (void) cookie; // cookie is unused
         TypeCode::primitive_complex_t<float> * d =
           (TypeCode::primitive_complex_t<float> *) dst;
         TypeCode::primitive_complex_t<float> * s =
@@ -90,6 +97,7 @@ namespace PAMI
                                                                 size_t   bytes,
                                                                 void   * cookie)
       {
+        (void) cookie; // cookie is unused
         TypeCode::primitive_complex_t<float> * d =
           (TypeCode::primitive_complex_t<float> *) dst;
         TypeCode::primitive_complex_t<float> * s =
@@ -113,6 +121,7 @@ namespace PAMI
                                                                 size_t   bytes,
                                                                 void   * cookie)
       {
+        (void) cookie; // cookie is unused
         TypeCode::primitive_complex_t<double> * d =
           (TypeCode::primitive_complex_t<double> *) dst;
         TypeCode::primitive_complex_t<double> * s =
@@ -133,6 +142,7 @@ namespace PAMI
                                                                  size_t   bytes,
                                                                  void   * cookie)
       {
+        (void) cookie; // cookie is unused
         TypeCode::primitive_complex_t<double> * d =
           (TypeCode::primitive_complex_t<double> *) dst;
         TypeCode::primitive_complex_t<double> * s =

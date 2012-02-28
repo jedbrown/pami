@@ -50,6 +50,12 @@ namespace PAMI
         _user_cookie(user_cookie)
         {
         }
+      inline void setCallback(cr_event_function  f,
+                              void             * cookie)
+      {
+        _result_cb_done = f;
+        _result_cookie  = cookie;
+      }
       void startAllreduce(pami_context_t       context,
                           pami_event_function  cb_done,
                           void                *cookie)

@@ -68,7 +68,7 @@ public:
         virtual ~GenericMessage() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
-        inline void operator delete(void * p) { PAMI_abort(); }
+        inline void operator delete(void * p) { (void)p;PAMI_abort(); }
 
         /// \brief get client associated with message
         /// \return	client for message posting/completion

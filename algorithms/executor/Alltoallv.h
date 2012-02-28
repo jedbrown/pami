@@ -68,6 +68,7 @@ namespace CCMI
     inline void setAlltoallVec<pami_alltoall_t> (pami_alltoall_t *xfer, int *buflen,
                                                  void *sbuf, void *scounts, void *sdisps, void *rbuf, void *rcounts, void *rdisps, TypeCode **stype, TypeCode **rtype)
     {
+      (void)scounts;(void)sdisps;(void)rcounts;(void)rdisps;
       *((char **)rbuf)   = xfer->rcvbuf;
       *((char **)sbuf)   = xfer->sndbuf;
       *stype             = (TypeCode *)xfer->stype;

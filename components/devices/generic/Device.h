@@ -217,7 +217,7 @@ public:
 		/// \param[in] num_ctx  Number of contexts being created in client
 		/// \param[in] mm Memory manager (for shmem alloc, if needed)
 		/// \return Array of devices
-		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {
+		static inline Device *generate_impl(size_t client, size_t num_ctx, Memory::MemoryManager & mm, PAMI::Device::Generic::Device *devices) {                    (void)mm;(void)devices;
 			size_t x;
 			Device *gds;
 			pami_result_t rc;
@@ -238,6 +238,7 @@ public:
 		/// \param[in] devices    Generic Device array (same as devs in this case)
 		/// \return Error code
 		static inline pami_result_t init_impl(Device *devs, size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, PAMI::Device::Generic::Device *devices) {
+                        (void)clt;(void)client;
 			return getDevice_impl(devs, client, contextId).init(ctx, client, contextId, mm, devices);
 		}
 		/// \brief Advance this device for client/context
@@ -254,6 +255,7 @@ public:
 		/// \param[in] context  Context ID
 		/// \return Reference to a device
 		static inline Device & getDevice_impl(Device *devs, size_t client, size_t context) {
+                        (void)client;
 			return devs[context];
 		}
 	}; // class Factory

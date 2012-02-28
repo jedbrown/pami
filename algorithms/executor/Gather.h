@@ -56,6 +56,7 @@ namespace CCMI
     template<>
     inline void setGatherVectors<pami_gather_t> (pami_gather_t *xfer, void *disps, void * rcvcounts)
     {
+      (void)xfer;(void)disps;(void)rcvcounts;
     }
 
     template<>

@@ -70,6 +70,7 @@ namespace CCMI
     inline void setAllgatherVec<pami_allgather_t> (pami_allgather_t *xfer,
                                                    int *buflen, char **sbuf, char **rbuf, void *rdisps, void *rcounts, TypeCode **stype, TypeCode **rtype)
     {
+      (void)rdisps;(void)rcounts;
       TRACE_ADAPTOR((stderr, "Executor::AllgathervExec::setAllgatherVec(%p %p)\n", xfer->sndbuf, xfer->rcvbuf));
       *sbuf   = xfer->sndbuf;
       *rbuf   = xfer->rcvbuf;

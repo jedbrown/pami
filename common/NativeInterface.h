@@ -1036,9 +1036,9 @@ namespace PAMI
         if (state->sendpwq.pwq) state->sendpwq.pwq->consumeBytes(state->bytes); /// \todo ? is this always the right byte count?
       }
 
-    if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MANYTOMANY_SEND) ; /// ?
+    if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MANYTOMANY_SEND){ ; } /// ?
 
-    if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MANYTOMANY_SEND) ; /// ?
+    if (obj->_type == NativeInterfaceBase<T_Protocol, T_Max_Msgcount>::allocObj::MANYTOMANY_SEND){ ; }/// ?
 
     if (obj->_user_callback.function)
       obj->_user_callback.function(context,
@@ -1318,7 +1318,7 @@ namespace PAMI
           {
             memcpy(rcvpwq->bufferToProduce(), payload, length);
           }
-        else; /// \todo now what??? Move this to completion?
+        else{;} /// \todo now what??? Move this to completion?
       }
 
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)
@@ -1912,7 +1912,7 @@ namespace PAMI
           {
             memcpy(rcvpwq->bufferToProduce(), payload, length);
           }
-        else; /// \todo now what??? Move this to completion?
+        else{;} /// \todo now what??? Move this to completion?
       }
 
     state_data->sendpwq.send.simple.send.hints = (pami_send_hint_t)

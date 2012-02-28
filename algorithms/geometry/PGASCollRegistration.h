@@ -504,7 +504,7 @@ namespace PAMI
 
         inline pami_result_t analyze_impl(size_t context_id,T_Geometry *geometry, int phase, uint64_t *inout_val=NULL)
         {
-          PAMI_assertf(context_id == _context_id, "FATAL:  pgas registration analyze:  want=%ld, got=%ld\n", _context_id, context_id);
+          PAMI_assertf(context_id == _context_id, "FATAL:  pgas registration analyze:  want=%zd, got=%zd\n", _context_id, context_id);
 	  //in phase 0 we init all but hybrid collectives which
 	  //requires a shared memory region available only in phase 1
           if (phase == 0) {

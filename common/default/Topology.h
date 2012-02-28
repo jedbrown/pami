@@ -452,10 +452,16 @@ namespace PAMI {
     /// \brief Analyze a Rank Range to see if it is a rectangular segment.
     ///
     /// \return 'true' means "this" was altered!
+    inline void no_unused_warning(pami_coord_t *c)
+    {
+      c->network = PAMI_DEFAULT_NETWORK;
+      c->u.no_network = 0;
+    }
     bool __analyzeCoordsRange() {
       pami_result_t rc;
       pami_coord_t ll, ur;
       pami_coord_t c0;
+      no_unused_warning(&c0);
       pami_task_t r = topo_first;
       rc = RANK2COORDS(r, &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -483,6 +489,7 @@ namespace PAMI {
       pami_result_t rc;
       pami_coord_t ll, ur;
       pami_coord_t c0;
+      no_unused_warning(&c0);
       unsigned i = 0;
       rc = RANK2COORDS(topo_list(i), &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
@@ -790,6 +797,7 @@ namespace PAMI {
     /// \todo create destructor to free list, or establish rules
     ///
     Topology(pami_endpoint_t *eps, size_t neps, tag_eplist tag) {
+      (void)tag;
       __type = PAMI_EPLIST_TOPOLOGY;
       __size = neps;
       topo_endplist = eps;
@@ -831,7 +839,8 @@ namespace PAMI {
     ///
     /// \param[in] rtopo   Topology to replicate
     ///
-    Topology(const Topology &rtopo) {
+    Topology(const Topology &rtopo):
+      Interface::Topology<PAMI::Topology>() {
       const Topology *topo = &rtopo ;
       memcpy(this, topo, sizeof(*topo));
       __free_ranklist = false;
@@ -885,7 +894,7 @@ namespace PAMI {
 
     /// \brief accessor for size of a Topology object
     /// \return	size of PAMI::Topology
-    static const unsigned size_of_impl() { return sizeof(Topology); }
+    static unsigned size_of_impl() { return sizeof(Topology); }
 
     /// \brief number of ranks in topology
     /// \return	number of ranks
@@ -1016,7 +1025,7 @@ namespace PAMI {
       size_t x, ix, nn;
       pami_coord_t c0;
       pami_result_t rc;
-
+      no_unused_warning(&c0);
       switch (__type) {
       case PAMI_SINGLE_TOPOLOGY:
         if (topo_rank == rank) {
@@ -1892,6 +1901,7 @@ namespace PAMI {
     /// \param[in] other	The other topology
     ///
     void unionTopology_impl(Topology *_new, Topology *other) {
+      (void)_new;(void)other;
       // for now, assume this isn't used/needed.
       PAMI_abortf("Topology::unionTopology not implemented\n");
 #if 0

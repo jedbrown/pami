@@ -15,7 +15,6 @@
 
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
-#define _LAPI_LINUX
 const char *FCA_cmd_list[] =
 {
   "fca_get_version",
@@ -288,7 +287,7 @@ inline int FCAFunc::Load()
   FCA_CHECK_FN(strerror_handler);
   // It may be OK for this to be NULL
   FCA_CHECK_FN(config_t_value);
-#undef FCA_CHECK_FN;
+#undef FCA_CHECK_FN
   return 0;
 }
 

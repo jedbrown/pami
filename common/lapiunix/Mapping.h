@@ -77,6 +77,7 @@ namespace PAMI
       }
     inline pami_result_t nodeTasks_impl (size_t global, size_t & tasks)
       {
+        (void)global;(void)tasks;
         PAMI_abort();
         return PAMI_UNIMPL;
       }
@@ -104,6 +105,7 @@ namespace PAMI
     inline void nodeAddr_impl (Interface::Mapping::nodeaddr_t & address)
       {
         pami_result_t err = task2node_impl(_task, address);
+        (void)err;
         PAMI_assertf(err == PAMI_SUCCESS, "Internal error, my task does not exist");
       }
     inline pami_result_t task2node_impl (size_t task, Interface::Mapping::nodeaddr_t & address)
@@ -120,6 +122,7 @@ namespace PAMI
     ///
     inline void torusInformation_impl(pami_coord_t &ll, pami_coord_t &ur, unsigned char info[])
     {
+      (void)ll;(void)ur;
       memset(info, 0x00, LAPI_TDIMS*sizeof(unsigned char));
     }
     inline size_t torusSize_impl (size_t i) 
@@ -187,6 +190,7 @@ namespace PAMI
 
     inline pami_result_t torus2task_impl (size_t (&addr)[LAPI_TDIMS], size_t & task)
       {
+        (void)addr;(void)task;
         PAMI_abort();
         return PAMI_ERROR;
       }

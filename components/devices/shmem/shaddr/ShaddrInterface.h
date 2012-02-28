@@ -46,7 +46,7 @@ namespace PAMI
           /// implementation may statically access the 'shaddr_va_supported'
           /// constant.
           ///
-          static const bool isVirtualAddressSupported ();
+          static bool isVirtualAddressSupported ();
 
           ///
           /// \brief Shared address memory region operation support
@@ -59,7 +59,7 @@ namespace PAMI
           /// implementation may statically access the 'shaddr_mr_supported'
           /// constant.
           ///
-          static const bool isMemoryRegionSupported ();
+          static bool isMemoryRegionSupported ();
 
           ///
           /// \brief Shared address read operation support
@@ -72,7 +72,7 @@ namespace PAMI
           /// implementation may statically access the 'shaddr_read_supported'
           /// constant.
           ///
-          static const bool isReadSupported ();
+          static bool isReadSupported ();
 
           ///
           /// \brief Shared address write operation support
@@ -85,7 +85,7 @@ namespace PAMI
           /// implementation may statically access the 'shaddr_write_supported'
           /// constant.
           ///
-          static const bool isWriteSupported ();
+          static bool isWriteSupported ();
 
           ///
           /// \brief Shared address read operation using virtual addresses
@@ -182,7 +182,7 @@ bool PAMI::Device::Shmem::ShaddrInterface<T>::isEnabled ()
 };
 
 template <class T>
-const bool PAMI::Device::Shmem::ShaddrInterface<T>::isVirtualAddressSupported ()
+bool PAMI::Device::Shmem::ShaddrInterface<T>::isVirtualAddressSupported ()
 {
   // This compile time assert verifies that at least one of the two
   // types of shared address interfaces is supported.
@@ -192,7 +192,7 @@ const bool PAMI::Device::Shmem::ShaddrInterface<T>::isVirtualAddressSupported ()
 };
 
 template <class T>
-const bool PAMI::Device::Shmem::ShaddrInterface<T>::isMemoryRegionSupported ()
+bool PAMI::Device::Shmem::ShaddrInterface<T>::isMemoryRegionSupported ()
 {
   // This compile time assert verifies that at least one of the two
   // types of shared address interfaces is supported.
@@ -202,7 +202,7 @@ const bool PAMI::Device::Shmem::ShaddrInterface<T>::isMemoryRegionSupported ()
 };
 
 template <class T>
-const bool PAMI::Device::Shmem::ShaddrInterface<T>::isReadSupported ()
+bool PAMI::Device::Shmem::ShaddrInterface<T>::isReadSupported ()
 {
   // This compile time assert verifies that at least one of the two
   // types of shared address operations is supported.
@@ -212,7 +212,7 @@ const bool PAMI::Device::Shmem::ShaddrInterface<T>::isReadSupported ()
 };
 
 template <class T>
-const bool PAMI::Device::Shmem::ShaddrInterface<T>::isWriteSupported ()
+bool PAMI::Device::Shmem::ShaddrInterface<T>::isWriteSupported ()
 {
   // This compile time assert verifies that at least one of the two
   // types of shared address operations is supported.

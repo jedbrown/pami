@@ -90,6 +90,8 @@ namespace PAMI
                        int           numranks,
                        pami_task_t  *ranks)
         {
+          (void)parent;(void)mapping;(void)comm;
+          (void)numranks;(void)ranks;
           TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
         }
 
@@ -100,6 +102,8 @@ namespace PAMI
                        pami_endpoint_t  *eps,
                        bool)
         {
+          (void)parent;(void)mapping;(void)comm;
+          (void)numeps;(void)eps;
           TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
         }
 
@@ -109,6 +113,8 @@ namespace PAMI
                        int        numranges,
                        pami_geometry_range_t rangelist[])
       {
+        (void)parent;(void)mapping;(void)comm;
+        (void)numranges;(void)rangelist;
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       }
       inline Geometry (Geometry  *parent,
@@ -116,6 +122,8 @@ namespace PAMI
                        unsigned   comm,
                        PAMI::Topology *topo)
       {
+        (void)parent;(void)mapping;(void)comm;
+        (void)topo;
         TRACE_ERR((stderr, "<%p>%s\n", this, __PRETTY_FUNCTION__));
       }
 

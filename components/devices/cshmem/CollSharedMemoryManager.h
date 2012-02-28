@@ -286,9 +286,9 @@ namespace PAMI
             rc  = PAMI_EAGAIN;
           }
           PAMI_assertf((cv >= 0 && cv <= _key),
-                       "allocateKey outside range:  %ld %ld \n",
+                       "allocateKey outside range:  %zd %lld \n",
                        cv,
-                       _key);
+                       (long long int)_key);
           _collshm->pool_lock.release();
           return rc;
         }
@@ -302,9 +302,9 @@ namespace PAMI
           ssize_t cv, val = _collshm->clientdata_key.fetch_and_add(1UL);
           cv              = val + 1;
           PAMI_assertf((val >= 0 && val <= _key),
-                       "returnKey outside range: %ld %ld \n",
+                       "returnKey outside range: %zd %lld \n",
                        val,
-                       _key);
+                       (long long)_key);
           _collshm->pool_lock.release();
           return rc;
         }
@@ -329,7 +329,7 @@ namespace PAMI
               return (large_databuf_t*)shm_null_ptr();
             }
 
-          for (int i = 0; i < _lg_buf_cnt - 1; ++i)
+          for (size_t i = 0; i < _lg_buf_cnt - 1; ++i)
             {
               new_bufs->next_offset = addr_to_offset(new_bufs + 1);
               new_bufs              = (large_databuf_t*)offset_to_addr(new_bufs->next_offset);
@@ -453,14 +453,14 @@ namespace PAMI
 
           if ((char *)(new_bufs + _buf_cnt) > ((char *)_collshm + _size))
             {
-              fprintf(stderr, "Run out of shm data bufs, base=%p, buffer_offset=%lu, boundary=%p, end=%p\n",
+              fprintf(stderr, "Run out of shm data bufs, base=%p, buffer_offset=%zu, boundary=%p, end=%p\n",
                          _collshm, _collshm->buffer_offset, (char *)_collshm + _size,
                          (char *)(new_bufs + _buf_cnt));
               PAMI_ASSERT(0);
               return (databuf_t*)shm_null_ptr();
             }
 
-          for (int i = 0; i < _buf_cnt - 1; ++i)
+          for (size_t i = 0; i < _buf_cnt - 1; ++i)
             {
               new_bufs->next_offset = addr_to_offset(new_bufs + 1);
               new_bufs              = (databuf_t*)offset_to_addr(new_bufs->next_offset);
@@ -592,7 +592,7 @@ namespace PAMI
           if(addr_to_offset(ctlstr) >=
              _collshm->ctlstr_pool_init_offset+(_ctl_cnt*sizeof(*ctlstr)))
           {
-            fprintf(stderr, "Control String=%p too large(offset=%ld), start=%ld end=%ld\n",
+            fprintf(stderr, "Control String=%p too large(offset=%zd), start=%zd end=%zd\n",
                     in,
                     addr_to_offset(ctlstr),
                     _collshm->ctlstr_pool_init_offset,
@@ -600,7 +600,7 @@ namespace PAMI
           }
           if(addr_to_offset(ctlstr) < _collshm->ctlstr_pool_init_offset)
           {
-            fprintf(stderr, "Control String=%p too small(offset=%ld), start=%ld end=%ld\n",
+            fprintf(stderr, "Control String=%p too small(offset=%zd), start=%zd end=%zd\n",
                     ctlstr,
                     addr_to_offset(ctlstr),
                     _collshm->ctlstr_pool_init_offset,
@@ -625,13 +625,13 @@ namespace PAMI
 
           if ((char *)(ctlstr + _ctl_cnt) > ((char *)_collshm + end))
             {
-              fprintf(stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%lu, boundary=%p, end=%p\n",
+              fprintf(stderr, "Run out of shm ctrl structs: base=%p, ctrl_offset=%zu, boundary=%p, end=%p\n",
                       _collshm, _collshm->ctlstr_offset, (char *)_collshm + end,
                       (char *)(ctlstr + _ctl_cnt));
               PAMI_ASSERT(0);
               return (ctlstr_t*)shm_null_ptr();
             }
-          for (int i = 0; i < _ctl_cnt - 1; ++i)
+          for (size_t i = 0; i < _ctl_cnt - 1; ++i)
             {
               tmp->next_offset = addr_to_offset(tmp + 1);
               tmp              = (ctlstr_t*)offset_to_addr(tmp->next_offset);

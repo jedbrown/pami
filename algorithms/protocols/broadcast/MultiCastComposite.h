@@ -652,6 +652,7 @@ namespace CCMI
 
         inline void pwqCopy(PAMI::PipeWorkQueue *dst, PAMI::PipeWorkQueue *src)
         {
+          (void)dst;(void)src;
           PAMI_abort();
         }
 
@@ -695,7 +696,7 @@ namespace CCMI
           TRACE_FN_ENTER();
           MultiCastComposite2Device *m = (MultiCastComposite2Device*) cookie;
           m->_count--;
-          TRACE_FORMAT( "MultiCastComposite2Device:  composite done:  count=%ld", m->_count);
+          TRACE_FORMAT( "MultiCastComposite2Device:  composite done:  count=%zd", m->_count);
 
           if (m->_count == 0)
             m->_master_done.function(context, m->_master_done.clientdata, result);
@@ -744,7 +745,7 @@ namespace CCMI
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
           size_t           numLocal    = t_local->size();
-          TRACE_FORMAT( "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%ld buf=%p",
+          TRACE_FORMAT( "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%zd buf=%p",
                          &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf);
 
           DO_DEBUG(for (unsigned j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Endpoint(j), numMasters));
@@ -1194,7 +1195,7 @@ namespace CCMI
           {
             // A message has been posted, and the PWQ has been set up
             // So we can receive into this existing target PWQ
-            TRACE_FORMAT( "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%ld, pwq=%p, bytesAvailableToProduce %zu",
+            TRACE_FORMAT( "MultiCastComposite2DeviceFactoryT: cb_async_g, posted buffer, sndlen=%zd, pwq=%p, bytesAvailableToProduce %zu",
                            sndlen, pbuf->_target_pwq, pbuf->_target_pwq->bytesAvailableToProduce());
           }
           else
@@ -1381,6 +1382,7 @@ namespace CCMI
         _buffer_size(0),
         _buffer(NULL)
         {
+          (void)cmgr;(void)fn;(void)cookie;
           TRACE_FN_ENTER();
           TRACE_FORMAT( "<%p> type %#zX, count %zu, root %zu", this,  (size_t)cmd->cmd.xfer_broadcast.type, cmd->cmd.xfer_broadcast.typecount, (size_t)cmd->cmd.xfer_broadcast.root);
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;

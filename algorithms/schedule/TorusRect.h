@@ -95,6 +95,7 @@ namespace CCMI
       _start_phase((unsigned)-1)
 //      _nphases(?),
       {
+        (void)myrank;
         TRACE_FN_ENTER();
         _ndims = __global.mapping.torusDims();
         __global.mapping.task2network(__global.mapping.task(), &_self_coord, PAMI_N_TORUS_NETWORK);
@@ -304,6 +305,7 @@ CCMI::Schedule::TorusRect::init(int root,
 inline pami_result_t
 CCMI::Schedule::TorusRect::getSrcUnionTopology(PAMI::Topology *topo, pami_endpoint_t *src_eps)
 {
+  (void)src_eps;
   //  printf("no need to implement\n");
   new (topo) PAMI::Topology(_root);
   return PAMI_SUCCESS;
@@ -313,6 +315,7 @@ CCMI::Schedule::TorusRect::getSrcTopology(unsigned phase,
                                           PAMI::Topology *topo,
                                           pami_endpoint_t *src_eps)
 {
+  (void)phase;(void)topo;(void)src_eps;
   printf("no need to implement\n");
 }
 
@@ -375,6 +378,7 @@ CCMI::Schedule::TorusRect::getDstTopology(unsigned phase,
                                           PAMI::Topology *topo,
                                           pami_endpoint_t *dst_eps)
 {
+  (void)dst_eps;
   TRACE_FN_ENTER();
   CCMI_assert (phase >= _start_phase);
 
@@ -575,6 +579,7 @@ CCMI::Schedule::TorusRect::setupLocal(int     & raxis,
 inline pami_result_t
 CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps)
 {
+  (void)dst_eps;
   TRACE_FN_ENTER();
   unsigned char torus_link[PAMI_MAX_DIMS] = {0};
 

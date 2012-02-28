@@ -249,7 +249,10 @@ namespace CCMI
             hdr._phase = 0;
             hdr._data_size  = bytes;
             hdr._dispatch   = amb_xfer->dispatch;
-
+#if !defined(__64BIT__)
+            hdr.unused[0]=0;
+            hdr.unused[1]=0;
+#endif
             composite->setContext (this->_context);
             composite->headerExecutor().setCollHeader (hdr);
             composite->headerExecutor().setBuffers ((char *)amb_xfer->user_header,
@@ -385,7 +388,11 @@ namespace CCMI
             a_xfer->cmd.xfer_ambroadcast.stypecount  = amcdata->_data_size;
             a_xfer->cmd.xfer_ambroadcast.sndbuf      = NULL;
             a_xfer->cmd.xfer_ambroadcast.dispatch    = amcdata->_dispatch;
-
+#if !defined(__64BIT__)
+            // Avoid compiler uninitialized warnings
+            amcdata->unused[0]=0;
+            amcdata->unused[1]=0;
+#endif
             composite->headerExecutor().setCollHeader (*amcdata);
             composite->headerExecutor().setBuffers ((char *)a_xfer->cmd.xfer_ambroadcast.user_header,
                                                     (char *)a_xfer->cmd.xfer_ambroadcast.user_header,

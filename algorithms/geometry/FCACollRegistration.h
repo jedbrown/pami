@@ -114,7 +114,7 @@ public:
         _fca_rank_info = FCA_Get_rank_info(_fca_context, &_fca_rank_info_sz);
         if (_fca_rank_info == NULL)
           {
-            printf("fca_get_rank_info failed with ptr %p\n", ret);
+            printf("fca_get_rank_info failed with ptr %p\n", _fca_rank_info);
             exit(0);
           }
         else
@@ -152,7 +152,7 @@ public:
     Topology        *topo             = (Topology *) (geometry->getTopology(G::DEFAULT_TOPOLOGY_INDEX));
     Topology        *master_topo      = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
     Topology        *local_topo       = (Topology *) (geometry->getTopology(G::LOCAL_TOPOLOGY_INDEX));
-    Topology        *my_master_topo   = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
+    //Topology        *my_master_topo   = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
 
     pami_endpoint_t  my_endpoint = PAMI_ENDPOINT_INIT(_client_id,
                                                      __global.mapping.task(),
@@ -179,7 +179,7 @@ public:
           // Set up the first phase reduction buffer
           uint64_t *uptr      = (uint64_t*)inout_val;
           size_t    count     = analyze_count(context_id, geometry);
-          for(int i=0; i<count; i++)
+          for(int i=0; i<(int)count; i++)
             uptr[i] = 0xFFFFFFFFFFFFFFFFULL;
           if(amLeader)
             {
@@ -199,9 +199,9 @@ public:
         {
           uint64_t *uptr      = (uint64_t*)inout_val;
           size_t    count     = analyze_count(context_id, geometry);
-          for(int i=0; i<count; i++)
+          for(int i=0; i<(int)count; i++)
             uptr[i] = 0xFFFFFFFFFFFFFFFFULL;
-          char *ptr       = ((char*)inout_val)+(master_topo->size()*_fca_rank_info_sz);
+          char *ptr       = ((char*)inout_val)+(num_master_tasks*_fca_rank_info_sz);
           memset(ptr, 0xFF,sizeof(fca_comm_desc_t));
           if(amRoot)
             {
@@ -209,7 +209,7 @@ public:
                                                                    G::CKEY_FCAGEOMETRYINFO);
               fca_comm_new_spec_t cs;
               cs.rank_info     = (void*)inout_val[0];
-              cs.rank_count    = master_topo->size();
+              cs.rank_count    = num_master_tasks;
               cs.is_comm_world = 0;
               fca_comm_desc_t *comm_desc = (fca_comm_desc_t*) ptr;
               rc = FCA_Comm_new(_fca_context,
@@ -230,16 +230,16 @@ public:
         case 2:
         {
           fca_comm_init_spec is;
-          char            *ptr       = ((char*)inout_val)+(master_topo->size()*_fca_rank_info_sz);
+          char            *ptr       = ((char*)inout_val)+(num_master_tasks*_fca_rank_info_sz);
           fca_comm_desc_t *d         = (fca_comm_desc_t*)ptr;
           GeometryInfo    *gi        = (GeometryInfo*)geometry->getKey(_context_id,
                                                                        G::CKEY_FCAGEOMETRYINFO);
           gi->_fca_comm_desc         = *d;
           is.desc                    = *d;
           is.rank                    = topo->endpoint2Index(my_endpoint);
-          is.size                    = topo->size();
+          is.size                    = numtasks;
           is.proc_idx                = local_topo->endpoint2Index(my_endpoint);
-          is.num_procs               = local_topo->size();
+          is.num_procs               = num_local_tasks;
 
           rc = FCA_Comm_init(_fca_context,
                              &is,

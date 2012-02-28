@@ -422,6 +422,7 @@ namespace CCMI
 
       extern inline bool binomial_analyze (PAMI_GEOMETRY_CLASS *geometry)
       {
+        (void)geometry;
         return true;
       }
 
@@ -464,6 +465,7 @@ namespace CCMI
                        unsigned                  * colors,
                        unsigned                  & ncolors)
       {
+        (void)t;(void)bytes;
         ncolors = 1;
         colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
       }
@@ -634,6 +636,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS         * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(),
                                                   (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX),
                                                   0);
@@ -644,6 +647,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                                    *geometry,
                       ConnectionManager::BaseConnectionManager              **connmgr)
       {
+        (void)connid;(void)geometry;(void)connmgr;
         return root;
       }
 
@@ -653,6 +657,7 @@ namespace CCMI
                               Interfaces::NativeInterface * native,
                               PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
       }
 
@@ -661,6 +666,7 @@ namespace CCMI
                          PAMI_GEOMETRY_CLASS                      * geometry,
                          ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -707,6 +713,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)root;(void)size;
         new (buf) CCMI::Schedule::KnomialBcastSchedule<2>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -715,6 +722,7 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -746,6 +754,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::KnomialBcastSchedule<3>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
           }
@@ -754,6 +763,7 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -784,14 +794,16 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)root;(void)size;
         new (buf) CCMI::Schedule::KnomialBcastSchedule<4>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
-          }
+      }
       extern inline unsigned getKey_4nomial(unsigned                                   root,
                                             unsigned                                   connid,
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -828,6 +840,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::KnaryBcastSchedule<2>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
@@ -836,6 +849,7 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -880,6 +894,7 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::KnaryBcastSchedule<3>(native->endpoint(),
                                                         ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
       }
@@ -888,6 +903,7 @@ namespace CCMI
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -918,14 +934,16 @@ namespace CCMI
                                                   Interfaces::NativeInterface * native,
                                                   PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::KnaryBcastSchedule<4>(native->endpoint(),
                                                           ((PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)));
-          }
+      }
       extern inline unsigned getKey_4nary(unsigned                                   root,
                                             unsigned                                   connid,
                                             PAMI_GEOMETRY_CLASS                      * geometry,
                                             ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         ConnectionManager::CommSeqConnMgr *cm = (ConnectionManager::CommSeqConnMgr *)*connmgr;
         if (connid != (unsigned) - 1)
           {
@@ -953,6 +971,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                       *geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;(void)geometry;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -975,6 +994,7 @@ namespace CCMI
                                            Interfaces::NativeInterface * native,
                                            PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
         }
 
@@ -1009,6 +1029,7 @@ namespace CCMI
                          unsigned                  * colors,
                          unsigned                  & ncolors)
         {
+          (void)t;(void)bytes;
           ncolors = 1;
           colors[0] = CCMI::Schedule::TorusRect::NO_COLOR;
         }
@@ -1073,6 +1094,7 @@ namespace CCMI
                        PAMI_GEOMETRY_CLASS                      * geometry,
                        ConnectionManager::BaseConnectionManager **connmgr)
        {
+         (void)geometry;(void)root;
          if (connid != (unsigned)-1)
          {
            *connmgr = NULL; //use this key as connection id
@@ -1145,6 +1167,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                       *geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)geometry;(void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1166,6 +1189,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::TopoMultinomial(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX), 0);
         }
 
@@ -1193,6 +1217,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1211,6 +1236,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<>(native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1241,6 +1267,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1272,6 +1299,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1288,6 +1316,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1335,6 +1364,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1351,6 +1381,7 @@ namespace CCMI
                            Interfaces::NativeInterface * native,
                            PAMI_GEOMETRY_CLASS          * g)
       {
+        (void)size;(void)root;
         new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
       }
 
@@ -1378,6 +1409,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                       *geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;(void)geometry;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1399,6 +1431,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1424,6 +1457,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1442,6 +1476,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1473,6 +1508,7 @@ namespace CCMI
                                     Interfaces::NativeInterface * native,
                                     PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1482,6 +1518,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1515,6 +1552,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                       *geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)geometry;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1536,6 +1574,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS         * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1545,6 +1584,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS         * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1572,6 +1612,7 @@ namespace CCMI
                       PAMI_GEOMETRY_CLASS                      * geometry,
                       ConnectionManager::BaseConnectionManager **connmgr)
       {
+        (void)root;
         if (connid != (unsigned)-1)
         {
           *connmgr = NULL; //use this key as connection id
@@ -1588,6 +1629,7 @@ namespace CCMI
                                      Interfaces::NativeInterface * native,
                                      PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,1> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1597,6 +1639,7 @@ namespace CCMI
                                    Interfaces::NativeInterface * native,
                                    PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<1,1,2> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1652,6 +1695,7 @@ namespace CCMI
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
         {
+          (void)root;
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
@@ -1667,6 +1711,7 @@ namespace CCMI
                              Interfaces::NativeInterface * native,
                              PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(), (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
 
@@ -1701,6 +1746,7 @@ namespace CCMI
                                       PAMI_GEOMETRY_CLASS                      * geometry,
                                       ConnectionManager::BaseConnectionManager **connmgr)
         {
+          (void)root;
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
@@ -1716,6 +1762,7 @@ namespace CCMI
                                            Interfaces::NativeInterface * native,
                                            PAMI_GEOMETRY_CLASS          * g)
         {
+          (void)size;(void)root;
           new (buf) CCMI::Schedule::GenericTreeSchedule<> (native->endpoint(),
                                                            (PAMI::Topology *)g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
         }
@@ -1751,6 +1798,7 @@ namespace CCMI
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
         {
+          (void)root;
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id
@@ -1826,6 +1874,7 @@ namespace CCMI
                         PAMI_GEOMETRY_CLASS                      * geometry,
                         ConnectionManager::BaseConnectionManager **connmgr)
         {
+          (void)root;
           if (connid != (unsigned)-1)
           {
             *connmgr = NULL; //use this key as connection id

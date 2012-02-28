@@ -183,6 +183,7 @@ namespace PAMI
                                   void           * cookie,
                                   pami_result_t    result)
       {
+        (void)context;(void)result;
         volatile int* var = (volatile int*) cookie;
         (*var)--;
         return;
@@ -201,9 +202,6 @@ namespace PAMI
         rc = __global.heap_mm->memalign((void **)&ctxt->_pgas_collreg, 0,
                                         sizeof(*ctxt->_pgas_collreg));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PGASCollreg");
-        pami_endpoint_t ep = PAMI_ENDPOINT_INIT((pami_client_t)this,
-                                                __global.mapping.task(),
-                                                ctxt->getId());
         new(ctxt->_pgas_collreg) PGASCollreg(this,
                                              ctxt,
                                              _clientid,
@@ -234,9 +232,6 @@ namespace PAMI
         rc = __global.heap_mm->memalign((void **)&ctxt->_cau_collreg, 0,
                                         sizeof(*ctxt->_cau_collreg));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc CAUCollreg");
-        pami_endpoint_t ep = PAMI_ENDPOINT_INIT((pami_client_t)this,
-                                                __global.mapping.task(),
-                                                ctxt->getId());
         new(ctxt->_cau_collreg) CAUCollreg(_client,
                                            ctxt,
                                            ctxt->getId(),
@@ -345,9 +340,9 @@ namespace PAMI
     inline Client (const char * name, pami_configuration_t configuration[],
             size_t num_configs, pami_result_t & result) :
       Interface::Client<PAMI::Client>(name, result),
-      _client ((pami_client_t) this),
       _maxctxts(0),
       _ncontexts (0),
+      _client ((pami_client_t) this),
       _world_list(NULL),
       _mm (),
       _disable_shm(true)
@@ -375,10 +370,13 @@ namespace PAMI
                                              size_t               ncontexts)
       {
         pami_result_t   rc = PAMI_SUCCESS;
-        size_t          myrank, mysize;
+        size_t          myrank=-1, mysize=-1;
 
         // Support more contexts
-        pami_configuration_t query = { PAMI_CLIENT_NUM_CONTEXTS };
+
+        pami_configuration_t query;
+        memset(&query,0,sizeof(query));
+        query.name = PAMI_CLIENT_NUM_CONTEXTS;
         query_impl(&query, 1);
         _maxctxts = query.value.intval;
         if (ncontexts > _maxctxts)
@@ -386,7 +384,7 @@ namespace PAMI
               ncontexts, _maxctxts);
 
         // Create all contexts with P2P initialized
-        for(int i=0; i< ncontexts; i++)
+        for(int i=0; i< (ssize_t)ncontexts; i++)
             {
               lapi_handle_t t_lhandle;
 
@@ -595,6 +593,7 @@ namespace PAMI
                              void           * cookie,
                              pami_result_t    result)
       {
+        (void)context;(void)result;
         int *flag = (int*)cookie;
         *flag = 0;
       }
@@ -608,7 +607,6 @@ namespace PAMI
                                    size_t **local_ranks)
       {
         size_t  r,q,nSize,tSize;
-        int     nz,tz;
         nrt_node_number_t *hosts;
 
         // local node process/rank info
@@ -743,8 +741,6 @@ namespace PAMI
                                         pami_configuration_t   configuration[],
                                         size_t                 num_configs)
       {
-        int rc = 0;
-
         // per-process setup. _Lapi_env usable after this point
         if (pthread_once(&_Per_proc_lapi_init, _lapi_perproc_setup) != 0) {
             RETURN_ERR_PAMI(PAMI_ERROR, "pthread_once failed. errno=%d\n", errno);
@@ -785,8 +781,6 @@ namespace PAMI
                                           int             index)
       {
         PAMI::Context *c = (PAMI::Context *) _contextAlloc.allocateObject();
-
-        Memory::GenMemoryManager *mm;
         new (c) PAMI::Context(this->getClient(),      /* Client ptr       */
                               _clientid,              /* Client  id       */
                               ((LapiImpl::Client*)&_lapiClient[0])->GetName(), /* Client String    */
@@ -800,11 +794,13 @@ namespace PAMI
 
 
     inline pami_result_t initMoreContexts (pami_configuration_t configuration[],
-                                             size_t               count,
-                                             pami_context_t      *contexts,
+                                           size_t               count,
+                                           pami_context_t      *contexts,
                                            size_t               ncontexts,
                                            bool                 affinity_checked)
       {
+        (void)configuration;
+        (void)count;
         // Todo:  Support multiple contexts (more than 1)
         if(ncontexts > _maxctxts)
           return PAMI_ERROR;
@@ -815,11 +811,8 @@ namespace PAMI
 
         // Todo:  Configure Contexts
         // This should work, but crosstalk isn't enabled yet for lapi
-        for(int i=1; i< ncontexts; i++)
+        for(int i=1; i< (ssize_t)ncontexts; i++)
             {
-              pami_result_t rc;
-              lapi_handle_t t_lhandle;
-              size_t        t_myrank, t_mysize;
 	      _platdevs.init(_clientid,i,_client,(pami_context_t)_contexts[i],&_mm, _disable_shm);
 
               initP2PCollectives(_contexts[i],&_mm,_disable_shm);
@@ -895,8 +888,8 @@ namespace PAMI
                   break;
                 case PAMI_CLIENT_ACTIVE_CONTEXT:
                   _active_contexts.context_num = _ncontexts;
-                  for (int i = 0; i < _ncontexts; i ++)
-                    _active_contexts.contexts[i] = (pami_context_t) _contexts[i];
+                  for (int j = 0; j < (ssize_t)_ncontexts; j ++)
+                    _active_contexts.contexts[j] = (pami_context_t) _contexts[j];
                   configuration[i].value.chararray = (char*)&_active_contexts;
                   break;
                 default:
@@ -951,25 +944,32 @@ namespace PAMI
       typedef  typename ClassRouteId::cr_event_function cr_event_function;
       typedef  PAMI::Geometry::Algorithm<T_Geometry>    Algorithm;
       typedef  PAMI::Device::Generic::GenericThread     GenericThread;
-
+//#define TRACE(x) fprintf x
       static void _allreduce_done(pami_context_t context, void *cookie, pami_result_t result)
         {
-          Context           *ctxt       = (Context*) context;
           PostedClassRoute  *classroute = (PostedClassRoute *)cookie;
           TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> allreduce done: classroute->_done=true\n",
-                 pthread_self(),ctxt, ctxt->getId(), classroute));
-          PAMI_assert(classroute->_state == 1);
-          classroute->_state            = 2;
+                 pthread_self(),context, ((PAMI::Context*)context)->getId(), classroute));
+          PAMI_assert(classroute->_state == 100);
+          classroute->_state            = 150;
+        }
+      static void _allreduce_done2(pami_context_t context, void *cookie, pami_result_t result)
+        {
+          PostedClassRoute  *classroute = (PostedClassRoute *)cookie;
+          TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> allreduce2 done: classroute->_done=true\n",
+                 pthread_self(),context, ((PAMI::Context*)context)->getId(), classroute));
+          PAMI_assert(classroute->_state == 175);
+          classroute->setCallback(cr_func2, classroute);
+          classroute->_state            = 200;
         }
 
       static void _cr_done(pami_context_t context, void *cookie, pami_result_t result)
         {
-          Context          *ctxt       = (Context*) context;
           PostedClassRoute *classroute = (PostedClassRoute*)cookie;
           TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> cr barrier done\n",
-                 pthread_self(),ctxt, ctxt->getId(), classroute));
-          PAMI_assert(classroute->_state == 3);
-          classroute->_state            = 4;
+                 pthread_self(),context, ((PAMI::Context*)context)->getId(), classroute));
+          PAMI_assert(classroute->_state == 300);
+          classroute->_state            = 400;
         }
 
       static pami_result_t _do_classroute(pami_context_t context, void *cookie)
@@ -980,17 +980,28 @@ namespace PAMI
           PostedClassRoute *master     = classroute->getMasterCr();
           switch(classroute->_state)
             {
-              case 0:
+              case 50:
                 // Start the Allreduce
                 TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> starting allreduce\n",
                        pthread_self(),ctxt, ctxt->getId(), classroute));
-                classroute->_state = 1;
+                classroute->_state = 100;
                 classroute->startAllreduce(context, _allreduce_done, classroute);
                 return PAMI_EAGAIN;
                 break;
-              case 2:
+              case 150:
+                // Phase 1 reduction delivery
+                classroute->_result_cb_done(context,
+                                            classroute->_result_cookie,
+                                            classroute->_bitmask,
+                                            classroute->_geometry,
+                                            PAMI_SUCCESS);
+                classroute->_state = 175;
+                classroute->startAllreduce(context, _allreduce_done2, classroute);
+                return PAMI_EAGAIN;
+              case 200:
                 TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> delivering allreduce results\n",
                        pthread_self(),ctxt, ctxt->getId(), classroute));
+                // Phase 2 reduction delivery
                 classroute->_result_cb_done(context,
                                             classroute->_result_cookie,
                                             classroute->_bitmask,
@@ -998,31 +1009,31 @@ namespace PAMI
                                             PAMI_SUCCESS);
                 TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> starting post allreduce barrier\n",
                        pthread_self(),ctxt, ctxt->getId(), classroute));
-                classroute->_state = 3;
+                classroute->_state = 300;
                 g->default_barrier(_cr_done, classroute, ctxt->getId(), context);
                 return PAMI_EAGAIN;
                 break;
-              case 4:
-                  classroute->_state = 5;
+              case 400:
+                  classroute->_state = 500;
                   master->_syncup.fetch_and_add(1);
                 return PAMI_EAGAIN;
                 break;
-              case 5:
-                if(master->_syncup.fetch() == master->_num_locals)
+              case 500:
+                if(master->_syncup.fetch() == (size_t)master->_num_locals)
                   {
                     if(classroute == master)
-                      classroute->_state = 6;
+                      classroute->_state = 600;
                     else
-                      classroute->_state = 7;
+                      classroute->_state = 700;
                   }
                 return PAMI_EAGAIN;
                 break;
-              case 6:
+              case 600:
                 if(master->_syncdown.fetch() == 1L)
-                  classroute->_state = 7;
+                  classroute->_state = 700;
                 return PAMI_EAGAIN;
                 break;
-              case 7:
+              case 700:
                 if(classroute == classroute->getMasterCr())
                   {
                     TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> am master, delivering user func\n",
@@ -1044,7 +1055,26 @@ namespace PAMI
                 return PAMI_EAGAIN;
             }
         }
-    static void cr_func(pami_context_t  context,
+      static void cr_func2(pami_context_t  context,
+                           void           *cookie,
+                           uint64_t       *reduce_result,
+                           PEGeometry     *g,
+                           pami_result_t   result )
+      {
+        TRACE((stderr, "%p CR FUNC 1\n", cookie));
+        int count = 1;
+        PostedClassRoute<PEGeometry> *classroute = (PostedClassRoute<PEGeometry> *)cookie;
+        PAMI::Context *ctxt   = (PAMI::Context*)context;
+        PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
+        client->lock();
+        ctxt->_fca_collreg->analyze(ctxt->getId(),
+                                    classroute->_geometry,
+                                    &reduce_result[2],&count,
+                                    2);
+        client->unlock();
+      }
+
+      static void cr_func(pami_context_t  context,
                         void           *cookie,
                         uint64_t       *reduce_result,
                         PEGeometry     *g,
@@ -1103,7 +1133,7 @@ namespace PAMI
         ClassRouteId(ar_algo, geometry, bitmask, count,
                      result_cb_done, result_cookie, user_cb_done,
                      user_cookie),
-        _state(0),
+        _state(50),
         _work(_do_classroute, this),
         _master_cr(master_cr),
         _syncup(),
@@ -1162,6 +1192,7 @@ namespace PAMI
                                                         pami_event_function     fn,
                                                         void                  * cookie)
       {
+        (void)configuration;(void)num_configs;
         PAMI::Context * ctxt = (PAMI::Context*) context;
         ctxt->plock();
 
@@ -1170,7 +1201,7 @@ namespace PAMI
         size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
         size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
         uint64_t      *to_reduce[nctxt];
-        uint           to_reduce_count;
+        uint           to_reduce_count=0;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
         // set of algorithms.
@@ -1297,6 +1328,7 @@ namespace PAMI
                                                        pami_event_function     fn,
                                                        void                  * cookie)
       {
+        (void)configuration;(void)num_configs;
         PAMI::Context    *ctxt    = (PAMI::Context *)context;
         ctxt->plock();
         // todo:  implement this routine
@@ -1305,7 +1337,7 @@ namespace PAMI
         size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
         size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
         uint64_t      *to_reduce[nctxt];
-        uint           to_reduce_count;
+        uint           to_reduce_count=0;
 
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
@@ -1430,6 +1462,7 @@ namespace PAMI
                                                            pami_event_function     fn,
                                                            void                  * cookie)
       {
+        (void)configuration;(void)num_configs;
         PAMI::Context *ctxt         = (PAMI::Context *)context;
         PEGeometry    *new_geometry = NULL;
         pami_result_t  rc;
@@ -1472,7 +1505,7 @@ namespace PAMI
         // Find the master context index
         uint64_t       *to_reduce[num_local_ep];
         uint to_reduce_count = 3 + 3*master_topology->size();
-        for(size_t n=0; n<num_local_ep;n++)
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
         {
           size_t idx = index_array[n];
           rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
@@ -1504,14 +1537,14 @@ namespace PAMI
                                       NULL,
                                       0);
         PostedClassRoute<PEGeometry>    *cr[num_local_ep];
-        for(size_t n=0; n<num_local_ep;n++)
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
           {
             rc = __global.heap_mm->memalign((void **)&cr[n], 0, sizeof(PostedClassRoute<PEGeometry>));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc PostedClassRoute<PEGeometry>");
             to_reduce[n][0] = 0;
             to_reduce[n][1] = 0;
           }
-        for(size_t n=0; n<num_local_ep;n++)
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
         {
           size_t idx = _contexts[index_array[n]]->getId();
           Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[idx];
@@ -1526,7 +1559,7 @@ namespace PAMI
                                                  cr[master_context_idx],
                                                  num_local_ep);
         }
-        for(size_t n=0; n<num_local_ep;n++)
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
           {
             _contexts[index_array[n]]->post(&cr[n]->_barrier_work,
                                             _do_ue_barrier,
@@ -1537,7 +1570,7 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
-
+#if 0
     inline pami_result_t geometry_create_topology_impl(pami_geometry_t       * geometry,
 					       pami_configuration_t   configuration[],
 					       size_t                 num_configs,
@@ -1553,14 +1586,15 @@ namespace PAMI
 
         return PAMI_SUCCESS;
       }
-
+#endif
 
     inline pami_result_t geometry_query_impl (pami_geometry_t        geometry,
 					      pami_configuration_t   configuration[],
 					      size_t                 num_configs)
-        {
+    {
+      (void)geometry;(void)configuration;(void)num_configs;
 	return PAMI_UNIMPL;
-        }
+    }
 
     inline pami_result_t geometry_update_impl (pami_geometry_t        geometry,
 					       pami_configuration_t   configuration[],
@@ -1569,6 +1603,8 @@ namespace PAMI
 					       pami_event_function    fn,
 					       void                 * cookie)
       {
+        (void)geometry;(void)configuration;(void)num_configs;
+        (void)context;(void)fn;(void)cookie;
 	return PAMI_UNIMPL;
       }
 
@@ -1608,11 +1644,10 @@ namespace PAMI
 
     static void geom_barrier_done(pami_context_t context, void *cookie, pami_result_t res)
     {
-      Context                      *my_ctxt      = (Context*) context;
-      geomCleanup                  *gc           = (geomCleanup*)cookie;
-      geomCleanup                  *master       = gc->_master_cleanup;
-      PEGeometry                   *g            = (PEGeometry*)gc->_geometry;
-      gc->_state                                 = 2;
+      (void)context;
+      geomCleanup *gc           = (geomCleanup*)cookie;
+      gc->_state  = 2;
+      res         = PAMI_SUCCESS;
     }
     static pami_result_t do_destroy_geometry(pami_context_t context, void *cookie)
       {
@@ -1640,7 +1675,7 @@ namespace PAMI
                      master->_syncup.fetch(),
                      master->_num_locals,
                      gc, master));
-              if(master->_syncup.fetch() == master->_num_locals)
+              if(master->_syncup.fetch() == (size_t)master->_num_locals)
                 {
                   if(gc == master)
                     gc->_state = 4;
@@ -1714,16 +1749,16 @@ namespace PAMI
         PAMI_assertf(master_context_idx != -1,
                      "Fatal:  Geometry destroy posted context is not represented in the endpoint list");
         geomCleanup *gc[num_local_ep];
-        for(size_t n=0; n<num_local_ep; n++)
+        for(size_t n=0; n<(size_t)num_local_ep; n++)
           gc[n]  = (geomCleanup*)__global.heap_mm->malloc(sizeof(geomCleanup));
 
 
         TRACE((stderr, "Client.h:  Destroying geometry for %d ep  mci=%d\n",
                num_local_ep, master_context_idx));
-        for(size_t n=0; n<num_local_ep; n++)
+        for(size_t n=0; n<(size_t)num_local_ep; n++)
           new(gc[n])geomCleanup(g,fn,cookie,num_local_ep, gc[master_context_idx]);
 
-        for(size_t n=0; n<num_local_ep; n++)
+        for(size_t n=0; n<(size_t)num_local_ep; n++)
           {
             _contexts[index_array[n]]->post(&gc[n]->_barrier_work,
                                             do_destroy_geometry,

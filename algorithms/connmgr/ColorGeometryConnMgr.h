@@ -51,7 +51,7 @@ namespace CCMI
         inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
                                               unsigned color, unsigned phase, unsigned dst = (unsigned) - 1)
         {
-
+          (void)root;(void)phase;(void)dst;
           PAMI_assert(_numConnections != 0);
 
           unsigned connid = 0;
@@ -78,6 +78,7 @@ namespace CCMI
         inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
                                                   unsigned src, unsigned phase, unsigned color)
         {
+          (void)src;
           return getConnectionId_impl (comm, root, color, phase);
         }
 

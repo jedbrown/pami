@@ -51,6 +51,7 @@ class Bsr : public SharedArray
         void Store8(const int byte_offset, const unsigned long long val);
 
         static size_t GetCtrlBlockSz(unsigned int mem_cnt) {
+            (void)mem_cnt;
             /* need pad structure to natural word alignment */
             size_t align_mask = (sizeof(size_t) - 1);
             return ((sizeof(Shm) + align_mask) & ~(align_mask));
@@ -94,7 +95,7 @@ class Bsr : public SharedArray
 
         /* for Checkpoint support */
         struct CkptInfo {
-            CkptInfo(): byte_data(0), in_checkpoint(false), prev_state(ST_NONE){};
+            CkptInfo(): byte_data(0),prev_state(ST_NONE),in_checkpoint(false){};
             unsigned int          byte_data;
             BSR_SETUP_STATE       prev_state; // state before checkpoint
             bool                  in_checkpoint;

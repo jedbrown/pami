@@ -54,8 +54,8 @@ SyncGroup::SyncGroup():
 
 inline
 SyncGroup::SyncGroup(unsigned int mem_id, unsigned int mem_cnt):
-    member_id(mem_id),
     member_cnt(mem_cnt),
+    member_id(mem_id),
     group_desc("N/A")
 {
 }

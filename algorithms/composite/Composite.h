@@ -80,6 +80,7 @@ namespace CCMI
         ///
         virtual unsigned restart (void *cmd)
         {
+          (void)cmd;
           //Currently not all composites implement this method
           CCMI_abort();
           return PAMI_SUCCESS;
@@ -115,6 +116,8 @@ namespace CCMI
                                        pami_callback_t      * cb_done,
                                        void                 * cookie)
         {
+          // -pedantic warning
+          (void)src;(void)metadata;(void)pwq;(void)cb_done;(void)cookie;
           //Currently not all composites implement this method
           CCMI_abort();
         }

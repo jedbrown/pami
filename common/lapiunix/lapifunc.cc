@@ -107,7 +107,11 @@ LapiFunc * LapiFunc::getInstance()
     if (instance == NULL) {
         instance = new LapiFunc();
         int rc = instance->load();
-        // FixMe: error handling
+        if(rc != 0)
+          {
+            ::fprintf(stderr, "Unable to load FCA instance\n");
+            exit(1);
+          }
         PAMI_assert(rc == 0);
     }
     return instance;
@@ -168,7 +172,7 @@ LapiFunc::~LapiFunc()
 
 int LapiFunc::load()
 {
-    char *filename = NULL;
+    const char *filename = NULL;
 #ifdef _LAPI_LINUX // Linux
     filename = "libpami.so";
 #else

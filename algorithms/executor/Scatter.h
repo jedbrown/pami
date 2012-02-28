@@ -55,6 +55,7 @@ namespace CCMI
     template<>
     inline void setScatterVectors<pami_scatter_t> (pami_scatter_t *xfer, void *disps, void * sndcounts)
     {
+      (void)xfer;(void)disps;(void)sndcounts;
     }
 
     template<>

@@ -56,6 +56,7 @@ namespace CCMI
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
         inline void operator delete(void * p)
         {
+          (void)p;
           CCMI_abort();
         }
 

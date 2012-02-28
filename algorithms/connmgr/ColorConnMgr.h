@@ -39,6 +39,7 @@ namespace CCMI
 
       inline void setNumConnections_impl (size_t sz)
 	{
+          (void)sz;
 	}
       
       ///
@@ -49,12 +50,14 @@ namespace CCMI
       inline unsigned getConnectionId_impl (unsigned comm, unsigned root,
                                             unsigned color, unsigned phase, unsigned dst=(unsigned)-1)
 	{
+          (void)comm;(void)root;(void)phase;(void)dst;
 	  return color + _offset;
 	}
       
       inline unsigned getRecvConnectionId_impl (unsigned comm, unsigned root,
 						unsigned src, unsigned phase, unsigned color)
 	{
+          (void)comm;(void)root;(void)phase;(void)src;
 	  return color + _offset;
 	}
       

@@ -795,7 +795,6 @@ namespace PAMI
                       mcast  = (pami_multicast_t *) static_cast<CollShmMessage<pami_multicast_t, CollShmDevice> *>(_msg)->getMulti();
                       topo   = (PAMI::Topology *)mcast->src_participants;
                       root   = _device->getTopo()->endpoint2Index(topo->index2Endpoint(0));
-                      PAMI::Topology *t = _device->getTopo();
                       _len   = mcast->bytes;
                       _wlen  = 0;
                       // Todo:  non-flat n-ary trees give incorrect results
@@ -825,6 +824,7 @@ namespace PAMI
                       k             = 2;  // binary for better latency
                       break;
                     default:
+                      root = 0; // avoid uninitialized warnings
                       PAMI_ASSERT(0);
                       break;
                   }
@@ -967,6 +967,7 @@ namespace PAMI
                                     size_t len = pwindow->consumeData(window->getBuffer(_device->getSysdep()), _wlen, 1,
                                                                       mcombine->optor, mcombine->dtype,
                                                                       _device->getSysdep());
+                                    (void)len;
                                     PAMI_ASSERT(len == _wlen);
                                     pwindow->setCmpl();
                                   }
@@ -1115,8 +1116,7 @@ namespace PAMI
 
                             if (_role == BOTH)
                               {
-                                size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep(),false);
-                                                            
+                                size_t len = window->produceData(*(PAMI::PipeWorkQueue *)mcast->dst, _wlen, _device->getSysdep(),false);(void)len;
                                 PAMI_ASSERT(len == _wlen);
                                 _action = SHAREWITH;
                                 rc = window->setAvail(_step, _nchildren + 1);
@@ -1306,7 +1306,7 @@ namespace PAMI
             //bool     cur_round = head < (_tail >> _syncbits);
             //unsigned round = cur_round ? _round : ((_round + 1) & 0x1);
             int      head      = (_head / _synccounts) % _numsyncs;
-            bool     cur_round = head < (_tail / _synccounts);
+            bool     cur_round = (unsigned)head < (_tail / _synccounts);
             unsigned round     = cur_round ? _round : (_round+1)% 2;
             int      increment  = _increments[round];
             unsigned adv   = 0;
@@ -1431,7 +1431,7 @@ namespace PAMI
             // BITWISE OPTIMIZATION(disabled)
             //unsigned idx = channel_id >> _syncbits;
             unsigned idx       = channel_id / _synccounts;
-            bool     cur_round = channel_id < _tail;
+            bool     cur_round = (unsigned)channel_id < _tail;
             unsigned round     = cur_round ? _round : ((_round + 1) & 0x1);
 
             TRACE_DBG((stderr,

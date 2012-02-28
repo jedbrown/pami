@@ -43,7 +43,7 @@ namespace xlpgas
     public:
       FixedLeader (int N, int myindex, int leader, void * shmem
 ,  int nc=2);
-      FixedLeader(int N, int myindex, int leader, int nchildren) : _N(N), _me(myindex), _leader(leader), _nchildren(nchildren) {}
+      FixedLeader(int N, int myindex, int leader, int nchildren) : _N(N), _me(myindex), _nchildren(nchildren),_leader(leader) {}
       void bcast (xlpgas_local_addr_t buffer, size_t len);
       void reduce (int64_t* val, int64_t* dest, const cau_reduce_op_t&, size_t nelems);
       void reset(int leader);

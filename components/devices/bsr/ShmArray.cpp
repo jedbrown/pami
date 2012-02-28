@@ -22,10 +22,10 @@
  */
 ShmArray::ShmArray(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz):
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "ShmArray"),
-    shm((Shm*)shm_block),
-    shm_size(shm_block_sz),
+    is_last(false),
     shm_state(ST_NONE),
-    is_last(false)
+    shm((Shm*)shm_block),
+    shm_size(shm_block_sz)
 {
     assert(GetCtrlBlockSz(member_cnt) <= shm_block_sz);
     /* check alignment for variables that used by atomic */
@@ -55,7 +55,7 @@ SharedArray::RC ShmArray::CheckInitDone(const unsigned int   job_key,
             shm_state = ST_SHM_CHECK_REF_CNT;
             // fall through
         case ST_SHM_CHECK_REF_CNT:
-            if (shm->ready_cnt == this->member_cnt) {
+            if (shm->ready_cnt == (int)this->member_cnt) {
                 ITRC(IT_BSR, "ShmArray: Ready to use\n");
                 return SUCCESS;
             } else {

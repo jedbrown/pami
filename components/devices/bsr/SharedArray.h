@@ -154,11 +154,11 @@ class SharedArray
 
 inline SharedArray::SharedArray(unsigned int mem_cnt, bool is_leader,
         void *shm_block, size_t shm_block_sz, const char *name):
+                  name(name),
                   member_cnt(mem_cnt),
                   is_leader(is_leader),
                   shm_size(shm_block_sz),
-                  shm_seg(shm_block),
-                  name(name) {};
+                  shm_seg(shm_block){};
 
 inline SharedArray::~SharedArray() {};
 

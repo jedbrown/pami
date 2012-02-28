@@ -476,6 +476,7 @@ public:
 		static inline NillSubDevice *generate_impl(size_t clientid, size_t num_ctx,
 						Memory::MemoryManager & mm,
 						PAMI::Device::Generic::Device *devices) {
+                        (void)clientid;(void)num_ctx;(void)mm;
 			return (NillSubDevice *)devices;
 		}
 		static inline pami_result_t init_impl(NillSubDevice *devs,
@@ -483,10 +484,13 @@ public:
 						pami_client_t clt, pami_context_t ctx,
 						PAMI::Memory::MemoryManager *mm,
 						PAMI::Device::Generic::Device *devices) {
+                        (void)devs;(void)clientid;(void)contextid;(void)clt;
+                        (void)ctx;(void)mm;(void)devices;
 			return PAMI_SUCCESS;
 		}
 		static inline size_t advance_impl(NillSubDevice *devs,
 						size_t clientid, size_t contextid) {
+                        (void)devs;(void)clientid;(void)contextid;
 			return 0;
 		}
 		static inline NillSubDevice &getDevice_impl(NillSubDevice *devs,
@@ -522,7 +526,7 @@ public:
         virtual ~CommonQueueSubDevice() {}
 
         /// \note This is required to make "C" programs link successfully with virtual destructors
-        inline void operator delete(void * p) { PAMI_abortf("%s<%d>\n", __FILE__, __LINE__); }
+        inline void operator delete(void * p) { (void)p;PAMI_abortf("%s<%d>\n", __FILE__, __LINE__); }
 
         /// \brief returns a unique ID relative to this common sub-device
         ///
@@ -562,6 +566,7 @@ public:
         /// \param[in] devices		Array of generic devices for client
         ///
         inline pami_result_t __init(size_t client, size_t contextId, pami_client_t clt, pami_context_t ctx, PAMI::Memory::MemoryManager *mm, const char *key, PAMI::Device::Generic::Device *devices) {
+                (void)clt;(void)ctx;(void)key;
                 if (client == 0) {
 #if 0 // always an in-place (proc-scoped) counter...
 			unsigned n = strlen(key);
@@ -592,6 +597,7 @@ public:
         /// \return	Total number of threads completed for message
         ///
         inline unsigned __completeThread(GenericAdvanceThread *t) {
+                (void)t;
                 // fetchIncr() returns value *before* increment,
                 // and we need to return total number of threads completed,
                 // so we return "+1".

@@ -25,6 +25,7 @@ namespace PAMI
                                            void     * base,
                                            uint64_t   options)
       {
+        (void)bytes_out;(void)bytes_in;(void)base;(void)options;
         return PAMI_UNIMPL;
       }
 
@@ -36,6 +37,7 @@ namespace PAMI
       inline pami_result_t getInfo (size_t * bytes,
                                    void ** base)
       {
+        (void)bytes;(void)base;
         return PAMI_UNIMPL;
 
       }
@@ -50,6 +52,7 @@ namespace PAMI
                                      size_t      remote_offset,
                                      size_t      bytes)
       {
+        (void)local_offset;(void)remote_memregion;(void)remote_offset;(void)bytes;
         return PAMI_ERROR;
       }
 
@@ -58,6 +61,8 @@ namespace PAMI
                                       size_t      remote_offset,
                                       size_t      bytes)
       {
+        (void)local_offset;(void)remote_memregion;
+        (void)remote_offset;(void)bytes;
         return PAMI_ERROR;
       }
 

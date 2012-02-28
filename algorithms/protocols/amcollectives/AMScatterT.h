@@ -270,7 +270,10 @@ namespace CCMI
             hdr._phase = 0;
             hdr._data_size  = bytes;
             hdr._dispatch   = ams_xfer->dispatch;
-
+#if !defined(__64BIT__)
+            hdr.unused[0]  = 0;
+            hdr.unused[1]  = 0;
+#endif
             composite->setContext (_context);
             composite->headerExecutor().setCollHeader (hdr);
             composite->headerExecutor().setBuffers ((char *)ams_xfer->headers,

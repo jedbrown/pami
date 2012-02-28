@@ -21,7 +21,7 @@ namespace PAMI
 {
   namespace Memory
   {
-    template <> const bool supports <instruction> () { return true; };
+    template <> bool supports <instruction> () { return true; };
 
     template <> void sync <instruction> ()
     {

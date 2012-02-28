@@ -49,6 +49,7 @@ namespace CCMI{namespace Adaptor{
                                   void           *clientdata,
                                   pami_result_t   res)
         {
+          (void)context;(void)clientdata;(void)res;
           PAMI_abort();
         }
 
@@ -98,6 +99,7 @@ namespace CCMI{namespace Adaptor{
         /// NOTE: This is required to make "C" programs link successfully with virtual destructors
         void operator delete(void * p)
         {
+          (void)p;
           CCMI_abort();
         }
 
@@ -126,6 +128,7 @@ namespace CCMI{namespace Adaptor{
                                    pami_dispatch_callback_function cb_async,
                                    pami_mapidtogeometry_fn        cb_geometry)
         {
+          (void)is_buffered;(void)cb_async;(void)cb_geometry;
           TRACE_FN_ENTER();
           TRACE_FORMAT("<%p>",this);
           TRACE_FN_EXIT();
@@ -141,7 +144,7 @@ namespace CCMI{namespace Adaptor{
       inline size_t getContextId()
         {
           TRACE_FN_ENTER();
-          TRACE_FORMAT("<%p> _context_id %ld",this,_context_id);
+          TRACE_FORMAT("<%p> _context_id %zu",this,_context_id);
           TRACE_FN_EXIT();
           return _context_id;
         }

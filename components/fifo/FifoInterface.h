@@ -88,7 +88,7 @@ namespace PAMI
           /// C++ code using templates to specify the fifo may safely access the
           /// 'fifo_memory_size' static constant.
           ///
-          static const size_t getFifoMemorySize ();
+          static size_t getFifoMemorySize ();
 
           ///
           /// \brief Number of available bytes in each packet header for application data
@@ -100,7 +100,7 @@ namespace PAMI
           /// C++ code using templates to specify the fifo may safely access the
           /// 'packet_header_size' static constant.
           ///
-          static const size_t getPacketHeaderSize ();
+          static size_t getPacketHeaderSize ();
 
           ///
           /// \brief Number of available bytes in each packet payload for application data
@@ -112,7 +112,7 @@ namespace PAMI
           /// C++ code using templates to specify the fifo may safely access the
           /// 'packet_payload_size' static constant.
           ///
-          static const size_t getPacketPayloadSize ();
+          static size_t getPacketPayloadSize ();
 
           ///
           /// \brief Initialize a fifo using a memory manager and unique key.
@@ -214,19 +214,19 @@ namespace PAMI
       };
 
       template <class T_Fifo>
-      const size_t Fifo<T_Fifo>::getFifoMemorySize ()
+      size_t Fifo<T_Fifo>::getFifoMemorySize ()
       {
         return T_Fifo::fifo_memory_size;
       }
 
       template <class T_Fifo>
-      const size_t Fifo<T_Fifo>::getPacketHeaderSize ()
+      size_t Fifo<T_Fifo>::getPacketHeaderSize ()
       {
         return T_Fifo::packet_header_size;
       }
 
       template <class T_Fifo>
-      const size_t Fifo<T_Fifo>::getPacketPayloadSize ()
+      size_t Fifo<T_Fifo>::getPacketPayloadSize ()
       {
         return T_Fifo::packet_payload_size;
       }

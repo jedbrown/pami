@@ -65,6 +65,7 @@ namespace PAMI
       ///
       inline pami_result_t init_impl (uint64_t dummy)
       {
+        (void)dummy;
         _clockMHz      = clockMHz();
         _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
 

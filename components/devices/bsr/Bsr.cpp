@@ -41,17 +41,13 @@ static void show_dlerror(const char* msg) {
     const char* msg_to_use = (msg == NULL)?"Dynamic linking error":msg;
     char* err_str = dlerror();
     ITRC(IT_BSR, "%s (%s)\n", msg_to_use, (err_str == NULL)?"unknown":err_str);
+    (void)msg_to_use; (void)err_str;
 }
 
 class BsrFunc {
     public:
         static bool loaded;
         BsrFunc() {
-            bsr_query_t bsr_query = NULL;
-            bsr_alloc_t bsr_alloc = NULL;
-            bsr_free_t  bsr_free  = NULL;
-            bsr_map_t   bsr_map   = NULL;
-            bsr_unmap_t bsr_unmap = NULL;
         };
         bool LoadFunc() {
             if (BsrFunc::loaded) return true;
@@ -107,11 +103,11 @@ bool BsrFunc::loaded = false;
  */
 Bsr::Bsr(unsigned int mem_cnt, bool is_leader, void *shm_block, size_t shm_block_sz) :
     SharedArray(mem_cnt, is_leader, shm_block, shm_block_sz, "BSR"),
+    is_last(false),
     bsr_id(-1),
     bsr_addr(NULL),
     bsr_state(ST_NONE),
-    shm(NULL),
-    is_last(false)
+    shm(NULL)
 {
     ASSERT(shm_block_sz >= sizeof(Shm));
     shm = (Shm *)shm_seg;
@@ -246,7 +242,7 @@ bool Bsr::IsBsrReady()
 {
     // Check if all tasks have update the reference count, or
     // if any task failed
-    if (shm->bsr_acquired && member_cnt == shm->setup_ref) {
+    if (shm->bsr_acquired && (int)member_cnt == shm->setup_ref) {
         ITRC(IT_BSR, "BSR: %s READY to use (setup_ref=%d)\n",
                 (is_leader?"LEADER":"FOLLOWER"), shm->setup_ref);
 #ifndef _LAPI_LINUX
@@ -307,14 +303,14 @@ bool Bsr::AttachBsr(int mem_id, unsigned char init_val)
 
     // increase ref count
     int ref = fetch_and_add ((atomic_p)&shm->setup_ref, 1);
-    ITRC(IT_BSR, "BSR: attached ref=%d->%d\n", ref, ref+1);
+    ITRC(IT_BSR, "BSR: attached ref=%d->%d\n", ref, ref+1);(void)ref;
     return true;
 }
 
 bool Bsr::GetBsrResource(unsigned int job_key)
 {
     ASSERT(is_leader); // this is a leader only step
-    size_t bsr_size;
+    size_t bsr_size=0;
 #ifdef _LAPI_LINUX 
     // Check availability of BSR resources.
     if (! BsrFunc::loaded)
@@ -538,14 +534,14 @@ bool Bsr::Checkpoint(int byte_offset)
     /* remove bsr_id */
     ReleaseBsrResource();
 
-    int ret = fetch_and_add((atomic_p)&(shm->ckpt_ref), 1);
+    fetch_and_add((atomic_p)&(shm->ckpt_ref), 1);
     return true;
 }
 
 bool Bsr::Resume(int byte_offset)
 {
     assert(ckpt_info.in_checkpoint);
-    assert(shm->ckpt_ref <= member_cnt);
+    assert(shm->ckpt_ref <= (int)member_cnt);
     /*
      * Resume from a unsuccessful checkpoint, is handled by following code
      * as well. In that case, the bsr_id is not freed.

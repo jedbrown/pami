@@ -94,7 +94,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
   // This branch should be resolved at compile time and optimized out.
   if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet metadata (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet metadata (%zu bytes)", (long)sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
 
       // Initialize the short protocol metadata on the stack to copy
       // into the packet metadata.
@@ -161,7 +161,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
   // This branch should be resolved at compile time and optimized out.
   if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) fits in the packet header (%zu bytes)", (long)sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
 
       // Initialize the short protocol metadata on the stack to copy
       // into the packet metadata.
@@ -190,7 +190,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
     }
   else
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) does not fit in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) does not fit in the packet header (%zu bytes)", (long)sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
 
       // Initialize the metadata, to be sent with the header and data, in the
       // temporary packet payload.
@@ -245,13 +245,13 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_packed (void   * metadata,
   // This branch should be resolved at compile time and optimized out.
   if (sizeof(packed_metadata_t) > T_Model::packet_model_metadata_bytes)
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet header (%zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet header (%zu bytes)", (long)sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
       packed_metadata = (packed_metadata_t *) payload;
       header = (void *) (packed_metadata + 1);
     }
   else
     {
-      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet payload (packet header is %zu bytes)", sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
+      TRACE_FORMAT("protocol metadata (%ld bytes) is in the packet payload (packet header is %zu bytes)",(long) sizeof(packed_metadata_t), T_Model::packet_model_metadata_bytes);
       packed_metadata = (packed_metadata_t *) metadata;
       header = payload;
     }

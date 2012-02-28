@@ -78,11 +78,13 @@ public:
 
   static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
   {
+    (void)hndl;(void)completion_param;
     TRACE((stderr, "cau_red_send_done\n"));
   }
 
   static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
   {
+    (void)hndl;
     TRACE((stderr, "cau_mcast_send_done\n"));
     // This means that the synchronization is complete on the root node
     CAUMsyncMessage     *m          = (CAUMsyncMessage *)completion_param;
@@ -136,17 +138,17 @@ public:
                   lapi_handle_t        lapi_handle,
                   void                *toFree):
     MatchQueueElem(geometryInfo->_seqno),
+    _geometryInfo(geometryInfo),
     _reduce_val(init_val),
+    _red(red),
     _user_done_fn(done_fn),
+    _cleanup_fn(cleanup_fn),
     _user_cookie(user_cookie),
     _toFree(toFree),
     _context(context),
-    _lapi_hdl(lapi_handle),
-    _geometryInfo(geometryInfo),
     _dispatch_mcast_id(dispatch_mcast_id),
     _dispatch_red_id(dispatch_red_id),
-    _red(red),
-    _cleanup_fn(cleanup_fn)
+    _lapi_hdl(lapi_handle)
   {
   }
   CAUGeometryInfo     *_geometryInfo;
@@ -182,6 +184,7 @@ public:
   // Also, toggle the phase back to reduce
   static void cau_red_send_done(lapi_handle_t *hndl, void * completion_param)
   {
+    (void)hndl;
     CAUMcombineMessage *m = (CAUMcombineMessage*)completion_param;
     unsigned bytesConsumed;
 
@@ -205,6 +208,7 @@ public:
   // the next chunk of data from the non-root tasks.
   static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
   {
+    (void)hndl;
     CAUMcombineMessage *m = (CAUMcombineMessage*)completion_param;
     unsigned bytesProduced;
 
@@ -348,11 +352,11 @@ public:
                      int              searchKey = -1):
     MatchQueueElem(searchKey),
     _geometryInfo(geometryInfo),
-    _device(device),
     _isInit(false),
     _isPosted(false),
     _dispatch_red_id(dispatch_red_id),
     _dispatch_mcast_id(dispatch_mcast_id),
+    _device(device),
     _lapi_hdl(lapi_hdl),
     _context(context)
   {
@@ -482,9 +486,6 @@ public:
     if(_phase == REDUCE && _reducePktBytes == 0)
       {
         if(bytesAvailToConsume == 0) return;
-
-        unsigned actualDataInPacket;
-
         if(_sizeoftype == 4)
           {
             bytesAvailToConsume    = MIN(32, bytesAvailToConsume);
@@ -617,6 +618,7 @@ public:
 
   static void cau_mcast_send_done(lapi_handle_t *hndl, void * completion_param)
   {
+    (void)hndl;
     CAUMcastMessage *m      = (CAUMcastMessage*)completion_param;
     unsigned         bytes  = m->_xfer_header.pktsize;
     m->_totalBytesConsumed += bytes;
@@ -633,12 +635,12 @@ public:
                   pami_context_t   context,
                   int              searchKey = -1):
     MatchQueueElem(searchKey),
-    _device(device),
     _geometryInfo(geometryInfo),
     _isInit(false),
     _isPosted(false),
-    _injectReady(true),
     _dispatch_mcast_id(dispatch_mcast_id),
+    _injectReady(true),
+    _device(device),
     _lapi_hdl(lapi_hdl),
     _context(context),
     _pkt_allocator(NULL)
@@ -684,7 +686,7 @@ public:
       {
         TRACE((stderr, "Advance Root (%p):  bac=%d buf=%p, injectReady=%d\n",
                this, bytesAvailToConsume, bufToConsume, _injectReady));
-        int bytesToBroadcast     = MIN(bytesAvailToConsume, 64);
+        unsigned bytesToBroadcast= MIN(bytesAvailToConsume, 64);
         _xfer_header.dispatch_id = _dispatch_mcast_id;
         _xfer_header.geometry_id = _geometryInfo->_geometry_id;
         _xfer_header.seqno       = this->_key;
@@ -722,7 +724,7 @@ public:
                this, bytesAvailToProduce, bufToProduce, _packetQueue.size()));
         IncomingPacket * pkt = (IncomingPacket*)_packetQueue.dequeue();
         memcpy(bufToProduce, pkt->_data, pkt->_size);
-        PAMI_assert(bytesAvailToProduce >= pkt->_size);
+        PAMI_assert(bytesAvailToProduce >= (unsigned)pkt->_size);
         _dstpwq->produceBytes(pkt->_size);
         _totalBytesProduced += pkt->_size;
         bytesAvailToProduce = _dstpwq->bytesAvailableToProduce();

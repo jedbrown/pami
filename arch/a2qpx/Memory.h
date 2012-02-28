@@ -27,9 +27,9 @@ namespace PAMI
 {
   namespace Memory
   {
-    template <> const bool supports <instruction>  () { return true; };
-    template <> const bool supports <remote_msync> () { return true; };
-    template <> const bool supports <l1p_flush>    () { return true; };
+    template <> bool supports <instruction>  () { return true; };
+    template <> bool supports <remote_msync> () { return true; };
+    template <> bool supports <l1p_flush>    () { return true; };
 
     template <> void sync <instruction>  ()
     {

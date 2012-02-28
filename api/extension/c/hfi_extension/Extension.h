@@ -24,6 +24,7 @@ namespace PAMI
                                          const char    * name,
                                          pami_result_t & result)
   {
+    (void)client;(void)name;
     if (_Lapi_env.use_hfi) {
       PAMI::HfiExtension * x;
       pami_result_t rc;
@@ -67,6 +68,7 @@ namespace PAMI
   template <>
   void * Extension::queryExtension<3000> (const char * name, void * cookie)
   {
+    (void)cookie;
     if (strcasecmp (name, "hfi_pkt_counters") == 0)
       return (void *) PAMI::HfiExtension::hfi_pkt_counters;
 

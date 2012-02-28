@@ -142,7 +142,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'deterministic_packet_model' constant.
           ///
-          static const bool isPacketDeterministic ();
+          static  bool isPacketDeterministic ();
 
           ///
           /// \brief Returns the reliable network attribute of this model
@@ -160,7 +160,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'reliable_packet_model' constant.
           ///
-          static const bool isPacketReliable ();
+          static bool isPacketReliable ();
 
           ///
           /// \brief Returns the 'read() required' attribute of this model
@@ -178,7 +178,7 @@ namespace PAMI
           /// \retval false The packet payload data may be directly accessed
           ///               from within the packet model dispatch function.
           ///
-          static const bool isReadRequired ();
+          static bool isReadRequired ();
 
           ///
           /// \brief Returns the maximum metadata bytes attribute of this model for single-packet transfers.
@@ -199,7 +199,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'packet_model_metadata_bytes' constant.
           ///
-          static const size_t getPacketMetadataBytes ();
+          static size_t getPacketMetadataBytes ();
 
           ///
           /// \brief Returns the maximum metadata bytes attribute of this model for multi-packet transfers.
@@ -221,7 +221,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'packet_model_metadata_bytes' constant.
           ///
-          static const size_t getPacketMultiMetadataBytes ();
+          static size_t getPacketMultiMetadataBytes ();
 
           ///
           /// \brief Returns the maximum payload bytes attribute of this model.
@@ -242,7 +242,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'packet_model_payload_bytes' constant.
           ///
-          static const size_t getPacketPayloadBytes ();
+          static size_t getPacketPayloadBytes ();
 
           ///
           /// \brief Returns the maximum immediate payload bytes attribute of this model.
@@ -267,7 +267,7 @@ namespace PAMI
           /// \note The \c packet_model_immediate_bytes value may be different
           ///       than the \c packet_model_payload_bytes value
           ///
-          static const size_t getPacketImmediateBytes ();
+          static size_t getPacketImmediateBytes ();
 
           ///
           /// \brief Returns the transfer state bytes attribute of this model.
@@ -284,7 +284,7 @@ namespace PAMI
           /// C++ code using templates to specify the model may statically
           /// access the 'packet_model_state_bytes' constant.
           ///
-          static const size_t getPacketTransferStateBytes ();
+          static size_t getPacketTransferStateBytes ();
 
           ///
           /// \brief Initialize the packet model
@@ -538,49 +538,49 @@ namespace PAMI
       };
 
       template <class T>
-      const bool PacketModel<T>::isPacketDeterministic ()
+      bool PacketModel<T>::isPacketDeterministic ()
       {
         return T::deterministic_packet_model;
       }
 
       template <class T>
-      const bool PacketModel<T>::isPacketReliable ()
+      bool PacketModel<T>::isPacketReliable ()
       {
         return T::reliable_packet_model;
       }
 
       template <class T>
-      const bool PacketModel<T>::isReadRequired ()
+      bool PacketModel<T>::isReadRequired ()
       {
         return T::read_is_required_packet_model;
       }
 
       template <class T>
-      const size_t PacketModel<T>::getPacketMetadataBytes ()
+      size_t PacketModel<T>::getPacketMetadataBytes ()
       {
         return T::packet_model_metadata_bytes;
       }
 
       template <class T>
-      const size_t PacketModel<T>::getPacketMultiMetadataBytes ()
+      size_t PacketModel<T>::getPacketMultiMetadataBytes ()
       {
         return T::packet_model_multi_metadata_bytes;
       }
 
       template <class T>
-      const size_t PacketModel<T>::getPacketPayloadBytes ()
+      size_t PacketModel<T>::getPacketPayloadBytes ()
       {
         return T::packet_model_payload_bytes;
       }
 
       template <class T>
-      const size_t PacketModel<T>::getPacketImmediateBytes ()
+      size_t PacketModel<T>::getPacketImmediateBytes ()
       {
         return T::packet_model_immediate_bytes;
       }
 
       template <class T>
-      const size_t PacketModel<T>::getPacketTransferStateBytes ()
+      size_t PacketModel<T>::getPacketTransferStateBytes ()
       {
         return T::packet_model_state_bytes;
       }

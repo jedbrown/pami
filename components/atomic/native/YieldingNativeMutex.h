@@ -48,11 +48,13 @@ namespace PAMI
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm)
 	{
+                (void)mm;
 		return true;
 	}
 
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm)
 	{
+                (void)mm;
 		return true;
 	}
       

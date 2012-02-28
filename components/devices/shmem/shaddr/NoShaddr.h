@@ -49,6 +49,8 @@ namespace PAMI
                                    size_t   bytes,
                                    size_t   task)
           {
+            (void)local;(void)remote;
+            (void)bytes;(void)task;
             return 0;
           };
 
@@ -62,6 +64,8 @@ namespace PAMI
                                     size_t   bytes,
                                     size_t   task)
           {
+            (void)local;(void)remote;
+            (void)bytes;(void)task;
             return 0;
           };
 
@@ -76,6 +80,8 @@ namespace PAMI
                                    size_t      remote_offset,
                                    size_t      bytes)
           {
+            (void)local;(void)local_offset;(void)remote;
+            (void)remote_offset;(void)bytes;
             return 0;
           };
 
@@ -90,6 +96,8 @@ namespace PAMI
                                     size_t      local_offset,
                                     size_t      bytes)
           {
+            (void)local;(void)local_offset;(void)remote;
+            (void)remote_offset;(void)bytes;
             return 0;
           };
 

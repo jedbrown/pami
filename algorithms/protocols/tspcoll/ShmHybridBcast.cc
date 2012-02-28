@@ -52,7 +52,6 @@ void next_repeated_phase (void* ctxt, void * arg, pami_result_t){
     b->kick();
   }
   else {
-    xlpgas::SHMLargeBcast<T_NI>* shm_bcast = (xlpgas::SHMLargeBcast<T_NI>*)hb_args->shm_bcast;
     //fprintf(stderr, "L%d NRP non LEFTOVER ROOT =%d\n",shm_bcast->rank(),hb_args->leader_root);
     hb_args->shmem_finished = true;
     // if leader will start global bcast; 
@@ -190,9 +189,6 @@ void xlpgas::ShmHybridBcast<T_NI,T_Device>::reset (int root,
     }
     return ;
   }
-
-  bool local_done=false;
-  bool root_is_leader=false;
 
   assert (shm_bcast != NULL);
   args.shm_bcast      = (void*)shm_bcast;

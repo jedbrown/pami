@@ -20,6 +20,7 @@ namespace PAMI
                                          const char    * name,
                                          pami_result_t & result)
   {
+    (void)client;(void)name;
     result = PAMI_SUCCESS;
     return NULL;
   }
@@ -28,6 +29,7 @@ namespace PAMI
   void Extension::closeExtension<4000> (void          * cookie,
                                         pami_result_t & result)
   {
+    (void)cookie;
     result = PAMI_SUCCESS;
     return;
   }
@@ -36,6 +38,7 @@ namespace PAMI
   void * Extension::queryExtension<4000> (const char * name,
                                           void       * cookie)
   {
+    (void)cookie;
     if (strcasecmp(name, "register") == 0)
       {
         return (void *)PAMI::ProgressExtension::context_async_progress_register;

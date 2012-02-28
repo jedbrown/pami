@@ -51,6 +51,7 @@ public:
         _geometry((PAMI_GEOMETRY_CLASS*)g),
         _app_cb_done(cb_done)
     {
+        (void)cmgr;
         //pami_task_t self = __global.mapping.task();
         PAMI::Topology * all = (PAMI::Topology *)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
         size_t topo_size = all->size();
@@ -158,6 +159,7 @@ public:
                                 void *arg,
                                 pami_result_t err)
     {
+        (void)context;(void)err;
         TRACE_ADAPTOR((stderr, "<%p>All2AllProtocol::cb_barrier_done\n", arg));
         All2AllProtocol *a2a = (All2AllProtocol*) arg;
         CCMI_assert(a2a != NULL);

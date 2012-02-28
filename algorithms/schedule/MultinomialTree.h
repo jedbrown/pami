@@ -93,7 +93,7 @@ namespace CCMI
             }
 
           if (nranks > 0)
-            TRACE_SCHEDULE ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));
+            {TRACE_SCHEDULE ((stderr, "%d: phase %d, node %d\n", _map.getMyRank(), ph, nodes[0]));}
         }
 
         /**

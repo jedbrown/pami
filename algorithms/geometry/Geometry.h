@@ -70,6 +70,7 @@ namespace PAMI
                                    void           * factory,
                                    pami_result_t    result)
     {
+      (void)ctxt;(void)result;
       CCMI::Adaptor::CollectiveProtocolFactory *cf =
         (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
       cf->clearCache();
@@ -734,6 +735,7 @@ namespace PAMI
                                                           pami_context_t    context,
                                                           size_t            context_id)
       {
+        (void)context;
         uint32_t hash = factory->nameHash(_generation_id++);
         Algorithm<Geometry<Common> >*elem = &_algoTable[colltype][hash][context_id];
         new(elem) Algorithm<Geometry<Common> >(factory, this);
@@ -755,6 +757,7 @@ namespace PAMI
                                                          pami_context_t    context,
                                                          size_t            context_id)
       {
+        (void)context;
         if(!factory) return PAMI_SUCCESS;
         resetCleanupCallback(resetFactoryCache, factory);
         uint32_t hash = factory->nameHash();
@@ -777,6 +780,7 @@ namespace PAMI
                                                               pami_context_t    context,
                                                               size_t            context_id)
       {
+        (void)context;
         resetCleanupCallback(resetFactoryCache, factory);
         uint32_t hash = factory->nameHash();
         _algoTableCheck[colltype][hash].erase(context_id);
@@ -798,6 +802,7 @@ namespace PAMI
                                                                pami_context_t    context,
                                                                size_t                                     context_id)
       {
+        (void)context;
         uint32_t hash = factory->nameHash(_generation_id++);
         Algorithm<Geometry<Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
         new(elem) Algorithm<Geometry<Common> >(factory, this);
@@ -893,6 +898,7 @@ namespace PAMI
                                          size_t               ctxt_id,
                                          pami_context_t       context)
       {
+        (void)context;
         PAMI_assert (_default_barrier[ctxt_id]._factory != NULL);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
@@ -923,6 +929,7 @@ namespace PAMI
                                                        size_t                  ctxt_id,
                                                        pami_context_t          context)
       {
+        (void)context;
         TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
         PAMI_assert (_ue_barrier[ctxt_id]._factory != NULL);
         pami_xfer_t cmd;

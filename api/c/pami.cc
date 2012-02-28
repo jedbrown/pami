@@ -40,7 +40,7 @@ extern "C"
   pami_algorithm_t PAMI_ALGORITHM_NULL=0;
   size_t           PAMI_ALL_CONTEXTS  =(size_t) -1;
 #ifndef PAMI_ENDPOINT_NULL
-  pami_endpoint_t PAMI_ENDPOINT_NULL = (size_t) -1;
+  pami_endpoint_t PAMI_ENDPOINT_NULL = (pami_endpoint_t) -1;
 #endif
 }
 
@@ -54,7 +54,7 @@ extern "C" size_t PAMI_Error_text (char * string, size_t length)
     if (length == 0)
         return 0;
 
-    char *err_msg = ReturnErr::_get_err_msg();
+    const char *err_msg = ReturnErr::_get_err_msg();
     if (err_msg == NULL) {
         string[0] = '\0';
         return 0;
@@ -90,6 +90,7 @@ extern "C" pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                                size_t            offset,
                                                pami_endpoint_t * endpoint)
 {
+  (void)client;
   pami_result_t rc = PAMI_SUCCESS;
   *endpoint = PAMI_ENDPOINT_INIT(client,task,offset);
   return rc;

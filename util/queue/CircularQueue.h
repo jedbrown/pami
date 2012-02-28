@@ -95,15 +95,18 @@ namespace PAMI
       };
 
 	static bool checkCtorMm(PAMI::Memory::MemoryManager *mm) {
+                (void)mm;
 		return true;
 	}
 
 	static bool checkDataMm(PAMI::Memory::MemoryManager *mm) {
+                (void)mm;
 		return true;
 	}
 
       inline void init (PAMI::Memory::MemoryManager * mm, const char *key)
       {
+        (void)mm;(void)key;
       };
 
       /// \copydoc PAMI::Interface::QueueInterface::enqueue

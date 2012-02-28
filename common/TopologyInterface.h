@@ -23,7 +23,6 @@ namespace PAMI
       /// \brief default constructor (PAMI_EMPTY_TOPOLOGY)
       ///
       inline Topology() {}
-
       /// \brief rectangular segment with torus (PAMI_COORD_TOPOLOGY)
       ///
       /// Assumes no torus links if no 'tl' param.

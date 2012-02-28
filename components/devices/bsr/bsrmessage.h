@@ -35,10 +35,10 @@ namespace PAMI
                       size_t       shm_block_sz,
                       unsigned int job_key,
                       unsigned int member_id):
+        _sync_group(member_id, topology->size(), job_key, shm_block, shm_block_sz),
         _geometry_id(geometry_id),
         _topology(topology),
-        _in_barrier(false),
-        _sync_group(member_id, topology->size(), job_key, shm_block, shm_block_sz)
+        _in_barrier(false)
         {
         }
 

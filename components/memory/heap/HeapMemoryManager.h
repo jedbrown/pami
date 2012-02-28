@@ -73,6 +73,10 @@ public:
 				  size_t alignment, size_t new_align,
 				  unsigned attrs = 0, const char *key = NULL,
 				  MM_INIT_FN *init_fn = NULL, void *cookie = NULL) {
+                //unused warnings with -pedantic
+                (void)mm;(void)bytes;(void)alignment;(void)new_align;
+                (void)attrs;(void)key;(void)init_fn;(void)cookie;
+
 		PAMI_abortf("HeapMemoryManager cannot be init()");
 		return PAMI_ERROR;
 	}
@@ -81,11 +85,14 @@ public:
 				  const char *key = NULL,
 				  size_t new_align = 1,
 				  unsigned attrs = 0) {
-		PAMI_abortf("HeapMemoryManager cannot be init()");
+                (void)mm;(void)bytes;(void)new_align;
+                (void)attrs;(void)key;(void)buf;
+                PAMI_abortf("HeapMemoryManager cannot be init()");
 		return PAMI_ERROR;
 	}
 
 	inline pami_result_t reset(bool force = false) {
+                (void)force;
 #ifdef MM_DEBUG
 		if (_debug) {
 			MM_DUMP_STATS();
@@ -145,6 +152,7 @@ public:
 	}
 
 	inline size_t available(size_t alignment) {
+                (void)alignment;
 		// how to tell how much is available???
 		return (size_t)-1;
 	}
