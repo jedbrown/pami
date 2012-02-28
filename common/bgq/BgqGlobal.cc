@@ -45,7 +45,7 @@ extern "C" unsigned __isMambo() {return __global.personality._is_mambo? 1:0;};
 #include "components/devices/bgq/mu2/model/RectangleMultisyncModel.h"
 
 char *PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBuf;
-uint32_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBytes;
+uint64_t PAMI::Device::MU::CollectiveMulticastDmaModel::_zeroBufPA;
 
 PAMI::Device::MU::CollectiveDmaModelBase::CollState PAMI::Device::MU::CollectiveDmaModelBase::_collstate;
 PAMI::Device::MU::Collective2DeviceBase::CollState PAMI::Device::MU::Collective2DeviceBase::_collstate;

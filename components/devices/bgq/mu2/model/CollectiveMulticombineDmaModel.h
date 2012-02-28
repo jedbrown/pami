@@ -72,24 +72,52 @@ namespace PAMI
             char *src = spwq->bufferToConsume();
             uint32_t sbytes = spwq->bytesAvailableToConsume();
 
-            pami_result_t rc = PAMI_ERROR;
-
-            if ( likely(bytes <= CollectiveDmaModelBase::_collstate._tempSize &&
-                        sbytes == bytes) )
+            pami_result_t result = PAMI_ERROR;
+	    
+            if ( likely(sbytes == bytes) )
               {
-                rc = CollectiveDmaModelBase::postShortCollective (op,
-                                                                  sizeoftype,
-                                                                  bytes,
-                                                                  src,
-                                                                  dpwq,
-                                                                  mcombine->cb_done.function,
-                                                                  mcombine->cb_done.clientdata,
-                                                                  classroute);
-              }
+		if (likely (bytes <= CollectiveDmaModelBase::_collstate._tempSize)) {
+		  result = CollectiveDmaModelBase::postShortCollective (op,
+									sizeoftype,
+									bytes,
+									src,
+									dpwq,
+									mcombine->cb_done.function,
+									mcombine->cb_done.clientdata,
+									classroute);
+		}
+		else {
+		  size_t src_pa, dst_pa;
+		  Kernel_MemoryRegion_t memRegion;
+		  uint32_t rc = 0;
+		  rc = Kernel_CreateMemoryRegion (&memRegion, src, bytes);
+		  PAMI_assert ( rc == 0 );
+		  uint64_t paddr = (uint64_t)memRegion.BasePa +
+		    ((uint64_t)src - (uint64_t)memRegion.BaseVa);		  
+		  src_pa = paddr;
 
+		  char *dst = dpwq->bufferToProduce();
+		  PAMI_assert (dst != NULL);
+		  rc = Kernel_CreateMemoryRegion (&memRegion, dst, bytes);
+		  PAMI_assert ( rc == 0 );
+		  paddr = (uint64_t)memRegion.BasePa + ((uint64_t)dst - (uint64_t)memRegion.BaseVa);		  
+		  dst_pa = paddr;
+		  
+		  result = CollectiveDmaModelBase::postMidCollective (op,
+								      sizeoftype,
+								      bytes,
+								      src_pa,
+								      dst_pa,
+								      dpwq,
+								      mcombine->cb_done.function,
+								      mcombine->cb_done.clientdata,
+								      classroute);   
+		}
+              }
+	    
             TRACE_FN_EXIT();
-            if (rc == PAMI_SUCCESS)
-              return rc;
+            if (result == PAMI_SUCCESS)
+              return result;
 
             return CollectiveDmaModelBase::postCollective (bytes,
                                                            spwq,
@@ -98,7 +126,7 @@ namespace PAMI
                                                            mcombine->cb_done.clientdata,
                                                            op,
                                                            sizeoftype,
-                                                           classroute);
+                                                           classroute);	    
           }
 
 

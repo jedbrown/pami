@@ -37,7 +37,7 @@ namespace PAMI
       {
           size_t               _myrank;
           static char        * _zeroBuf;
-          static uint32_t      _zeroBytes;
+	  static uint64_t      _zeroBufPA;
 
         public:
           static const size_t sizeof_msg = mcast_state_bytes;
@@ -51,13 +51,17 @@ namespace PAMI
               Interface::MulticastModel<CollectiveMulticastDmaModel, MU::Context, mcast_state_bytes >  (device, status), _myrank(__global.mapping.task())
           {
             TRACE_FN_ENTER();
-            _zeroBytes = ZERO_BYTES;
 
             if (_zeroBuf == NULL)
-              {
-                _zeroBuf = (char *) malloc (_zeroBytes * sizeof(char));
-                memset (_zeroBuf, 0, _zeroBytes);
-              }
+            {
+	      _zeroBuf = (char *) malloc (ZERO_BYTES * sizeof(char));
+	      memset (_zeroBuf, 0, ZERO_BYTES);
+	      Kernel_MemoryRegion_t memRegion;
+	      uint32_t rc;
+	      rc = Kernel_CreateMemoryRegion (&memRegion, _zeroBuf, ZERO_BYTES);
+	      PAMI_assert ( rc == 0 );
+	      _zeroBufPA = (uint64_t)memRegion.BasePa + ((uint64_t)_zeroBuf - (uint64_t)memRegion.BaseVa); 
+	    }
             TRACE_FN_EXIT();
           }
 
@@ -67,50 +71,86 @@ namespace PAMI
                                                     void                * devinfo = NULL)
           {
             TRACE_FN_ENTER();
-            pami_result_t rc = PAMI_ERROR;
+            pami_result_t result = PAMI_ERROR;
             pami_task_t rank_0 =((Topology *)mcast->src_participants)->index2Rank(0);
             bool isroot = (rank_0 == _myrank);
 
             unsigned classroute = 0;
-
             PAMI_assert(devinfo);
             classroute = ((uint32_t)(uint64_t)devinfo) - 1;
 
-            if ( likely(mcast->bytes <= immediate_bytes) )
+            if ( likely(mcast->bytes <= ZERO_BYTES) )
+            {
+	      char *src = NULL;
+	      PipeWorkQueue *dst = NULL;
+	      unsigned sbytes = 0;
+
+	      if (isroot)
               {
-                char *src = NULL;
-                PipeWorkQueue *dst = NULL;
-                unsigned sbytes = 0;
+		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
+		src = spwq->bufferToConsume();
+		sbytes = spwq->bytesAvailableToConsume();
+		
+		if (sbytes != mcast->bytes)
+		  goto longmsg;
+	      }
+	      else
+              {
+		src = _zeroBuf;
+		dst = (PipeWorkQueue*) mcast->dst;
+	      }
 
-                if (isroot)
-                  {
-                    PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
-                    src = spwq->bufferToConsume();
-                    sbytes = spwq->bytesAvailableToConsume();
+	      if ( likely (mcast->bytes <= immediate_bytes) ) {
+		result = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
+								  4,
+								  mcast->bytes,
+								  src,
+								  dst,
+								  mcast->cb_done.function,
+								  mcast->cb_done.clientdata,
+								  classroute);
+	      }
+	      else {
+		unsigned src_pa;
+		unsigned dst_pa;
+		
+		if (isroot) {
+		  Kernel_MemoryRegion_t memRegion;
+		  uint32_t rc;
+		  rc = Kernel_CreateMemoryRegion (&memRegion, src, mcast->bytes);
+		  PAMI_assert ( rc == 0 );
+		  uint64_t paddr = (uint64_t)memRegion.BasePa +
+		    ((uint64_t)src - (uint64_t)memRegion.BaseVa);
+		  
+		  src_pa = dst_pa = paddr;
+		}
+		else {
+		  src_pa = _zeroBufPA;
+		  Kernel_MemoryRegion_t memRegion;
+		  uint32_t rc;
+		  char *dstbuf = dst->bufferToProduce();
+		  rc = Kernel_CreateMemoryRegion (&memRegion, dstbuf, mcast->bytes);
+		  PAMI_assert ( rc == 0 );
+		  dst_pa = (uint64_t)memRegion.BasePa +
+		    ((uint64_t)dstbuf - (uint64_t)memRegion.BaseVa);		  
+		}
 
-                    if (sbytes != mcast->bytes)
-                      goto longmsg;
-                  }
-                else
-                  {
-                    src = _zeroBuf;
-                    dst = (PipeWorkQueue*) mcast->dst;
-                  }
-
-                rc = CollectiveDmaModelBase::postShortCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
-                                                                  4,
-                                                                  mcast->bytes,
-                                                                  src,
-                                                                  dst,
-                                                                  mcast->cb_done.function,
-                                                                  mcast->cb_done.clientdata,
-                                                                  classroute);
-              }
-
+		result = CollectiveDmaModelBase::postMidCollective (MUHWI_COLLECTIVE_OP_CODE_OR,
+								4,
+								mcast->bytes,
+								src_pa,
+								dst_pa,
+								dst,
+								mcast->cb_done.function,
+								mcast->cb_done.clientdata,	
+								classroute);  
+	      }
+	    }
+	    
             TRACE_FN_EXIT();
-            if (rc == PAMI_SUCCESS)
-              return rc;
-
+            if (result == PAMI_SUCCESS)
+              return result;
+	    
 longmsg:
             return CollectiveDmaModelBase::postBroadcast (mcast->bytes,
                                                           (PipeWorkQueue *) mcast->src,
@@ -118,7 +158,7 @@ longmsg:
                                                           mcast->cb_done.function,
                                                           mcast->cb_done.clientdata,
                                                           _zeroBuf,
-                                                          _zeroBytes,
+                                                          ZERO_BYTES,
                                                           isroot,
                                                           classroute);
           }

@@ -139,7 +139,7 @@ namespace PAMI
           };
 
 
-          class ShortCompletionMsg
+          class CollectiveCompletionMsg
           {
             public:
               pami_event_function                        _cb_done;     /// Short message callback
@@ -148,7 +148,7 @@ namespace PAMI
               uint64_t                                   _bytes;       /// Short bytes
               volatile uint64_t                        * _counterAddress; /// Counter address
 
-              ShortCompletionMsg () {          
+	      CollectiveCompletionMsg () {          
                 TRACE_FN_ENTER();
                 TRACE_FN_EXIT();
               }
@@ -179,8 +179,25 @@ namespace PAMI
 
             _scompmsg._counterAddress = &_collstate._colCounter;
             new (&_swork) PAMI::Device::Generic::GenericThread(short_advance, &_scompmsg);
+            new (&_mwork) PAMI::Device::Generic::GenericThread(mid_advance, &_scompmsg);
 
             initDescBase();
+
+	    _spinCycles = 0UL;
+	    size_t num_nodes = 
+	      __global.mapping.torusSize(0) * 
+	      __global.mapping.torusSize(1) * 
+	      __global.mapping.torusSize(2) * 
+	      __global.mapping.torusSize(3) * 
+	      __global.mapping.torusSize(4);
+	    
+	    if (num_nodes <= 512)
+	      _spinCycles = 8 *  1600UL; //8  us
+	    else if (num_nodes <= 8192)
+	      _spinCycles = 10 * 1600UL; //10 us
+	    else 
+	      _spinCycles = 12 * 1600UL; //12 us
+
             TRACE_FN_EXIT();
           }
 
@@ -238,7 +255,7 @@ namespace PAMI
             MUSPI_DirectPutDescriptorInfoFields dput;
             memset((void *)&dput, 0, sizeof(dput));
 
-            dput.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
+            dput.Rec_Payload_Base_Address_Id = _collstate.tempBatID();
             dput.Rec_Payload_Offset          = 0;
             dput.Rec_Counter_Base_Address_Id = _collstate.counterBatID();
             dput.Rec_Counter_Offset          = 0;
@@ -265,6 +282,22 @@ namespace PAMI
             _scompmsg._dpwq    = pwq;
 
             PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *) & _swork;
+            _gdev.postThread(work);
+            TRACE_FN_EXIT();
+          }
+
+          void postMidCompletion (pami_event_function      cb_done,
+				  void                   * cookie,
+				  size_t                   bytes,
+				  PipeWorkQueue          * pwq)
+          {
+            TRACE_FN_ENTER();
+            _scompmsg._cb_done = cb_done;
+            _scompmsg._cookie  = cookie;
+            _scompmsg._bytes   = bytes;
+            _scompmsg._dpwq    = pwq;
+	    
+            PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *) & _mwork;
             _gdev.postThread(work);
             TRACE_FN_EXIT();
           }
@@ -304,14 +337,29 @@ namespace PAMI
             d->setWordLength (sizeoftype);
             TRACE_HEXDATA(d, sizeof(*d));
             //d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _pBatID;
-            _mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
+            //_mucontext.setThroughputCollectiveBufferBatEntry(_collstate._tempPAddr);
 
             //fprintf(stderr, "Collective on class route %d\n", classroute);
             //MUSPI_DescriptorDumpHex ((char *)"Coll Descriptor", (MUHWI_Descriptor_t *)d);
             _injChannel.injFifoAdvanceDesc ();
 
 #ifndef MU_SHORT_BLOCKING_COLLECTIVE
-            postShortCompletion(cb_done, cookie, bytes, dpwq);
+	    size_t end = GetTimeBase() + _spinCycles;
+	    while ( (_collstate._colCounter != 0) && (GetTimeBase() < end) );
+
+	    if (_collstate._colCounter == 0) {
+	      Memory::sync();	      
+	      if (dpwq)
+		{
+		  char *dst = dpwq->bufferToProduce();
+		  _int64Cpy (dst, _collstate._tempBuf, bytes);
+		  dpwq->produceBytes(bytes);
+		}
+	      
+	      cb_done (NULL, cookie, PAMI_SUCCESS);
+	    }
+	    else 
+	      postShortCompletion(cb_done, cookie, bytes, dpwq);
 #else
 
             while (_collstate._colCounter != 0);
@@ -331,6 +379,71 @@ namespace PAMI
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
+
+          pami_result_t  postMidCollective (uint32_t              opcode,
+					    uint32_t              sizeoftype,
+					    uint32_t              bytes,
+					    uint64_t              src_pa,
+					    uint64_t              dst_pa,
+					    PAMI::PipeWorkQueue * dpwq,
+					    pami_event_function   cb_done,
+					    void                * cookie,
+					    unsigned              classroute)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("postMidCollective: opcode %u, sizeoftype %u, bytes %u, src_pa %ld, dpwq %p, classroute %u\n", opcode, sizeoftype, bytes, src_pa, dpwq, classroute);
+            PAMI_assert(bytes);	    
+            bool flag = _injChannel.hasFreeSpaceWithUpdate();
+
+            if (!flag)
+            {
+	      TRACE_STRING("Error");
+              TRACE_FN_EXIT();
+              return PAMI_ERROR;
+	    }
+
+	    _mucontext.setThroughputCollectiveBufferBatEntry(dst_pa);	    
+	    _collstate._colCounter = bytes;
+	    
+            // Clone the message descriptors directly into the injection fifo.
+            MUSPI_DescriptorBase *d = (MUSPI_DescriptorBase *) _injChannel.getNextDescriptor ();
+            _modeldesc.clone (*d);
+            d->setClassRoute (classroute);
+            d->setPayload (src_pa, bytes);
+            d->setOpCode (opcode);
+            d->setWordLength (sizeoftype);
+            d->PacketHeader.messageUnitHeader.Packet_Types.Direct_Put.Rec_Payload_Base_Address_Id = _collstate.payloadBatID();
+
+            //MUSPI_DescriptorDumpHex((char*)"postMidCollective", d);
+            _injChannel.injFifoAdvanceDesc ();
+	    
+#ifndef MU_SHORT_BLOCKING_COLLECTIVE
+	    size_t end = GetTimeBase() + _spinCycles;
+	    while ( (_collstate._colCounter != 0) && (GetTimeBase() < end) );
+
+	    if (_collstate._colCounter == 0) {
+	      Memory::sync();	    
+	      if (dpwq)
+		dpwq->produceBytes(bytes);
+	      
+	      cb_done (NULL, cookie, PAMI_SUCCESS);
+	    }
+	    else
+	      postMidCompletion(cb_done, cookie, bytes, dpwq);
+#else
+            while (_collstate._colCounter != 0);
+            Memory::sync();
+	    
+            if (dpwq)
+	      dpwq->produceBytes(bytes);
+	    
+            cb_done (NULL, cookie, PAMI_SUCCESS);
+#endif
+
+            TRACE_FN_EXIT();
+            return PAMI_SUCCESS;
+          }
+
 
           pami_result_t postCollective (uint32_t                   bytes,
                                         PAMI::PipeWorkQueue      * src,
@@ -373,10 +486,10 @@ namespace PAMI
             bool flag = msg->advance();
 
             if (!flag)
-              {
-                PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
-                _mucontext.getProgressDevice()->postThread(work);
-              }
+	    {
+	      PAMI::Device::Generic::GenericThread *work = new (&_work) PAMI::Device::Generic::GenericThread(advance, msg);
+	      _mucontext.getProgressDevice()->postThread(work);
+	    }
 
             TRACE_FN_EXIT();
             return PAMI_SUCCESS;
@@ -397,7 +510,7 @@ namespace PAMI
                                               void             * cookie)
           {
             TRACE_FN_ENTER();
-            ShortCompletionMsg  *scmsg = (ShortCompletionMsg *) cookie;
+            CollectiveCompletionMsg  *scmsg = (CollectiveCompletionMsg *) cookie;
 
             if (*scmsg->_counterAddress == 0)
               {
@@ -413,6 +526,32 @@ namespace PAMI
                 if (scmsg->_cb_done)
                   scmsg->_cb_done (context, scmsg->_cookie, PAMI_SUCCESS);
 
+                TRACE_FN_EXIT();
+                return PAMI_SUCCESS;
+              }
+
+            TRACE_STRING("EAGAIN");
+            TRACE_FN_EXIT();
+            return PAMI_EAGAIN;
+          }
+
+
+          static pami_result_t mid_advance (pami_context_t     context,
+					    void             * cookie)
+          {
+            TRACE_FN_ENTER();
+            CollectiveCompletionMsg  *msg = (CollectiveCompletionMsg *) cookie;
+
+            if (*msg->_counterAddress == 0)
+              {
+                Memory::sync();
+		
+                if (msg->_dpwq)
+		  msg->_dpwq->produceBytes(msg->_bytes);
+		
+                if (msg->_cb_done)
+                  msg->_cb_done (context, msg->_cookie, PAMI_SUCCESS);
+		
                 TRACE_FN_EXIT();
                 return PAMI_SUCCESS;
               }
@@ -442,13 +581,15 @@ namespace PAMI
           static CollState                            _collstate;
 
         protected:
-          MU::Context                                & _mucontext;         /// Pointer to MU context
-          pami_context_t                               _context;
-          InjChannel                                 & _injChannel;
-          Generic::Device                            & _gdev;
+          MU::Context                              & _mucontext;         /// Pointer to MU context
+          pami_context_t                             _context;
+          InjChannel                               & _injChannel;
+          Generic::Device                          & _gdev;
+	  size_t                                     _spinCycles;
           MUSPI_DescriptorBase                       _modeldesc;         /// Model descriptor
-          ShortCompletionMsg                         _scompmsg;
+          CollectiveCompletionMsg                    _scompmsg;
           pami_work_t                                _swork;
+          pami_work_t                                _mwork;
           pami_work_t                                _work;
           CollectiveDPutMulticast                    _mcast_msg;
           CollectiveDPutMulticombine                 _mcomb_msg;
