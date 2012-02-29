@@ -207,7 +207,7 @@ namespace PAMI
 	pami_result_t  MultisyncModel::configureClassRoute (size_t       id,
 							    Topology   * topology) 
 	{
-    if ( (_counterstate._crbitmap & (0x1 << id)) != 0 )
+    if ( (_counterstate._crbitmap & (0x1 << id)) == 0 )
       return PAMI_ERROR;
 
 	  PAMI_assert (_params->_statevec != NULL);
