@@ -178,7 +178,7 @@ int main(int argc, char*argv[])
 
       for (dt = 0; dt < dt_count; dt++)
       {
-        if (gValidTable[op][dt])
+        if ((gFull_test && ((dt != DT_NULL) && (dt != DT_BYTE))) || gValidTable[op][dt])
         {
           if (task_id == 0)
             printf("Running gather: %s\n", dt_array_str[dt]);
@@ -240,7 +240,11 @@ int main(int argc, char*argv[])
               blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
               if (task_id == root_zero)
-                assert(gather_check_rcvbuf_dt(task_id, rbuf, i, dt)==0);
+              {
+                int rc_check;
+                rc |= rc_check = gather_check_rcvbuf_dt(task_id, rbuf, i, dt);
+                if (rc_check) fprintf(stderr, "%s FAILED validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
             }
 
             tf = timer();

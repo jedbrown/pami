@@ -12,7 +12,6 @@
  */
 
 /* see setup_env() for environment variable overrides               */
-#define FULL_TEST  1
 #define COUNT      65536
 #define NITERLAT   10
 
@@ -234,7 +233,7 @@ int main(int argc, char*argv[])
               int rc_check;
               rc |= rc_check = scan_check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id, 0);
 
-              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              if (rc_check) fprintf(stderr, "%s FAILED validation on %s/%s\n", gProtocolName, dt_array_str[dt], op_array_str[op]);
 
               usec = (tf - ti)/(double)niter;
               if (task_id == task_zero)

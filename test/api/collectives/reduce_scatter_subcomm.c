@@ -12,7 +12,6 @@
  */
 
 /* see setup_env() for environment variable overrides               */
-#define FULL_TEST  1
 #define COUNT      65536
 #define NITERLAT   10
 

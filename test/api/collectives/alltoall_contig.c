@@ -189,7 +189,7 @@ int main(int argc, char*argv[])
 
       for (dt = 0; dt < dt_count; dt++)
       {
-          if (gValidTable[op][dt])
+          if ((gFull_test && ((dt != DT_NULL) && (dt != DT_BYTE))) || gValidTable[op][dt])
           {
             if (task_id == 0)
               printf("Running Alltoall: %s\n", dt_array_str[dt]);
@@ -256,7 +256,7 @@ int main(int argc, char*argv[])
 
               int rc_check;
               rc |= rc_check = alltoall_check_rcvbuf_dt(rbuf, i, num_tasks, task_id, dt);
-              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              if (rc_check) fprintf(stderr, "%s FAILED validation on %s\n", gProtocolName, dt_array_str[dt]);
 
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 

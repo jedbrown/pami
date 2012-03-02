@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
 
       for (dt = 0; dt < dt_count; dt++)
       {
-          if (gValidTable[op][dt])
+          if ((gFull_test && ((dt != DT_NULL) && (dt != DT_BYTE))) || gValidTable[op][dt])
           {
             if (task_id == task_zero)
               printf("Running Allgatherv: %s\n", dt_array_str[dt]);
@@ -226,7 +226,7 @@ int main (int argc, char ** argv)
               int rc_check;
               rc |= rc_check = gather_check_rcvbuf_dt (num_tasks, rbuf, i, dt);
 
-              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+              if (rc_check) fprintf(stderr, "%s FAILED validation on %s\n", gProtocolName, dt_array_str[dt]);
 
               usec = (tf - ti) / (double)niter;
 

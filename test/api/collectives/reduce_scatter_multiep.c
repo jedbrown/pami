@@ -13,7 +13,6 @@
 
 /* see setup_env() for environment variable overrides               */
 #define MAX_THREADS 128
-#define FULL_TEST  1
 #define COUNT      65536
 #define NITERLAT   10
 

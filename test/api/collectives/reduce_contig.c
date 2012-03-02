@@ -250,7 +250,7 @@ int main(int argc, char*argv[])
                 int rc_check;
                 rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
 
-                if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+                if (rc_check) fprintf(stderr, "%s FAILED validation on %s/%s\n", gProtocolName, dt_array_str[dt], op_array_str[op]);
               }
 
               usec = (tf - ti) / (double)niter;
