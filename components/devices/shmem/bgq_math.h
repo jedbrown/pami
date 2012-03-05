@@ -535,8 +535,17 @@ inline unsigned convertToCount(unsigned bytes,pami_dt dt)
    case PAMI_LONG_DOUBLE:
      count = bytes/sizeof(long double);
      break;
-   case PAMI_LOGICAL:
-     count = bytes/sizeof(unsigned int);
+   case PAMI_LOGICAL1:
+     count = bytes;
+     break;
+   case PAMI_LOGICAL2:
+     count = bytes>>1;
+     break;
+   case PAMI_LOGICAL4:
+     count = bytes>>2;
+     break;
+   case PAMI_LOGICAL8:
+     count = bytes>>3;
      break;
    case PAMI_SINGLE_COMPLEX:
      count = bytes/sizeof(fp32_fp32_t);

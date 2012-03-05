@@ -59,7 +59,10 @@ namespace PAMI
                 PRIMITIVE_TYPE_DOUBLE,
                 PRIMITIVE_TYPE_LONG_DOUBLE,
 
-                PRIMITIVE_TYPE_LOGICAL,
+                PRIMITIVE_TYPE_LOGICAL1,
+                PRIMITIVE_TYPE_LOGICAL2,
+                PRIMITIVE_TYPE_LOGICAL4,
+                PRIMITIVE_TYPE_LOGICAL8,
 
                 PRIMITIVE_TYPE_SINGLE_COMPLEX,
                 PRIMITIVE_TYPE_DOUBLE_COMPLEX,
@@ -70,12 +73,17 @@ namespace PAMI
                 PRIMITIVE_TYPE_LOC_SHORT_INT,
                 PRIMITIVE_TYPE_LOC_FLOAT_INT,
                 PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+                PRIMITIVE_TYPE_LOC_LONG_INT,
+                PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT,
 
                 PRIMITIVE_TYPE_COUNT,
                 PRIMITIVE_TYPE_UNDEFINED,
             } primitive_type_t;
 
-            typedef unsigned primitive_logical_t; // PRIMITIVE_TYPE_LOGICAL
+            typedef uint8_t  primitive_logical1_t; // PRIMITIVE_TYPE_LOGICAL1
+            typedef uint16_t primitive_logical2_t; // PRIMITIVE_TYPE_LOGICAL2
+            typedef uint32_t primitive_logical4_t; // PRIMITIVE_TYPE_LOGICAL4
+            typedef uint64_t primitive_logical8_t; // PRIMITIVE_TYPE_LOGICAL8
 
             //
             // primitive_complex_t<float> ..... PRIMITIVE_TYPE_SINGLE_COMPLEX
@@ -95,6 +103,8 @@ namespace PAMI
             // primitive_loc_t<short,int> ..... PRIMITIVE_TYPE_LOC_SHORT_INT
             // primitive_loc_t<float,int> ..... PRIMITIVE_TYPE_LOC_FLOAT_INT
             // primitive_loc_t<double,int> .... PRIMITIVE_TYPE_LOC_DOUBLE_INT
+            // primitive_loc_t<long,int> ...... PRIMITIVE_TYPE_LOC_LONG_INT
+            // primitive_loc_t<long double,int> .. PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT
             //
             template <typename T_Value, typename T_Index, int T_Pad0 = 0, int T_Pad1 = 0>
             struct primitive_loc_t
@@ -853,8 +863,20 @@ namespace PAMI
                 primitive_atom = sizeof(long double);
                 break;
 
-            case PRIMITIVE_TYPE_LOGICAL:
-                primitive_atom = sizeof(primitive_logical_t);
+            case PRIMITIVE_TYPE_LOGICAL1:
+                primitive_atom = sizeof(primitive_logical1_t);
+                break;
+
+            case PRIMITIVE_TYPE_LOGICAL2:
+                primitive_atom = sizeof(primitive_logical2_t);
+                break;
+
+            case PRIMITIVE_TYPE_LOGICAL4:
+                primitive_atom = sizeof(primitive_logical4_t);
+                break;
+
+            case PRIMITIVE_TYPE_LOGICAL8:
+                primitive_atom = sizeof(primitive_logical8_t);
                 break;
 
             case PRIMITIVE_TYPE_SINGLE_COMPLEX:
@@ -887,6 +909,14 @@ namespace PAMI
 
             case PRIMITIVE_TYPE_LOC_DOUBLE_INT:
                 primitive_atom = sizeof(primitive_loc_t<double,int, 0, 4>);
+                break;
+
+            case PRIMITIVE_TYPE_LOC_LONG_INT:
+                primitive_atom = sizeof(primitive_loc_t<long,int, 0, sizeof(long)-sizeof(int)>);
+                break;
+
+            case PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT:
+                primitive_atom = sizeof(primitive_loc_t<long double,int, 0, sizeof(long double)-sizeof(int)>);
                 break;
 
             default:
@@ -934,7 +964,10 @@ typedef enum
     PAMI_DOUBLE             = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE,
     PAMI_LONG_DOUBLE        = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE,
 
-    PAMI_LOGICAL            = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL,
+    PAMI_LOGICAL1           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL1,
+    PAMI_LOGICAL2           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL2,
+    PAMI_LOGICAL4           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL4,
+    PAMI_LOGICAL8           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOGICAL8,
 
     PAMI_SINGLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX,
     PAMI_DOUBLE_COMPLEX     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX,
@@ -945,6 +978,8 @@ typedef enum
     PAMI_LOC_SHORT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT,
     PAMI_LOC_FLOAT_INT      = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT,
     PAMI_LOC_DOUBLE_INT     = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT,
+    PAMI_LOC_LONG_INT       = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_LONG_INT,
+    PAMI_LOC_LONGDOUBLE_INT = PAMI::Type::TypeCode::PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT,
     PAMI_DT_COUNT           = PAMI::Type::TypeCode::PRIMITIVE_TYPE_COUNT
 } pami_dt;
 

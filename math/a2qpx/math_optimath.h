@@ -125,6 +125,8 @@ extern void _pami_core_int64_max(int64_t *dst, const int64_t **srcs, int nsrc, i
 extern void _pami_core_int64_min(int64_t *dst, const int64_t **srcs, int nsrc, int count);
 extern void _pami_core_int64_prod(int64_t *dst, const int64_t **srcs, int nsrc, int count);
 extern void _pami_core_int64_sum(int64_t *dst, const int64_t **srcs, int nsrc, int count);
+extern void _pami_core_int64_int32_maxloc(int64_int32_t *dst, const int64_int32_t **srcs, int nsrc, int count);
+extern void _pami_core_int64_int32_minloc(int64_int32_t *dst, const int64_int32_t **srcs, int nsrc, int count);
 extern void _pami_core_uint64_band(uint64_t *dst, const uint64_t **srcs, int nsrc, int count);
 extern void _pami_core_uint64_bor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count);
 extern void _pami_core_uint64_bxor(uint64_t *dst, const uint64_t **srcs, int nsrc, int count);
@@ -169,6 +171,8 @@ extern void _pami_core_fp128_max(long double *dst, const long double **srcs, int
 extern void _pami_core_fp128_min(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_prod(long double *dst, const long double **srcs, int nsrc, int count);
 extern void _pami_core_fp128_sum(long double *dst, const long double **srcs, int nsrc, int count);
+extern void _pami_core_fp128_int32_maxloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count);
+extern void _pami_core_fp128_int32_minloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count);
 
 
 //Optimized math routines
@@ -316,6 +320,8 @@ extern void _pami_qpx_fp64_max_16way(double *dst, const double **srcs, int nsrc,
 #define OPTIMIZED_int64_min
 #define OPTIMIZED_int64_prod
 #define OPTIMIZED_int64_sum
+#define OPTIMIZED_int64_int32_maxloc
+#define OPTIMIZED_int64_int32_minloc
 #define OPTIMIZED_uint64_band
 #define OPTIMIZED_uint64_bor
 #define OPTIMIZED_uint64_bxor
@@ -360,5 +366,7 @@ extern void _pami_qpx_fp64_max_16way(double *dst, const double **srcs, int nsrc,
 #define OPTIMIZED_fp128_min
 #define OPTIMIZED_fp128_prod
 #define OPTIMIZED_fp128_sum
+#define OPTIMIZED_fp128_int32_maxloc
+#define OPTIMIZED_fp128_int32_minloc
 
 #endif /* _math_optimath_h_ */

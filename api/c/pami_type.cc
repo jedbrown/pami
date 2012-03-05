@@ -30,7 +30,13 @@ pami_type_t PAMI_TYPE_FLOAT              = new TypeContig(TypeCode::PRIMITIVE_TY
 pami_type_t PAMI_TYPE_DOUBLE             = new TypeContig(TypeCode::PRIMITIVE_TYPE_DOUBLE);
 pami_type_t PAMI_TYPE_LONG_DOUBLE        = new TypeContig(TypeCode::PRIMITIVE_TYPE_LONG_DOUBLE);
 
-pami_type_t PAMI_TYPE_LOGICAL            = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL);
+// Deprecated pami type. Must remain for binary compatibility
+pami_type_t PAMI_TYPE_LOGICAL            = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL4);
+
+pami_type_t PAMI_TYPE_LOGICAL1           = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL1);
+pami_type_t PAMI_TYPE_LOGICAL2           = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL2);
+pami_type_t PAMI_TYPE_LOGICAL4           = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL4);
+pami_type_t PAMI_TYPE_LOGICAL8           = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOGICAL8);
 
 pami_type_t PAMI_TYPE_SINGLE_COMPLEX     = new TypeContig(TypeCode::PRIMITIVE_TYPE_SINGLE_COMPLEX);
 pami_type_t PAMI_TYPE_DOUBLE_COMPLEX     = new TypeContig(TypeCode::PRIMITIVE_TYPE_DOUBLE_COMPLEX);
@@ -41,6 +47,8 @@ pami_type_t PAMI_TYPE_LOC_2DOUBLE        = new TypeContig(TypeCode::PRIMITIVE_TY
 pami_type_t PAMI_TYPE_LOC_SHORT_INT      = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_SHORT_INT);
 pami_type_t PAMI_TYPE_LOC_FLOAT_INT      = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_FLOAT_INT);
 pami_type_t PAMI_TYPE_LOC_DOUBLE_INT     = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_DOUBLE_INT);
+pami_type_t PAMI_TYPE_LOC_LONG_INT       = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_LONG_INT);
+pami_type_t PAMI_TYPE_LOC_LONGDOUBLE_INT = new TypeContig(TypeCode::PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT);
 
 
 pami_data_function PAMI_DATA_COPY        = (pami_data_function) TypeFunc::PRIMITIVE_FUNC_COPY;

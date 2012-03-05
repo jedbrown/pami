@@ -182,7 +182,11 @@ namespace PAMI
       unsigned i;
 
       for (i = 0; i < count; i++)
-        dst[i] = dst[i] ^ src[i];
+      {
+        const T d = dst[i];
+        const T s = src[i];
+        dst[i] = ((d && !s) || (!d && s));
+      }
     }
 
     template <typename T, unsigned N>
@@ -192,7 +196,11 @@ namespace PAMI
       unsigned i;
 
       for (i = 0; i < N; i++)
-        dst[i] = dst[i] ^ src[i];
+      {
+        const T d = dst[i];
+        const T s = src[i];
+        dst[i] = ((d && !s) || (!d && s));
+      }
     }
 
     template <typename T>

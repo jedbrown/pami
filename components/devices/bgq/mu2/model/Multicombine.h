@@ -450,7 +450,10 @@ namespace PAMI
          "PAMI_FLOAT             " ,
          "PAMI_DOUBLE            " ,
          "PAMI_LONG_DOUBLE       " ,
-         "PAMI_LOGICAL           " ,
+         "PAMI_LOGICAL1          " ,
+         "PAMI_LOGICAL2          " ,
+         "PAMI_LOGICAL4          " ,
+         "PAMI_LOGICAL8          " ,
          "PAMI_SINGLE_COMPLEX    " ,
          "PAMI_DOUBLE_COMPLEX    " ,
          "PAMI_LOC_2INT          " ,
@@ -458,7 +461,9 @@ namespace PAMI
          "PAMI_LOC_2DOUBLE       " ,
          "PAMI_LOC_SHORT_INT     " ,
          "PAMI_LOC_FLOAT_INT     " ,
-         "PAMI_LOC_DOUBLE_INT    "
+         "PAMI_LOC_DOUBLE_INT    " ,
+         "PAMI_LOC_LONG_INT      " ,
+         "PAMI_LOC_LONGDOUBLE_INT"
         };
         return string[index];
       }
@@ -548,7 +553,10 @@ namespace PAMI
           PAMI_DOUBLE             ,
           PAMI_LONG_DOUBLE        ,
 
-          PAMI_LOGICAL            ,
+          PAMI_LOGICAL1           ,
+          PAMI_LOGICAL2           ,
+          PAMI_LOGICAL4           ,
+          PAMI_LOGICAL8           ,
 
           PAMI_SINGLE_COMPLEX     ,
           PAMI_DOUBLE_COMPLEX     ,
@@ -558,7 +566,9 @@ namespace PAMI
           PAMI_LOC_2DOUBLE        ,
           PAMI_LOC_SHORT_INT      ,
           PAMI_LOC_FLOAT_INT      ,
-          PAMI_LOC_DOUBLE_INT
+          PAMI_LOC_DOUBLE_INT     ,
+          PAMI_LOC_LONG_INT       ,
+          PAMI_LOC_LONGDOUBLE_INT
         };
 #endif
 

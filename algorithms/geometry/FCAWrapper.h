@@ -144,7 +144,10 @@ const fca_reduce_dtype_t _fca_reduce_dtype_tbl[PAMI_DT_COUNT] =
     FCA_DTYPE_DOUBLE           /*PAMI_DOUBLE*/,
     FCA_DTYPE_LAST             /*PAMI_LONG_DOUBLE (invalid FCA type)*/,
 
-    FCA_DTYPE_LAST             /*PAMI_LOGICAL (invalid FCA type)*/,
+    FCA_DTYPE_LAST             /*PAMI_LOGICAL1 (invalid FCA type)*/,
+    FCA_DTYPE_LAST             /*PAMI_LOGICAL2 (invalid FCA type)*/,
+    FCA_DTYPE_LAST             /*PAMI_LOGICAL4 (invalid FCA type)*/,
+    FCA_DTYPE_LAST             /*PAMI_LOGICAL8 (invalid FCA type)*/,
 
     FCA_DTYPE_LAST             /*PAMI_SINGLE_COMPLEX (invalid FCA type)*/,
     FCA_DTYPE_LAST             /*PAMI_DOUBLE_COMPLEX (invalid FCA type)*/,
@@ -154,7 +157,9 @@ const fca_reduce_dtype_t _fca_reduce_dtype_tbl[PAMI_DT_COUNT] =
     FCA_DTYPE_LAST             /*PAMI_LOC_2DOUBLE (invalid FCA type)*/,
     FCA_DTYPE_SHORT_INT        /*PAMI_LOC_SHORT_INT*/,
     FCA_DTYPE_FLOAT_INT        /*PAMI_LOC_FLOAT_INT*/,
-    FCA_DTYPE_DOUBLE_INT       /*PAMI_LOC_DOUBLE_INT*/
+    FCA_DTYPE_DOUBLE_INT       /*PAMI_LOC_DOUBLE_INT*/,
+    FCA_DTYPE_LONG_INT         /*PAMI_LOC_LONG_INT (invalid FCA type ??)*/,
+    FCA_DTYPE_LONGDOUBLE_INT   /*PAMI_LOC_LONGDOUBLE_INT (invalid FCA type ??)*/
   };
 
 

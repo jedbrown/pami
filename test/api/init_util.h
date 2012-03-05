@@ -60,7 +60,10 @@ enum dtNum
   DT_FLOAT,
   DT_DOUBLE,
   DT_LONG_DOUBLE,
-  DT_LOGICAL,
+  DT_LOGICAL1,
+  DT_LOGICAL2,
+  DT_LOGICAL4,
+  DT_LOGICAL8,
   DT_SINGLE_COMPLEX,
   DT_DOUBLE_COMPLEX,
   DT_LOC_2INT,
@@ -69,6 +72,8 @@ enum dtNum
   DT_LOC_SHORT_INT,
   DT_LOC_FLOAT_INT,
   DT_LOC_DOUBLE_INT,
+  DT_LOC_LONG_INT,
+  DT_LOC_LONGDOUBLE_INT,
   DT_COUNT,
 };
 int          dt_count = DT_COUNT;
@@ -137,15 +142,20 @@ void init_tables()
   dt_array[12]=PAMI_TYPE_FLOAT;
   dt_array[13]=PAMI_TYPE_DOUBLE;
   dt_array[14]=PAMI_TYPE_LONG_DOUBLE;
-  dt_array[15]=PAMI_TYPE_LOGICAL;
-  dt_array[16]=PAMI_TYPE_SINGLE_COMPLEX;
-  dt_array[17]=PAMI_TYPE_DOUBLE_COMPLEX;
-  dt_array[18]=PAMI_TYPE_LOC_2INT;
-  dt_array[19]=PAMI_TYPE_LOC_2FLOAT;
-  dt_array[20]=PAMI_TYPE_LOC_2DOUBLE;
-  dt_array[21]=PAMI_TYPE_LOC_SHORT_INT;
-  dt_array[22]=PAMI_TYPE_LOC_FLOAT_INT;
-  dt_array[23]=PAMI_TYPE_LOC_DOUBLE_INT;
+  dt_array[15]=PAMI_TYPE_LOGICAL1;
+  dt_array[16]=PAMI_TYPE_LOGICAL2;
+  dt_array[17]=PAMI_TYPE_LOGICAL4;
+  dt_array[18]=PAMI_TYPE_LOGICAL8;
+  dt_array[19]=PAMI_TYPE_SINGLE_COMPLEX;
+  dt_array[20]=PAMI_TYPE_DOUBLE_COMPLEX;
+  dt_array[21]=PAMI_TYPE_LOC_2INT;
+  dt_array[22]=PAMI_TYPE_LOC_2FLOAT;
+  dt_array[23]=PAMI_TYPE_LOC_2DOUBLE;
+  dt_array[24]=PAMI_TYPE_LOC_SHORT_INT;
+  dt_array[25]=PAMI_TYPE_LOC_FLOAT_INT;
+  dt_array[26]=PAMI_TYPE_LOC_DOUBLE_INT;
+  dt_array[27]=PAMI_TYPE_LOC_LONG_INT;
+  dt_array[28]=PAMI_TYPE_LOC_LONGDOUBLE_INT;
 
   dt_array_str[0]="PAMI_TYPE_NULL";
   dt_array_str[1]="PAMI_TYPE_BYTE";
@@ -162,15 +172,20 @@ void init_tables()
   dt_array_str[12]="PAMI_TYPE_FLOAT";
   dt_array_str[13]="PAMI_TYPE_DOUBLE";
   dt_array_str[14]="PAMI_TYPE_LONG_DOUBLE";
-  dt_array_str[15]="PAMI_TYPE_LOGICAL";
-  dt_array_str[16]="PAMI_TYPE_SINGLE_COMPLEX";
-  dt_array_str[17]="PAMI_TYPE_DOUBLE_COMPLEX";
-  dt_array_str[18]="PAMI_TYPE_LOC_2INT";
-  dt_array_str[19]="PAMI_TYPE_LOC_2FLOAT";
-  dt_array_str[20]="PAMI_TYPE_LOC_2DOUBLE";
-  dt_array_str[21]="PAMI_TYPE_LOC_SHORT_INT";
-  dt_array_str[22]="PAMI_TYPE_LOC_FLOAT_INT";
-  dt_array_str[23]="PAMI_TYPE_LOC_DOUBLE_INT";
+  dt_array_str[15]="PAMI_TYPE_LOGICAL1";
+  dt_array_str[16]="PAMI_TYPE_LOGICAL2";
+  dt_array_str[17]="PAMI_TYPE_LOGICAL4";
+  dt_array_str[18]="PAMI_TYPE_LOGICAL8";
+  dt_array_str[19]="PAMI_TYPE_SINGLE_COMPLEX";
+  dt_array_str[20]="PAMI_TYPE_DOUBLE_COMPLEX";
+  dt_array_str[21]="PAMI_TYPE_LOC_2INT";
+  dt_array_str[22]="PAMI_TYPE_LOC_2FLOAT";
+  dt_array_str[23]="PAMI_TYPE_LOC_2DOUBLE";
+  dt_array_str[24]="PAMI_TYPE_LOC_SHORT_INT";
+  dt_array_str[25]="PAMI_TYPE_LOC_FLOAT_INT";
+  dt_array_str[26]="PAMI_TYPE_LOC_DOUBLE_INT";
+  dt_array_str[27]="PAMI_TYPE_LOC_LONG_INT";
+  dt_array_str[28]="PAMI_TYPE_LOC_LONGDOUBLE_INT";
 }
 
 int pami_init(pami_client_t        * client,          /* in/out:  client      */
@@ -299,7 +314,7 @@ int pami_shutdown(pami_client_t        * client,          /* in/out:  client    
 
 unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
-unsigned gMax_datatype_sz= 16; /* Assumed max datatype size */
+unsigned gMax_datatype_sz= 32; /* Assumed max datatype size */
 unsigned gMax_byte_count = COUNT;
 unsigned gMin_byte_count = 1;
 unsigned gBuffer_offset  = OFFSET;
@@ -489,6 +504,8 @@ void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
     for (i = 0, j = DT_LOC_SHORT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
     for (i = 0, j = DT_LOC_FLOAT_INT ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
     for (i = 0, j = DT_LOC_DOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_LONG_INT  ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
+    for (i = 0, j = DT_LOC_LONGDOUBLE_INT; i < OP_MAXLOC; i++)validTable[i][j] = 0;
     for (i = 0, j = DT_LOC_2FLOAT    ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
     for (i = 0, j = DT_LOC_2DOUBLE   ; i < OP_MAXLOC; i++)validTable[i][j] = 0;
       
@@ -500,8 +517,14 @@ void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)
     /*---------------------------------------*/
     /* Disable unsupported ops on logical dt */
     /* Only land, lor, lxor, band, bor, bxor */
-    for (i = 0,         j = DT_LOGICAL; i < OP_LAND ; i++) validTable[i][j] = 0;
-    for (i = OP_BXOR+1, j = DT_LOGICAL; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (i = 0,         j = DT_LOGICAL1; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL1; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (i = 0,         j = DT_LOGICAL2; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL2; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (i = 0,         j = DT_LOGICAL4; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL4; i < OP_COUNT; i++) validTable[i][j] = 0;
+    for (i = 0,         j = DT_LOGICAL8; i < OP_LAND ; i++) validTable[i][j] = 0;
+    for (i = OP_BXOR+1, j = DT_LOGICAL8; i < OP_COUNT; i++) validTable[i][j] = 0;
     
     /*---------------------------------------*/
     /* Disable unsupported ops on long double*/

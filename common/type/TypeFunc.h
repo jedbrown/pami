@@ -451,22 +451,79 @@ namespace PAMI
             },
 
 
-            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOGICAL
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOGICAL1
             {
-              Type::Func::copy<TypeCode::primitive_logical_t>,// TypeFunc::PRIMITIVE_FUNC_COPY
-              Type::Func::noop,                           // TypeFunc::PRIMITIVE_FUNC_NOOP
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_MAX
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_MIN
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_SUM
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_PROD
-              Type::Func::land<TypeCode::primitive_logical_t>,// TypeFunc::PRIMITIVE_FUNC_LAND
-              Type::Func::lor<TypeCode::primitive_logical_t>, // TypeFunc::PRIMITIVE_FUNC_LOR
-              Type::Func::lxor<TypeCode::primitive_logical_t>,// TypeFunc::PRIMITIVE_FUNC_LXOR
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_BAND
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_BOR
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_BXOR
-              Type::Func::error,                          // TypeFunc::PRIMITIVE_FUNC_MAXLOC
-              Type::Func::error                           // TypeFunc::PRIMITIVE_FUNC_MINLOC
+              Type::Func::copy<TypeCode::primitive_logical1_t>,// TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::land<TypeCode::primitive_logical1_t>,// TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::lor<TypeCode::primitive_logical1_t>, // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::lxor<TypeCode::primitive_logical1_t>,// TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::error                                // TypeFunc::PRIMITIVE_FUNC_MINLOC
+            },
+
+
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOGICAL2
+            {
+              Type::Func::copy<TypeCode::primitive_logical2_t>,// TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::land<TypeCode::primitive_logical2_t>,// TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::lor<TypeCode::primitive_logical2_t>, // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::lxor<TypeCode::primitive_logical2_t>,// TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::error                                // TypeFunc::PRIMITIVE_FUNC_MINLOC
+            },
+
+
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOGICAL4
+            {
+              Type::Func::copy<TypeCode::primitive_logical4_t>,// TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::land<TypeCode::primitive_logical4_t>,// TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::lor<TypeCode::primitive_logical4_t>, // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::lxor<TypeCode::primitive_logical4_t>,// TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::error                                // TypeFunc::PRIMITIVE_FUNC_MINLOC
+            },
+
+
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOGICAL8
+            {
+              Type::Func::copy<TypeCode::primitive_logical8_t>,// TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::land<TypeCode::primitive_logical8_t>,// TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::lor<TypeCode::primitive_logical8_t>, // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::lxor<TypeCode::primitive_logical8_t>,// TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::error                                // TypeFunc::PRIMITIVE_FUNC_MINLOC
             },
 
 
@@ -613,6 +670,42 @@ namespace PAMI
               Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
               Type::Func::maxloc<TypeCode::primitive_loc_t<double, int, 0, 4> >,   // TypeFunc::PRIMITIVE_FUNC_MAXLOC
               Type::Func::minloc<TypeCode::primitive_loc_t<double, int, 0, 4> >    // TypeFunc::PRIMITIVE_FUNC_MINLOC
+            },
+
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOC_LONG_INT
+            {
+              Type::Func::copy<TypeCode::primitive_loc_t<long, int, 0, sizeof(long)-sizeof(int)> >,     // TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::maxloc<TypeCode::primitive_loc_t<long, int, 0, sizeof(long)-sizeof(int)> >,   // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::minloc<TypeCode::primitive_loc_t<long, int, 0, sizeof(long)-sizeof(int)> >    // TypeFunc::PRIMITIVE_FUNC_MINLOC
+            },
+
+            // --------------------------------- TypeCode::PRIMITIVE_TYPE_LOC_LONGDOUBLE_INT
+            {
+              Type::Func::copy<TypeCode::primitive_loc_t<long double, int, 0, sizeof(long double)-sizeof(int)> >,     // TypeFunc::PRIMITIVE_FUNC_COPY
+              Type::Func::noop,                                // TypeFunc::PRIMITIVE_FUNC_NOOP
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MAX
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_MIN
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_SUM
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_PROD
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_LXOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BAND
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BOR
+              Type::Func::error,                               // TypeFunc::PRIMITIVE_FUNC_BXOR
+              Type::Func::maxloc<TypeCode::primitive_loc_t<long double, int, 0, sizeof(long double)-sizeof(int)> >,   // TypeFunc::PRIMITIVE_FUNC_MAXLOC
+              Type::Func::minloc<TypeCode::primitive_loc_t<long double, int, 0, sizeof(long double)-sizeof(int)> >    // TypeFunc::PRIMITIVE_FUNC_MINLOC
             }
           };
 

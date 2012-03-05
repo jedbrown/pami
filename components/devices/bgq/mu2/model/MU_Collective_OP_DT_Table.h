@@ -44,7 +44,10 @@ namespace PAMI {
         MU_COLLECTIVE_DT_OP_DOUBLE,             //  PAMI_DOUBLE
         MU_COLLECTIVE_DT_OP_DOUBLE,             //  PAMI_LONG_DOUBLE
 
-        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOGICAL
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOGICAL1
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOGICAL2
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOGICAL4
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOGICAL8
 
         MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_SINGLE_COMPLEX
         MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_DOUBLE_COMPLEX
@@ -55,6 +58,8 @@ namespace PAMI {
         MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOC_SHORT_INT
         MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOC_FLOAT_INT
         MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOC_DOUBLE_INT
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOC_LONG_INT
+        MU_COLLECTIVE_DT_OP_UNDEFINED,          //  PAMI_LOC_LONGDOUBLE_INT
       };
       
       const size_t mu_collective_size_table[PAMI_DT_COUNT] =
@@ -77,7 +82,10 @@ namespace PAMI {
           sizeof(double),             //  PAMI_DOUBLE
           sizeof(long double),        //  PAMI_LONG_DOUBLE
 
-          sizeof(bool),               //  PAMI_LOGICAL
+          1,                          //  PAMI_LOGICAL1
+          2,                          //  PAMI_LOGICAL2
+          4,                          //  PAMI_LOGICAL4
+          8,                          //  PAMI_LOGICAL8
 
           -1,                         //  PAMI_SINGLE_COMPLEX
           -1,                         //  PAMI_DOUBLE_COMPLEX
@@ -88,6 +96,8 @@ namespace PAMI {
           -1,                         //  PAMI_LOC_SHORT_INT
           -1,                         //  PAMI_LOC_FLOAT_INT
           -1,                         //  PAMI_LOC_DOUBLE_INT
+          -1,                         //  PAMI_LOC_LONG_INT
+          -1,                         //  PAMI_LOC_LONGDOUBLE_INT
         };
     }; //MU
   };   //Device

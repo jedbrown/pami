@@ -50,3 +50,33 @@ void _pami_core_fp128_sum(long double *dst, const long double **srcs, int nsrc, 
 #undef TYPE
 #undef OP
 }
+
+void _pami_core_fp128_int32_maxloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count) {
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 > src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a < srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
+}
+
+void _pami_core_fp128_int32_minloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count) {
+        register int n = 0, m, o;
+        for (n = 0; n < count; n++) {
+                m = 0;  // assume src0 < src1
+                for (o = 1; o < nsrc; ++o) {
+                        if (srcs[m][n].a > srcs[o][n].a ||
+                            (srcs[m][n].a == srcs[o][n].a && srcs[m][n].b > srcs[o][n].b)) {
+                                m = o;
+                        }
+                }
+                dst[n].a = srcs[m][n].a;
+                dst[n].b = srcs[m][n].b;
+        }
+}

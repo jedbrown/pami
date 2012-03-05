@@ -98,6 +98,16 @@ typedef struct
 } uint64_int32_t;
 
 /**
+ * \brief MAXLOC and MINLOC operation element type for signed 64-bit and signed 32-bit data.
+ */
+typedef struct
+{
+  int64_t a; /**< First operand */
+  int32_t b; /**< Second operand */
+  int32_t z; /**< Blank hole     */
+} int64_int32_t;
+
+/**
  * \brief MAXLOC and MINLOC operation element type for unsigned 64-bit and unsigned 64-bit data.
  */
 typedef struct
@@ -142,6 +152,16 @@ typedef struct
   double   a; /**< First operand */
   double   b; /**< Second operand */
 } fp64_fp64_t;
+
+/**
+ * \brief MAXLOC and MINLOC operation element type for long double (128-bit) and signed 32-bit data.
+ */
+typedef struct
+{
+  long double a; /**< First operand */
+  int32_t  b;    /**< Second operand */
+  uint32_t z[3]; /**< Blank hole     */
+} fp128_int32_t;
 
 /** \brief Generic prototype of math function with one source */
 typedef void (*coremath1) (void *dst, void *src, int count);
@@ -1684,6 +1704,46 @@ static inline void Core_int64_sum(int64_t *dst, const int64_t **srcs, int nsrc, 
 }
 
 /**
+ * \brief Optimized MAXLOC on signed-long/signed-int datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized MAXLOC operation on \a count signed-long/signed-int
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_int64_int32_maxloc(int64_int32_t *dst, const int64_int32_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_int64_int32_maxloc
+        default:
+                _pami_core_int64_int32_maxloc(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
+ * \brief Optimized MINLOC on signed-long/signed-int datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized MINLOC operation on \a count signed-long/signed-int
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_int64_int32_minloc(int64_int32_t *dst, const int64_int32_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_int64_int32_minloc
+        default:
+                _pami_core_int64_int32_minloc(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
  * \brief Optimized bitwise AND on unsigned-long-long datatypes.
  *
  * \param dst The destination buffer.
@@ -2144,6 +2204,26 @@ static inline void Core_fp64_int32_maxloc(fp64_int32_t *dst, const fp64_int32_t 
 }
 
 /**
+ * \brief Optimized MAXLOC on long double/signed-int datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized MAXLOC operation on \a count double/signed-int
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp128_int32_maxloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_fp128_int32_maxloc
+        default:
+                _pami_core_fp128_int32_maxloc(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
  * \brief Optimized MAXLOC on double/double datatypes.
  *
  * \param dst The destination buffer.
@@ -2202,6 +2282,27 @@ static inline void Core_fp64_fp64_minloc(fp64_fp64_t *dst, const fp64_fp64_t **s
                 break;
         }
 }
+
+/**
+ * \brief Optimized MINLOC on long double/signed-int datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized MINLOC operation on \a count long double/signed-int
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp128_int32_minloc(fp128_int32_t *dst, const fp128_int32_t **srcs, int nsrc, int count) {
+        switch(nsrc) {
+        OPTIMIZED_fp128_int32_minloc
+        default:
+                _pami_core_fp128_int32_minloc(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
 
 /**
  * \brief Optimized MAX on long-double datatypes.

@@ -129,15 +129,20 @@ namespace PAMI
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_FLOAT      
           {false,            false,     true,     true,     true,     false,     true,      true,     true,      true,      true,     true,      false,       false},//  PAMI_DOUBLE                            
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LONG_DOUBLE       
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL                  
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL1
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL2
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL4
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOGICAL8
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_SINGLE_COMPLEX       
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_DOUBLE_COMPLEX                       
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2INT       
           {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2FLOAT                            
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2DOUBLE        
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_SHORT_INT      
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_FLOAT_INT     
-          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //  PAMI_LOC_DOUBLE_INT    
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_2DOUBLE
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_SHORT_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_FLOAT_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_DOUBLE_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false},//  PAMI_LOC_LONG_INT
+          {false,            false,     false,    false,    false,    false,     false,     false,    false,     false,     false,    false,     false,       false} //  PAMI_LOC_LONGDOUBLE_INT
         };
         metadata_result_t result = {0};
         uintptr_t op;
@@ -213,7 +218,10 @@ namespace PAMI
         pami_dt pdt = (pami_dt) dt;
         pami_op pop = (pami_op) op;
 	// No MATH_OP_FUNCS() for logical or complex or LOCs?
-        result.check.datatype_op = ((pdt != PAMI_LOGICAL) && 
+        result.check.datatype_op = ((pdt != PAMI_LOGICAL1) &&
+				    (pdt != PAMI_LOGICAL2) &&
+				    (pdt != PAMI_LOGICAL4) &&
+				    (pdt != PAMI_LOGICAL8) &&
 				    (pdt != PAMI_SINGLE_COMPLEX) && 
 				    (pdt != PAMI_DOUBLE_COMPLEX) && 
 				    (pop != PAMI_MAXLOC) && 

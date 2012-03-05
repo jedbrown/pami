@@ -3080,11 +3080,32 @@ extern "C"
   extern pami_type_t PAMI_TYPE_LONG_DOUBLE;
 
   /**
-   * \var PAMI_TYPE_LOGICAL
-   * \brief Predefined data type for a contiguous data layout of logical types.
+   * \var PAMI_TYPE_LOGICAL1
+   * \brief Predefined data type for a contiguous data layout of 1-byte logical types.
    * \ingroup datatype_predefines_logical
    */
-  extern pami_type_t PAMI_TYPE_LOGICAL;
+  extern pami_type_t PAMI_TYPE_LOGICAL1;
+
+  /**
+   * \var PAMI_TYPE_LOGICAL2
+   * \brief Predefined data type for a contiguous data layout of 2-byte logical types.
+   * \ingroup datatype_predefines_logical
+   */
+  extern pami_type_t PAMI_TYPE_LOGICAL2;
+
+  /**
+   * \var PAMI_TYPE_LOGICAL4
+   * \brief Predefined data type for a contiguous data layout of 4-byte logical types.
+   * \ingroup datatype_predefines_logical
+   */
+  extern pami_type_t PAMI_TYPE_LOGICAL4;
+
+  /**
+   * \var PAMI_TYPE_LOGICAL8
+   * \brief Predefined data type for a contiguous data layout of 8-byte logical types.
+   * \ingroup datatype_predefines_logical
+   */
+  extern pami_type_t PAMI_TYPE_LOGICAL8;
 
   /**
    * \var PAMI_TYPE_SINGLE_COMPLEX
@@ -3141,6 +3162,20 @@ extern "C"
    * \ingroup datatype_predefines_maxloc_minloc
    */
   extern pami_type_t PAMI_TYPE_LOC_DOUBLE_INT;
+
+  /**
+   * \var PAMI_TYPE_LOC_LONG_INT
+   * \brief Predefined data type for a contiguous data layout of (long,int) types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
+  extern pami_type_t PAMI_TYPE_LOC_LONG_INT;
+
+  /**
+   * \var PAMI_TYPE_LOC_LONGDOUBLE_INT
+   * \brief Predefined data type for a contiguous data layout of (long double,int) types.
+   * \ingroup datatype_predefines_maxloc_minloc
+   */
+  extern pami_type_t PAMI_TYPE_LOC_LONGDOUBLE_INT;
 
   /** \} */ /* end of "datatype_predefines" group */
 
@@ -4354,6 +4389,26 @@ extern "C"
   void * PAMI_Extension_symbol (pami_extension_t extension, const char * name);
 
   /** \} */ /* end of "extensions" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup release_notes Release Notes
+   *
+   * This section documents any changes from previous versions of the interface.
+   *
+   * The \b PAMI_TYPE_LOGICAL datatype is deprecated and removed from the interface.
+   * It is replaced with new logical datatypes that specify an exact byte-width.
+   * The previous \b PAMI_TYPE_LOGICAL is an alias to ::PAMI_TYPE_LOGICAL4.
+   * \see PAMI_TYPE_LOGICAL1
+   * \see PAMI_TYPE_LOGICAL2
+   * \see PAMI_TYPE_LOGICAL4
+   * \see PAMI_TYPE_LOGICAL8
+   * \{
+   */
+  /*****************************************************************************/
+
+  /** \} */ /* end of "release_notes" group */
+
 
 
 #ifdef __cplusplus
