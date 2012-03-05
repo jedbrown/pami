@@ -183,7 +183,7 @@ namespace PAMI
 	  uint32_t vc = MUHWI_PACKET_VIRTUAL_CHANNEL_DYNAMIC;
 	  //Check for DD1 (set routing to deterministic in DD1)
 
-	  if (__global.mapping.size() > 512)
+	  if ((__global.mapping.size() / __global.mapping.tSize()) > 512)
 	    zone = MUHWI_PACKET_ZONE_ROUTING_0;
 
 	  bool isDD2 = true;
