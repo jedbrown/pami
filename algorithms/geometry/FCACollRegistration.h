@@ -68,7 +68,7 @@ public:
     _allgatherv_int_f(context,context_id,mapidtogeometry),
     _barrier_f(context,context_id,mapidtogeometry)
   {
-    if(num_contexts > 1) return;
+    if(num_contexts > 1 || !_Lapi_env.collective_offload) return;
     void * rc = FCA_Dlopen(0);
     if(!rc) return;
     else

@@ -10,8 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "components/devices/fca/fca_api.h"
-#include "components/devices/fca/core/fca_errno.h"
+#include "fca_api.h"
+#include "core/fca_errno.h"
 
 // Define this to turn on dlopened FCA functions
 #define FCA_DLOPEN
