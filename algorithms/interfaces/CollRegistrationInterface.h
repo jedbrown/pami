@@ -63,6 +63,9 @@ namespace PAMI
                                    uint64_t      *inout_val,
                                    int           *inout_nelem,
                                    int            phase=0);
+
+      inline uint64_t analyze_count(size_t         context_id,
+                                    T_Geometry    *geometry);
     };
 
     template <class T_Collregistration, class T_Geometry>
@@ -104,6 +107,12 @@ namespace PAMI
                                                                   phase);
     }
 
+    template <class T_Collregistration, class T_Geometry>
+    inline uint64_t CollRegistration<T_Collregistration,T_Geometry>::analyze_count(size_t         context_id,
+                                                                                   T_Geometry    *geometry)
+    {
+      return static_cast<T_Collregistration*>(this)->analyze_count_impl(context_id, geometry);
+    }
 
   }; // namespace CollRegistration
 }; // namespace PAMI

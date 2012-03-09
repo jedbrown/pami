@@ -216,6 +216,13 @@ namespace PAMI
         return PAMI_SUCCESS;
       }
 
+    static void fca_progress_fn(void *arg)
+    {
+      PAMI::Context *c  = (PAMI::Context*)arg;
+      pami_result_t res = PAMI_SUCCESS;
+      c->advance(1, res);
+    }
+
     inline pami_result_t initCollectives(Context               *ctxt,
                                          Memory::MemoryManager *mm,
                                          bool                   disable_shm)
@@ -331,7 +338,8 @@ namespace PAMI
                                            ctxt,
                                            ctxt->getId(),
                                            _clientid,
-                                           _ncontexts);
+                                           _ncontexts,
+                                           fca_progress_fn);
         return PAMI_SUCCESS;
       }
 
@@ -952,6 +960,7 @@ namespace PAMI
                  pthread_self(),context, ((PAMI::Context*)context)->getId(), classroute));
           PAMI_assert(classroute->_state == 100);
           classroute->_state            = 150;
+          ITRC(IT_FCA, "_allreduce_done in\n");
         }
       static void _allreduce_done2(pami_context_t context, void *cookie, pami_result_t result)
         {
@@ -961,6 +970,7 @@ namespace PAMI
           PAMI_assert(classroute->_state == 175);
           classroute->setCallback(cr_func2, classroute);
           classroute->_state            = 200;
+          ITRC(IT_FCA, "_allreduce_done2 in\n");
         }
 
       static void _cr_done(pami_context_t context, void *cookie, pami_result_t result)
@@ -1063,13 +1073,18 @@ namespace PAMI
       {
         TRACE((stderr, "%p CR FUNC 1\n", cookie));
         int count = 1;
+
+        PAMI::Topology *master_topology  = (PAMI::Topology *)g->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+        uint fca_index = 3+3*master_topology->size();
+        ITRC(IT_FCA, "cr_func2 fca_index is %d\n", fca_index);
+
         PostedClassRoute<PEGeometry> *classroute = (PostedClassRoute<PEGeometry> *)cookie;
         PAMI::Context *ctxt   = (PAMI::Context*)context;
         PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
         client->lock();
         ctxt->_fca_collreg->analyze(ctxt->getId(),
                                     classroute->_geometry,
-                                    &reduce_result[2],&count,
+                                    &reduce_result[fca_index],&count,
                                     2);
         client->unlock();
       }
@@ -1085,6 +1100,9 @@ namespace PAMI
         PostedClassRoute<PEGeometry> *classroute = (PostedClassRoute<PEGeometry> *)cookie;
         PAMI::Context *ctxt   = (PAMI::Context*)context;
         PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
+        PAMI::Topology *master_topology  = (PAMI::Topology *)g->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
+        uint fca_index = 3+3*master_topology->size();
+        ITRC(IT_FCA, "cr_func fca_index is %d\n", fca_index);
 
         client->lock();
         ctxt->_pgas_collreg->receive_global(ctxt->getId(),
@@ -1106,7 +1124,8 @@ namespace PAMI
 
         ctxt->_fca_collreg->analyze(ctxt->getId(),
                                     classroute->_geometry,
-                                    &reduce_result[2],&count,
+                                    &reduce_result[fca_index],&count,
+                                    /*&reduce_result[2],&count,*/
                                     1);
         client->unlock();
       }
@@ -1223,9 +1242,9 @@ namespace PAMI
 
             PAMI::Topology *master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 
-            to_reduce_count = 3 + 3*master_topology->size();
             for(size_t n=start_off; n<nctxt; n++)
               {
+                to_reduce_count = 3 + 3*master_topology->size() + _contexts[n]->_fca_collreg->analyze_count(n,new_geometry);
                 rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
                                             to_reduce_count * sizeof(uint64_t));
                 PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
@@ -1240,7 +1259,7 @@ namespace PAMI
                 _contexts[n]->_cau_collreg->analyze(n,new_geometry,&to_reduce[n][2],&ncur, 0);
                 nc  += ncur;
                 ncur =0;
-                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][2],&ncur, 0);
+                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][3+3*master_topology->size()], &ncur, 0);
               }
             *geometry=(PEGeometry*) new_geometry;
           }
@@ -1358,9 +1377,9 @@ namespace PAMI
                                         nctxt);
 
             PAMI::Topology *master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            to_reduce_count = 3 + 3*master_topology->size();
             for(size_t n=start_off; n<nctxt; n++)
               {
+                to_reduce_count = 3 + 3*master_topology->size() + _contexts[n]->_fca_collreg->analyze_count(n,new_geometry);
                 rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
                                             to_reduce_count * sizeof(uint64_t));
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
@@ -1376,7 +1395,7 @@ namespace PAMI
 
 		nc+=ncur;
 		ncur=0;
-                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][2], &ncur, 0);
+                _contexts[n]->_fca_collreg->analyze(n,new_geometry,&to_reduce[n][3+3*master_topology->size()], &ncur, 0);
               }
             *geometry=(PEGeometry*) new_geometry;
           }

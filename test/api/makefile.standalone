@@ -78,6 +78,7 @@ build/collectives/allgather_subcomm.exe \
 build/collectives/allgatherv.exe \
 build/collectives/allgatherv_contig.exe \
 build/collectives/allgatherv_int.exe \
+build/collectives/allgatherv_int_contig.exe \
 build/collectives/allreduce.exe \
 build/collectives/allreduce_contig.exe \
 build/collectives/allreduce_query.exe \

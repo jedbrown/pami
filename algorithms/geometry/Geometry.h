@@ -736,7 +736,7 @@ namespace PAMI
                                                           size_t            context_id)
       {
         (void)context;
-        uint32_t hash = factory->nameHash(_generation_id++);
+        uint32_t hash = factory->nameHash(_generation_id++, (pami_geometry_t)this);
         Algorithm<Geometry<Common> >*elem = &_algoTable[colltype][hash][context_id];
         new(elem) Algorithm<Geometry<Common> >(factory, this);
         setCleanupCallback(resetFactoryCache, factory);
@@ -760,7 +760,7 @@ namespace PAMI
         (void)context;
         if(!factory) return PAMI_SUCCESS;
         resetCleanupCallback(resetFactoryCache, factory);
-        uint32_t hash = factory->nameHash();
+        uint32_t hash = factory->nameHash(-1, (pami_geometry_t)this);
         _algoTable[colltype][hash].erase(context_id);
         _algoTable[colltype].erase(hash);
 #if DO_TRACE_DEBUG
@@ -782,7 +782,7 @@ namespace PAMI
       {
         (void)context;
         resetCleanupCallback(resetFactoryCache, factory);
-        uint32_t hash = factory->nameHash();
+        uint32_t hash = factory->nameHash(-1, (pami_geometry_t)this);
         _algoTableCheck[colltype][hash].erase(context_id);
         _algoTableCheck[colltype].erase(hash);
 #if DO_TRACE_DEBUG
@@ -803,7 +803,7 @@ namespace PAMI
                                                                size_t                                     context_id)
       {
         (void)context;
-        uint32_t hash = factory->nameHash(_generation_id++);
+        uint32_t hash = factory->nameHash(_generation_id++, (pami_geometry_t)this);
         Algorithm<Geometry<Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
         new(elem) Algorithm<Geometry<Common> >(factory, this);
         setCleanupCallback(resetFactoryCache, factory);

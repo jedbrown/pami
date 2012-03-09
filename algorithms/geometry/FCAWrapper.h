@@ -25,6 +25,20 @@ namespace PAMI{namespace CollRegistration{
 // --------------  FCA Wrapper base class -------------
 template <class T_Composite>
 class FCAFactory;
+class GeometryInfo
+{
+public:
+  GeometryInfo(void *reg):
+    _registration(reg),
+    _fca_comm(NULL),
+    _amRoot(false)
+    {
+    }
+  void            *_registration;
+  fca_comm_t      *_fca_comm;
+  fca_comm_desc_t  _fca_comm_desc;
+  bool             _amRoot;
+};
 
 template <class T_Geometry>
 class FCAComposite:public CCMI::Executor::Composite
@@ -69,24 +83,25 @@ public:
   virtual CCMI::Executor::Composite * generate(pami_geometry_t  geometry,
                                                void            *cmd)
   {
-    T_Composite *c    = (T_Composite*)_alloc.allocateObject();
-    pami_xfer_t *xfer = (pami_xfer_t *)cmd;
-    T_Geometry  *g    = (T_Geometry*)geometry;
-    fca_comm_t  *comm = (fca_comm_t*)(g->getKey(this->_context_id,
-                                                Geometry::CKEY_FCAGEOMETRYINFO));
+    T_Composite  *c    = (T_Composite*)_alloc.allocateObject();
+    pami_xfer_t  *xfer = (pami_xfer_t *)cmd;
+    T_Geometry   *g    = (T_Geometry*)geometry;
+    GeometryInfo *gi   = (GeometryInfo*)(g->getKey(this->_context_id,
+                                                   Geometry::CKEY_FCAGEOMETRYINFO));
+    new(c)T_Composite((T_Geometry*)g,this);
     c->setDoneCallback(xfer->cb_done, xfer->cookie);
     c->setContext(_context);
-    c->setComm(comm);
+    c->setComm(gi->_fca_comm);
     c->setxfer(xfer);
     return c;
   }
   virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry)
   {
-    T_Geometry  *g    = (T_Geometry*)geometry;
-    fca_comm_t  *comm = (fca_comm_t*)(g->getKey(this->_context_id,
-                                                Geometry::CKEY_FCAGEOMETRYINFO));
+    T_Geometry   *g  = (T_Geometry*)geometry;
+    GeometryInfo *gi = (GeometryInfo*)(g->getKey(this->_context_id,
+                                                 Geometry::CKEY_FCAGEOMETRYINFO));
     fca_comm_caps_t comm_caps;
-    int rc = FCA_Comm_get_caps(comm, &comm_caps);
+    int rc = FCA_Comm_get_caps(gi->_fca_comm, &comm_caps);
     PAMI_assertf(rc == 0, "FCA_Comm_get_caps failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -159,7 +174,7 @@ const fca_reduce_dtype_t _fca_reduce_dtype_tbl[PAMI_DT_COUNT] =
     FCA_DTYPE_FLOAT_INT        /*PAMI_LOC_FLOAT_INT*/,
     FCA_DTYPE_DOUBLE_INT       /*PAMI_LOC_DOUBLE_INT*/,
     FCA_DTYPE_LONG_INT         /*PAMI_LOC_LONG_INT (invalid FCA type ??)*/,
-    FCA_DTYPE_LONGDOUBLE_INT   /*PAMI_LOC_LONGDOUBLE_INT (invalid FCA type ??)*/
+    FCA_DTYPE_LAST             /*PAMI_LOC_LONGDOUBLE_INT (invalid FCA type ??)*/
   };
 
 
@@ -167,14 +182,12 @@ static inline fca_reduce_dtype_t p_dtype_to_fca_dtype(pami_dt dt)
 {
   PAMI_assert(dt < PAMI_DT_COUNT);
   fca_reduce_dtype_t fca_dt = _fca_reduce_dtype_tbl[dt];
-  PAMI_assert(fca_dt != FCA_DTYPE_LAST);
   return fca_dt;
 }
 static inline fca_reduce_op_t p_func_to_fca_op(pami_op op)
 {
   PAMI_assert(op < PAMI_OP_COUNT);
   fca_reduce_op_t fca_op = _fca_reduce_op_tbl[op];
-  PAMI_assert(fca_op != FCA_OP_LAST);
   return fca_op;
 }
 
@@ -192,11 +205,25 @@ inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
                                  op);
   fca_reduce_dtype_t fca_dt = p_dtype_to_fca_dtype((pami_dt)dt);
   fca_reduce_op_t    fca_op = p_func_to_fca_op((pami_op)op);
-  if(fca_op < FCA_OP_MAX && fca_dt < FCA_DTYPE_LAST)
-    result.check.datatype_op = false;
-  else
-    result.check.datatype_op = true;
+  bool is_invalid = true;
+  if(fca_op != FCA_OP_LAST && fca_dt != FCA_DTYPE_LAST)   is_invalid=false;
 
+  // Replace this with a table for faster lookup
+  if(fca_op == FCA_OP_LAND && fca_dt == FCA_DTYPE_FLOAT)  is_invalid=true;
+  if(fca_op == FCA_OP_LOR && fca_dt == FCA_DTYPE_FLOAT)   is_invalid=true;
+  if(fca_op == FCA_OP_LXOR && fca_dt == FCA_DTYPE_FLOAT)  is_invalid=true;
+  if(fca_op == FCA_OP_LAND && fca_dt == FCA_DTYPE_DOUBLE) is_invalid=true;
+  if(fca_op == FCA_OP_LOR && fca_dt == FCA_DTYPE_DOUBLE)  is_invalid=true;
+  if(fca_op == FCA_OP_LXOR && fca_dt == FCA_DTYPE_DOUBLE) is_invalid=true;
+
+  if(fca_op == FCA_OP_BAND && fca_dt == FCA_DTYPE_FLOAT)  is_invalid=true;
+  if(fca_op == FCA_OP_BOR && fca_dt == FCA_DTYPE_FLOAT)   is_invalid=true;
+  if(fca_op == FCA_OP_BXOR && fca_dt == FCA_DTYPE_FLOAT)  is_invalid=true;
+  if(fca_op == FCA_OP_BAND && fca_dt == FCA_DTYPE_DOUBLE) is_invalid=true;
+  if(fca_op == FCA_OP_BOR && fca_dt == FCA_DTYPE_DOUBLE)  is_invalid=true;
+  if(fca_op == FCA_OP_BXOR && fca_dt == FCA_DTYPE_DOUBLE) is_invalid=true;
+
+  result.check.datatype_op = is_invalid;
   return(result);
 }
 // TODO:  convert endpoint based roots to TASKS
@@ -205,12 +232,13 @@ inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
 template <class T_Geometry>
 class FCAReduceExec:public FCAComposite<T_Geometry>
 {
-  typedef PAMI::Type::TypeCode     Type;
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef PAMI::Type::TypeCode      Type;
+  typedef FCAComposite<T_Geometry>  FCAComp;
+  typedef FCAFactory<FCAReduceExec> Factory;
+  typedef FCAFactory<FCAComp>       FactoryP;
 public:
   FCAReduceExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
   {
   }
   virtual void start()
@@ -243,7 +271,7 @@ public:
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
       _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
-      _spec.length   = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
+      _spec.length   = cmd->stypecount;
       _spec.op       = p_func_to_fca_op((pami_op)op);
     }
 private:
@@ -255,16 +283,17 @@ template <class T_Geometry>
 class FCAAllreduceExec:public FCAComposite<T_Geometry>
 {
 public:
-  typedef PAMI::Type::TypeCode     Type;
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef PAMI::Type::TypeCode         Type;
+  typedef FCAComposite<T_Geometry>     FCAComp;
+  typedef FCAFactory<FCAAllreduceExec> Factory;
+  typedef FCAFactory<FCAComp>          FactoryP;
   FCAAllreduceExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
   {
   }
   virtual void start()
   {
-    int rc = FCA_Do_all_reduce(this->_comm, &_spec);
+    int rc = FCA_Do_all_reduce(this->_c, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -291,7 +320,7 @@ public:
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
       _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
-      _spec.length   = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
+      _spec.length   = cmd->stypecount;
       _spec.op       = p_func_to_fca_op((pami_op)op);
     }
 private:
@@ -303,16 +332,17 @@ template <class T_Geometry>
 class FCABroadcastExec:public FCAComposite<T_Geometry>
 {
 public:
-  typedef PAMI::Type::TypeCode     Type;
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef PAMI::Type::TypeCode         Type;
+  typedef FCAComposite<T_Geometry>     FCAComp;
+  typedef FCAFactory<FCABroadcastExec> Factory;
+  typedef FCAFactory<FCAComp>          FactoryP;
   FCABroadcastExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
     {
     }
   virtual void start()
   {
-    int rc = FCA_Do_bcast(this->_comm, &_spec);
+    int rc = FCA_Do_bcast(this->_c, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -344,16 +374,17 @@ template <class T_Geometry>
 class FCAAllgatherExec:public FCAComposite<T_Geometry>
 {
 public:
-  typedef PAMI::Type::TypeCode     Type;
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef PAMI::Type::TypeCode         Type;
+  typedef FCAComposite<T_Geometry>     FCAComp;
+  typedef FCAFactory<FCAAllgatherExec> Factory;
+  typedef FCAFactory<FCAComp>           FactoryP;
   FCAAllgatherExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
     {
     }
   virtual void start()
   {
-    int rc = FCA_Do_allgather(this->_comm, &_spec);
+    int rc = FCA_Do_allgather(this->_c, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -386,19 +417,23 @@ template <class T_Geometry>
 class FCAAllgathervIntExec:public FCAComposite<T_Geometry>
 {
 public:
-  typedef PAMI::Type::TypeCode     Type;
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef PAMI::Type::TypeCode             Type;
+  typedef FCAComposite<T_Geometry>         FCAComp;
+  typedef FCAFactory<FCAAllgathervIntExec> Factory;
+  typedef FCAFactory<FCAComp>              FactoryP;
   FCAAllgathervIntExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
     {
     }
   virtual void start()
   {
-    int rc = FCA_Do_allgatherv(this->_comm, &_spec);
+    int rc = FCA_Do_allgatherv(this->_c, &_spec);
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d [%s]",
             rc, 
             FCA_Strerror(rc));
+    __global.heap_mm->free(_recvsizes);
+    this->executeDoneCallback();
+    this->_f->returnComposite(this);
   }
   static inline void metadata(pami_metadata_t *m)
     {
@@ -411,15 +446,33 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
     {
       pami_allgatherv_int_t *cmd = &(xfer->cmd.xfer_allgatherv_int);
-      _spec.root             = -1;  // will be ignored in FCA
-      _spec.sbuf             = cmd->sndbuf;
-      _spec.rbuf             = cmd->rcvbuf;
-      _spec.sendsize         = cmd->stypecount * ((Type*)cmd->stype)->GetExtent();
-      _spec.recvsizes        = cmd->rtypecounts;
-      _spec.displs           = cmd->rdispls;
+      int                   *ptr = NULL;
+      pami_result_t           rc = PAMI_SUCCESS; (void)rc;
+      size_t                  sz = this->_g->size();
+      _spec.root                 = -1;  // will be ignored in FCA
+      _spec.sbuf                 = cmd->sndbuf;
+      _spec.rbuf                 = cmd->rcvbuf;
+      _spec.sendsize             = cmd->stypecount  *((Type*)cmd->stype)->GetExtent();
+      rc                         = __global.heap_mm->memalign((void**)&ptr,
+                                                              0,
+                                                              2*sz*sizeof(int));
+      PAMI_assertf(ptr && (rc == PAMI_SUCCESS),
+                   "Unable to allocate FCA size/displacement buffers: size=%lu\n", sz);
+      _recvsizes             = &ptr[0];
+      _displs                = &ptr[sz];
+      size_t extent          = ((Type*)cmd->rtype)->GetExtent();
+      for(size_t i=0;i<sz;i++)
+      {
+        _recvsizes[i] = cmd->rtypecounts[i] * extent;
+        _displs[i]    = cmd->rdispls[i]     * extent;
+      }
+      _spec.recvsizes        = _recvsizes;
+      _spec.displs           = _displs;
     }
 private:
-  fca_gatherv_spec_t _spec;
+  fca_gatherv_spec_t  _spec;
+  int                *_recvsizes;
+  int                *_displs;
 };
 
 // --------------  FCA Barrier wrapper classes -------------
@@ -427,15 +480,16 @@ template <class T_Geometry>
 class FCABarrierExec:public FCAComposite<T_Geometry>
 {
 public:
-  typedef FCAComposite<T_Geometry> FCAComp;
-  typedef FCAFactory<FCAComp>      Factory;
+  typedef FCAComposite<T_Geometry>   FCAComp;
+  typedef FCAFactory<FCABarrierExec> Factory;
+  typedef FCAFactory<FCAComp>        FactoryP;
   FCABarrierExec(T_Geometry *g, Factory *f):
-    FCAComp(g,f)
+    FCAComp(g,(FactoryP*)f)
     {
     }
   virtual void start()
   {
-    int rc = FCA_Do_barrier(this->_comm);
+    int rc = FCA_Do_barrier(this->_c);
     PAMI_assertf(rc == 0, "FCA_Do_barrier failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));

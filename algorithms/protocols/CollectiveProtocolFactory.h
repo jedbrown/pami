@@ -107,11 +107,11 @@ namespace CCMI{namespace Adaptor{
                                                void                      * cmd) = 0;
 
         virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)=0;
-        virtual uint32_t nameHash(int generation_id=-1)
+        virtual uint32_t nameHash(int generation_id=-1, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
         {
           uint32_t hash =0;          
           pami_metadata_t md;
-          metadata(&md);
+          metadata(&md, geometry);
           size_t len = strlen(md.name);
           init_hash(&hash);
           update_hash(&hash,md.name,len);
