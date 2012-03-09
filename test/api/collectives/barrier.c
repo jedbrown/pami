@@ -66,6 +66,24 @@ int main(int argc, char*argv[])
     if (task_id == 0)
       printf("# Context: %u\n", iContext);
 
+    int o;
+    for(o = -1; o <= gOptimize ; o++) /* -1 = default, 0 = de-optimize, 1 = optimize */
+    {
+
+      pami_configuration_t configuration[1];
+      configuration[0].name = PAMI_GEOMETRY_OPTIMIZE;
+      configuration[0].value.intval = o; /* de/optimize */
+      if(o == -1) ; /* skip update, use defaults */
+      else
+        rc |= update_geometry(client,
+                              context[iContext],
+                              world_geometry,
+                              configuration,
+                              1);
+
+      if (rc != PAMI_SUCCESS)
+      return 1;
+
     /*  Query the world geometry for barrier algorithms */
     rc |= query_geometry_world(client,
                                context[iContext],
@@ -88,7 +106,7 @@ int main(int argc, char*argv[])
           ((strstr(always_works_md[0].name, gSelected) != NULL) && !gSelector)))
     {
       if (!task_id)
-        fprintf(stderr, "Test Default Barrier(%s)\n", always_works_md[0].name);
+        fprintf(stderr, "(Optimize %d) Test Default Barrier(%s)\n", o, always_works_md[0].name);
 
       rc |= blocking_coll(context[iContext], &barrier, &poll_flag);
 
@@ -96,7 +114,7 @@ int main(int argc, char*argv[])
         return 1;
 
       if (!task_id)
-        fprintf(stderr, "Barrier Done (%s)\n", always_works_md[0].name);
+        fprintf(stderr, "(Optimize %d) Barrier Done (%s)\n", o, always_works_md[0].name);
     }
 
     for (nalg = 0; nalg < num_algorithm[0]; nalg++)
@@ -106,8 +124,8 @@ int main(int argc, char*argv[])
 
       if (!task_id)
       {
-        printf("# Barrier Test -- context = %d, protocol: %s (%d of %zd algorithms)\n",
-               iContext, always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
+        printf("# Barrier Test -- context = %d, optimize = %d, protocol: %s (%d of %zd algorithms)\n",
+               iContext, o, always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
         printf("# -------------------------------------------------------------------\n");
       }
 
@@ -121,8 +139,8 @@ int main(int argc, char*argv[])
       {
         if (!task_id)
         {
-          fprintf(stderr, "Test Barrier protocol(%s) Correctness (%d of %zd algorithms)\n",
-                  always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
+          fprintf(stderr, "Test Barrier optimize = %d, protocol: %s correctness (%d of %zd algorithms)\n",
+                  o, always_works_md[nalg].name, nalg + 1, num_algorithm[0]);
           ti = timer();
           blocking_coll(context[iContext], &barrier, &poll_flag);
           tf = timer();
@@ -176,6 +194,7 @@ int main(int argc, char*argv[])
     free(must_query_algo);
     free(must_query_md);
 
+    } /* optimize loop */
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
   rc |= pami_shutdown(&client, context, &gNum_contexts);

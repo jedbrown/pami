@@ -74,24 +74,6 @@ int main(int argc, char*argv[])
 
   if (rc != PAMI_SUCCESS)
     return 1;
-  int o;
-  for(o = -1; o <= gOptimize ; o++) /* -1 = default, 0 = de-optimize, 1 = optimize */
-  {
-
-    pami_configuration_t configuration[1];
-    configuration[0].name = PAMI_GEOMETRY_OPTIMIZE;
-    configuration[0].value.intval = o; /* de/optimize */
-    if(o == -1) ; /* skip update, use defaults */
-    else
-      rc |= update_geometry(client,
-                            context[0],
-                            world_geometry,
-                            configuration,
-                            1);
-
-    if (rc != PAMI_SUCCESS)
-    return 1;
-
   /*  Query the world geometry for barrier algorithms */
   rc |= query_geometry_world(client,
                              context[0],
@@ -117,6 +99,24 @@ int main(int argc, char*argv[])
 
     if (task_id == 0)
       printf("# Context: %u\n", iContext);
+
+  int o;
+  for(o = -1; o <= gOptimize ; o++) /* -1 = default, 0 = de-optimize, 1 = optimize */
+  {
+
+    pami_configuration_t configuration[1];
+    configuration[0].name = PAMI_GEOMETRY_OPTIMIZE;
+    configuration[0].value.intval = o; /* de/optimize */
+    if(o == -1) ; /* skip update, use defaults */
+    else
+      rc |= update_geometry(client,
+                            context[iContext],
+                            world_geometry,
+                            configuration,
+                            1);
+
+    if (rc != PAMI_SUCCESS)
+    return 1;
 
     /*  Query the world geometry for allreduce algorithms */
     rc |= query_geometry_world(client,
@@ -224,6 +224,7 @@ int main(int argc, char*argv[])
     free(allreduce_must_query_algo);
     free(allreduce_must_query_md);
 
+  } /* optimize loop */
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
   free(bar_always_works_algo);
@@ -231,7 +232,6 @@ int main(int argc, char*argv[])
   free(bar_must_query_algo);
   free(bar_must_query_md);
 
-  } /* optimize loop */
 
 
   sbuf = (char*)sbuf - gBuffer_offset;
