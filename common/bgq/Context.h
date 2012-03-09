@@ -1673,7 +1673,7 @@ namespace PAMI
 #endif
             {
             TRACE_FORMAT("id %zu, geometry %p", _contextid, go->geometry());
-            uint64_t  reduce_result[16];
+            uint64_t  reduce_result[16] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
             int n_multi = 0;
             _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);	
             go->registerWithOptimizer (_contextid, reduce_result, n_multi, receive_global, this );

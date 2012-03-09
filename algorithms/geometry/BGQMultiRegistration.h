@@ -164,9 +164,9 @@ namespace PAMI
         //if((__global.topology_local.size() == 64) && (pdt != PAMI_DOUBLE)) 
         //  result.check.datatype_op = 1;
         //else 
-        
+
         // Shmem_optimized has range limits on non-DOUBLEs
-        if(Opt_shmem && pdt != PAMI_DOUBLE)
+        if (Opt_shmem && pdt != PAMI_DOUBLE)
         {
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
           size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
@@ -420,21 +420,23 @@ namespace PAMI
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
-      CCMI::Adaptor::Broadcast::MultiCastComposite<true, 
-      MUGlobalDputNI,
-      PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
-      MUMcastCollectiveDputMetaData,
-      CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUCollectiveDputMultiCastFactory;
+    CCMI::Adaptor::Broadcast::MultiCastComposite<true, 
+    MUGlobalDputNI,
+    PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+    MUMcastCollectiveDputMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUCollectiveDputMultiCastFactory;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
-      CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
-      MUShmemGlobalDputNI,
-      PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
-      MUMcastShmemCollectiveDputMetaData,
-      CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUShmemCollectiveDputMultiCastFactory;
+    CCMI::Adaptor::Broadcast::MultiCastComposite< true, 
+    MUShmemGlobalDputNI,
+    PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID>, //Mcast over Mcomb (key)
+    MUMcastShmemCollectiveDputMetaData,
+    CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_BROADCAST > MUShmemCollectiveDputMultiCastFactory;
 
-    struct  MUCollDputMcastStorage {
-      union {
+    struct  MUCollDputMcastStorage
+    {
+      union
+      {
         char dput  [sizeof(MUCollectiveDputMultiCastFactory)];
         char shmemdput [sizeof(MUShmemCollectiveDputMultiCastFactory)];
       };
@@ -815,38 +817,38 @@ namespace PAMI
     typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
     CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     < 10,
-      CCMI::Schedule::TorusRect,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      get_rect_allgv_colors,
-      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
-      false, false> RectangleDputAllgather;
+    CCMI::Schedule::TorusRect,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    get_rect_allgv_colors,
+    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
+    false, false> RectangleDputAllgather;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgather,
-      rectangle_dput_allgather_metadata,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      PAMI_XFER_ALLGATHER >
-      RectangleDputAllgatherFactory;
+    rectangle_dput_allgather_metadata,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    PAMI_XFER_ALLGATHER >
+    RectangleDputAllgatherFactory;
 
     typedef CCMI::Adaptor::Allgather::AllgatherOnBroadcastT < 10, 10,
     CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
     < 10,
-      CCMI::Schedule::TorusRect,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      get_rect_allgv_colors,
-      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
-      true, true> RectangleDputAllgatherV;
+    CCMI::Schedule::TorusRect,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    get_rect_allgv_colors,
+    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX > ,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
+    true, true> RectangleDputAllgatherV;
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgatherV,
-      rectangle_dput_allgather_metadata,
-      CCMI::ConnectionManager::ColorMapConnMgr,
-      PAMI_XFER_ALLGATHERV_INT >
-      RectangleDputAllgatherVFactory;
+    rectangle_dput_allgather_metadata,
+    CCMI::ConnectionManager::ColorMapConnMgr,
+    PAMI_XFER_ALLGATHERV_INT >
+    RectangleDputAllgatherVFactory;
 
     //----------------------------------------------------------------------------
     /// \brief The BGQ Multi* registration class for Shmem and MU.
@@ -858,31 +860,31 @@ namespace PAMI
       template<class T_Factory>
       class GeometryInfo
       {
-        public:
-          GeometryInfo(pami_context_t              context,
-                              CCMI::Executor::Composite  *composite,
-                              void                       *allocator):
-              _context(context),
-              _composite(composite),
-              _allocator(allocator)
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
-            DO_DEBUG((templateName<T_Factory>()));
-            TRACE_FN_EXIT();
-          }
-          virtual ~GeometryInfo()
-          {
-            TRACE_FN_ENTER();
-            TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
-            DO_DEBUG((templateName<T_Factory>()));
-            T_Factory::cleanup_done_fn(_context, _composite, PAMI_SUCCESS);
+      public:
+        GeometryInfo(pami_context_t              context,
+                     CCMI::Executor::Composite  *composite,
+                     void                       *allocator):
+        _context(context),
+        _composite(composite),
+        _allocator(allocator)
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
+          DO_DEBUG((templateName<T_Factory>()));
+          TRACE_FN_EXIT();
+        }
+        virtual ~GeometryInfo()
+        {
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("<%p> %p, %p, %p",this,_context,_composite,_allocator);
+          DO_DEBUG((templateName<T_Factory>()));
+          T_Factory::cleanup_done_fn(_context, _composite, PAMI_SUCCESS);
 //            _allocator->returnObject(this); // ?!
-            TRACE_FN_EXIT();
-          }
-          pami_context_t                _context;
-          CCMI::Executor::Composite    *_composite;
-          void                         *_allocator;
+          TRACE_FN_EXIT();
+        }
+        pami_context_t                _context;
+        CCMI::Executor::Composite    *_composite;
+        void                         *_allocator;
       };
 
     public:
@@ -895,13 +897,14 @@ namespace PAMI
                                   size_t                               client_id,
                                   int                                 *dispatch_id,
                                   std::map<unsigned, pami_geometry_t> *geometry_map,
-				  T_Allocator                          &allocator,
-				  T_BigAllocator                       &big_allocator):
+                                  T_Allocator                          &allocator,
+                                  T_BigAllocator                       &big_allocator):
       CollRegistration<PAMI::CollRegistration::BGQMultiRegistration<T_Geometry, T_ShmemDevice, T_ShmemNativeInterface, T_MUDevice, T_MUNativeInterface, T_AxialDputNativeInterface, T_AxialShmemDputNativeInterface, T_Allocator, T_BigAllocator>, T_Geometry> (),
       _client(client),
       _context(context),
       _context_id(context_id),
       _dispatch_id(dispatch_id),
+      _phase_1_done(0),
       _geometry_map(geometry_map),
       _allocator (allocator),
       _big_allocator (big_allocator),
@@ -1009,8 +1012,8 @@ namespace PAMI
 
             if (_axial_shmem_mu_dput_ni->status() != PAMI_SUCCESS) _axial_shmem_mu_dput_ni = NULL; // Not enough resources?
           }
-	  else 
-	    _axial_shmem_mu_dput_ni = NULL;
+          else
+            _axial_shmem_mu_dput_ni = NULL;
 
           _gi_msync_factory = NULL;
           if (_mu_global_dput_ni)
@@ -1044,22 +1047,24 @@ namespace PAMI
           {
             _alltoallv_int_factory = new (_alltoallv_int_factory_storage) All2AllvFactory_int(_context,_context_id,mapidtogeometry,&_csconnmgr, _mu_m2m_vector_int_ni);
           }
-          
-          _mucollectivedputmulticastfactory         = NULL;	 
-          _mucollectivedputmulticombinefactory      = NULL;	
-          _mushmemcollectivedputmulticastfactory    = NULL;	 
-          _mushmemcollectivedputmulticombinefactory = NULL;	
-          if (__global.mapping.tSize() == 1) {
+
+          _mucollectivedputmulticastfactory         = NULL;  
+          _mucollectivedputmulticombinefactory      = NULL; 
+          _mushmemcollectivedputmulticastfactory    = NULL;  
+          _mushmemcollectivedputmulticombinefactory = NULL; 
+          if (__global.mapping.tSize() == 1)
+          {
             _mucollectivedputmulticastfactory    = new (_mucolldputmcast_storage.dput ) MUCollectiveDputMultiCastFactory(_context, _context_id, mapidtogeometry, &_sconnmgr, _mu_global_dput_ni);
-            
+
             _mucollectivedputmulticombinefactory    = new (_mucollectivedputmulticombinestorage ) MUCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_global_dput_ni);
           }
-          else {
+          else
+          {
             _mushmemcollectivedputmulticastfactory    = new (_mucolldputmcast_storage.shmemdput ) MUShmemCollectiveDputMultiCastFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
-            
+
             _mushmemcollectivedputmulticombinefactory    = new (_mushmemcollectivedputmulticombinestorage ) MUShmemCollectiveDputMulticombineFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _mu_shmem_global_dput_ni);
           }
-          
+
           TRACE_FORMAT("<%p> _axial_shmem_mu_dput_ni %p", this,_axial_shmem_mu_dput_ni);
           if (_axial_shmem_mu_dput_ni)
           {
@@ -1133,6 +1138,8 @@ namespace PAMI
 
       inline pami_result_t register_local_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int &n) 
       {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("_axial_mu_dput_ni %p",_axial_mu_dput_ni);
         if (_axial_mu_dput_ni == NULL)
           return PAMI_SUCCESS;
 
@@ -1143,16 +1150,22 @@ namespace PAMI
           *in = _axial_mu_dput_ni->getMsyncModel().getAllocationVector();
           n  = 1;
         }
+        TRACE_FORMAT("*in %zu, _axial_mu_dput_ni %p",*in,_axial_mu_dput_ni);
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }    
 
       inline pami_result_t receive_global_impl (size_t context_id, T_Geometry *geometry, uint64_t *in, int n) 
       {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("*in %zu, _axial_mu_dput_ni %p",*in,_axial_mu_dput_ni);
         if (_axial_mu_dput_ni == NULL)
           return PAMI_SUCCESS;
 
         PAMI_assert (n == 1);
 
+        TRACE_FORMAT("<%p>(%u)topology is coord? %s", this, __LINE__,(((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX))->type() == PAMI_COORD_TOPOLOGY)?"YES":"NO");
+        TRACE_FORMAT("<%p>(%u)factories available %p, %p", this, __LINE__,_mu_rectangle_msync_factory,_msync2d_rectangle_composite_factory);
         if ((((PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX))->type() == PAMI_COORD_TOPOLOGY)
             &&
             ((_mu_rectangle_msync_factory && __global.topology_local.size() == 1) ||
@@ -1161,19 +1174,21 @@ namespace PAMI
             )
            )
         {
+          TRACE_FORMAT("<%p>(%u)CKEY_RECTANGLE_CLASSROUTEID ", this, __LINE__);
           uint64_t result = *in;
           for (size_t i = 0; i < 64; ++i)
             if ((result & (0x1 << i)) != 0)
             {
               //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
               pami_result_t rc = _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
-	      if (rc == PAMI_SUCCESS)
-		geometry->setKey (context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
-              TRACE_FORMAT("<%p>(%u)GKEY_RECTANGLE_CLASSROUTEID %zu", this, __LINE__,(i+1));
+              if (rc == PAMI_SUCCESS)
+                geometry->setKey (context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
+              TRACE_FORMAT("<%p>(%u)CKEY_RECTANGLE_CLASSROUTEID %zu", this, __LINE__,(i+1));
               break;
             }
         }
 
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1267,8 +1282,8 @@ namespace PAMI
 
           // (Maybe) Add rectangle broadcasts
           TRACE_FORMAT("<%p>Analyze Rectangle factories %p/%p, %p/%p, isLocal? %u, rectangle_topo %u", this,
-                      _mu_rectangle_1color_dput_broadcast_factory, _mu_rectangle_dput_broadcast_factory,
-                      _shmem_mu_rectangle_1color_dput_broadcast_factory, _shmem_mu_rectangle_dput_broadcast_factory,
+                       _mu_rectangle_1color_dput_broadcast_factory, _mu_rectangle_dput_broadcast_factory,
+                       _shmem_mu_rectangle_1color_dput_broadcast_factory, _shmem_mu_rectangle_dput_broadcast_factory,
                        topology->isLocal(),rectangle_topo);
           if (rectangle_topo)
           {
@@ -1291,12 +1306,13 @@ namespace PAMI
             if (_mu_rectangle_dput_broadcast_factory)
               geometry->addCollective(PAMI_XFER_BROADCAST,  _mu_rectangle_dput_broadcast_factory, _context, _context_id);
 
-            if (local_sub_topology->size() < 32) {
-	      if(_rectangle_dput_allgather_factory)
-		geometry->addCollective(PAMI_XFER_ALLGATHER,  _rectangle_dput_allgather_factory, _context, _context_id);	      
-	      if (_rectangle_dput_allgatherv_factory)
-		geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
-	    }
+            if (local_sub_topology->size() < 32)
+            {
+              if (_rectangle_dput_allgather_factory)
+                geometry->addCollective(PAMI_XFER_ALLGATHER,  _rectangle_dput_allgather_factory, _context, _context_id);
+              if (_rectangle_dput_allgatherv_factory)
+                geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
+            }
           }
         }
         else if (phase == 1)
@@ -1309,7 +1325,12 @@ namespace PAMI
 
           // Add optimized binomial barrier
           if (_binomial_barrier_factory)
-            geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context, _context_id);
+          {  
+          /* With analyze, de-optimize, analyze, optimize, analyze, ... processing, the factory may have
+                     already been added to the algorithm list, so check first  */
+            if(_phase_1_done)
+              geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context, _context_id);
+          }
 
           if (_alltoall_factory)
             geometry->addCollective(PAMI_XFER_ALLTOALL, _alltoall_factory, _context, _context_id);
@@ -1399,19 +1420,24 @@ namespace PAMI
                   (_msync2d_rectangle_composite_factory) && 
                   (valr && valr != PAMI_CR_CKEY_FAIL)
                  )
-              { 
+              {
                 TRACE_FORMAT("<%p>Register 2D MU Rectangle msync 2", this);
-                CCMI::Executor::Composite *composite;
-                composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
-                PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
-                geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context, _context_id);
-                geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
-                                 (void*)composite);
-
-                COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
-                GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
-                new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, composite, &_geom_allocator);
-                geometry->setCleanupCallback(cleanupCallback, gi);
+                /* With analyze, de-optimize, analyze, optimize, analyze, ... processing, the composite may have
+                   already been created and added to the algorithm list, so check first  */
+                if(_phase_1_done)
+                {
+                  CCMI::Executor::Composite *composite;
+                  composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
+                  PAMI_assert(geometry->getKey(context_id, PAMI::Geometry::CKEY_BARRIERCOMPOSITE6)==composite);
+                  geometry->addCollective(PAMI_XFER_BARRIER, _msync2d_rectangle_composite_factory, _context, _context_id);
+                  geometry->setKey(context_id, PAMI::Geometry::CKEY_OPTIMIZEDBARRIERCOMPOSITE,
+                                   (void*)composite);
+  
+                  COMPILE_TIME_ASSERT(sizeof(GeometryInfo<MultiSync2DeviceRectangleFactory>) <= ProtocolAllocator::objsize);
+                  GeometryInfo<MultiSync2DeviceRectangleFactory>    *gi = (GeometryInfo<MultiSync2DeviceRectangleFactory>*) _geom_allocator.allocateObject();
+                  new(gi) GeometryInfo<MultiSync2DeviceRectangleFactory>(_context, composite, &_geom_allocator);
+                  geometry->setCleanupCallback(cleanupCallback, gi);
+                }
               }
             }
           }
@@ -1518,10 +1544,10 @@ namespace PAMI
                 if (val && val != PAMI_CR_CKEY_FAIL && rectangle_topo)
                 {
                   if (_mushmemcollectivedputmulticombinefactory && 
-                    (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
+                      (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
                     geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,  _mushmemcollectivedputmulticombinefactory, _context,_context_id);
-                  if(_mushmemcollectivedputmulticastfactory && 
-                     (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
+                  if (_mushmemcollectivedputmulticastfactory && 
+                      (__global.topology_local.size() == __global.mapping.tSize())) /// \todo temp until the protocol is fixed
                     geometry->addCollective(PAMI_XFER_BROADCAST, _mushmemcollectivedputmulticastfactory, _context,_context_id);
                 }
 
@@ -1545,6 +1571,7 @@ namespace PAMI
 #endif
               }
           }
+          _phase_1_done = 1; /* Indicate that we've done phase 1 at least one time */
         }
         else if (phase == -1)
         {
@@ -1562,10 +1589,14 @@ namespace PAMI
 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context, _context_id);
+/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check _phase_1_done before (re)adding it. 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _binomial_barrier_factory,                 _context, _context_id);
+*/
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_composite_factory,                _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_gishm_composite_factory,          _context, _context_id);
+/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check _phase_1_done before (re)adding it. 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_rectangle_composite_factory,      _context, _context_id);
+*/
 
           if (_mucollectivedputmulticombinefactory)
             geometry->rmCollectiveCheck(PAMI_XFER_ALLREDUCE,_mucollectivedputmulticombinefactory, _context, _context_id);
@@ -1595,6 +1626,7 @@ namespace PAMI
       // This is a pointer to the current dispatch id of the context
       // This will be decremented by the ConstructNativeInterface routines
       int                                            *_dispatch_id;
+      int                                             _phase_1_done;
       std::map<unsigned, pami_geometry_t>            *_geometry_map;
 
       T_Allocator                                    &_allocator;
@@ -1772,8 +1804,8 @@ namespace PAMI
         //CCMI::Executor::Composite *opt_barrier_composite = (CCMI::Executor::Composite *)gi->_opt_barrier_composite;
 
         PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  *geom_allocator =
-          (PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  *)gi->_allocator;
-        
+        (PAMI::MemoryAllocator<sizeof(GeometryInfo<CCMI::Adaptor::CollectiveProtocolFactory>),16>  *)gi->_allocator;
+
         //if(opt_barrier_composite) OptBinomialBarrierFactory::cleanup_done_fn(ctxt, opt_barrier_composite, res);
         //opt_barrier_composite->_factory->_alloc.returnObject(opt_barrier_composite);
 
