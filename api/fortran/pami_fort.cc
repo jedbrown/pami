@@ -68,7 +68,7 @@ extern "C" {
       pami_geometry_t     PAMI_GEOMETRY_NULL;
       pami_algorithm_t    PAMI_ALGORITHM_NULL;
       pami_endpoint_t     PAMI_ENDPOINT_NULL;
-
+      size_t              PAMI_ALL_CONTEXTS;
     } pami_fort_globals;
 }
 
