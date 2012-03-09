@@ -666,7 +666,7 @@ namespace CCMI
                 {
                   case PAMI_FLOAT:
                     sizeOfType = sizeof(float);
-                    func = (coremath) Core_uint32_lxor;
+                    func = (coremath) Core_fp32_lxor;
                     break;
                   case PAMI_UNSIGNED_INT:
                     sizeOfType = sizeof(unsigned int);
@@ -692,7 +692,7 @@ namespace CCMI
                     break;
                   case PAMI_DOUBLE:
                     sizeOfType = sizeof(double);
-                    func = (coremath) Core_uint64_lxor;
+                    func = (coremath) Core_fp64_lxor;
                     break;
                   case PAMI_SIGNED_LONG_LONG:
                     sizeOfType = sizeof(long long);

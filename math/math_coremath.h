@@ -1964,6 +1964,26 @@ static inline void Core_fp32_max(float *dst, const float **srcs, int nsrc, int c
 }
 
 /**
+ * \brief Optimized LXOR on float datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized LXOR operation on \a count float
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp32_lxor(float *dst, const float **srcs, int nsrc, int count) {
+        switch(nsrc) {
+/*        OPTIMIZED_fp32_lxor */
+        default:
+                _pami_core_fp32_lxor(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
  * \brief Optimized MIN on float datatypes.
  *
  * \param dst The destination buffer.
@@ -2099,6 +2119,26 @@ static inline void Core_fp32_fp32_minloc(fp32_fp32_t *dst, const fp32_fp32_t **s
         OPTIMIZED_fp32_fp32_minloc
         default:
                 _pami_core_fp32_fp32_minloc(dst, srcs, nsrc, count);
+                break;
+        }
+}
+
+/**
+ * \brief Optimized LXOR on double datatypes.
+ *
+ * \param dst The destination buffer.
+ * \param srcs The source buffers.
+ * \param nsrc The number of source buffers.
+ * \param count The number of elements.
+ *
+ * Optimized LXOR operation on \a count double
+ * elements of the source buffers, results in destination buffer.
+ */
+static inline void Core_fp64_lxor(double *dst, const double **srcs, int nsrc, int count) {
+        switch(nsrc) {
+/*        OPTIMIZED_fp64_lxor */
+        default:
+                _pami_core_fp64_lxor(dst, srcs, nsrc, count);
                 break;
         }
 }
