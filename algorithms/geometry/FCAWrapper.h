@@ -101,7 +101,7 @@ public:
     GeometryInfo *gi = (GeometryInfo*)(g->getKey(this->_context_id,
                                                  Geometry::CKEY_FCAGEOMETRYINFO));
     fca_comm_caps_t comm_caps;
-    int rc = FCA_Comm_get_caps(gi->_fca_comm, &comm_caps);
+    int rc = FCA_Comm_get_caps(gi->_fca_comm, &comm_caps); (void) rc;
     PAMI_assertf(rc == 0, "FCA_Comm_get_caps failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -243,7 +243,7 @@ public:
   }
   virtual void start()
   {
-    int rc = FCA_Do_reduce(this->_c, &_spec);
+    int rc = FCA_Do_reduce(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_reduce failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -293,7 +293,7 @@ public:
   }
   virtual void start()
   {
-    int rc = FCA_Do_all_reduce(this->_c, &_spec);
+    int rc = FCA_Do_all_reduce(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -342,7 +342,7 @@ public:
     }
   virtual void start()
   {
-    int rc = FCA_Do_bcast(this->_c, &_spec);
+    int rc = FCA_Do_bcast(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -384,7 +384,7 @@ public:
     }
   virtual void start()
   {
-    int rc = FCA_Do_allgather(this->_c, &_spec);
+    int rc = FCA_Do_allgather(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));
@@ -427,7 +427,7 @@ public:
     }
   virtual void start()
   {
-    int rc = FCA_Do_allgatherv(this->_c, &_spec);
+    int rc = FCA_Do_allgatherv(this->_c, &_spec); (void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d [%s]",
             rc, 
             FCA_Strerror(rc));
@@ -489,7 +489,7 @@ public:
     }
   virtual void start()
   {
-    int rc = FCA_Do_barrier(this->_c);
+    int rc = FCA_Do_barrier(this->_c); (void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_barrier failed with rc=%d [%s]",
             rc,
             FCA_Strerror(rc));

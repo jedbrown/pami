@@ -14,7 +14,7 @@
 #include "core/fca_errno.h"
 
 // Define this to turn on dlopened FCA functions
-#define FCA_DLOPEN
+// #define FCA_DLOPEN
 const char *FCA_cmd_list[] =
 {
   "fca_get_version",
