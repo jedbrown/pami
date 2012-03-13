@@ -25,6 +25,7 @@ namespace PAMI
         inline size_t getId ();
 
         inline pami_result_t destroy ();
+        inline pami_result_t term_wait ();
 
         inline pami_result_t post (pami_work_t *state, pami_work_function work_fn, void * cookie);
 
@@ -130,6 +131,12 @@ namespace PAMI
     pami_result_t Context<T_Context>::destroy ()
     {
       return static_cast<T_Context*>(this)->destroy_impl();
+    }
+
+    template <class T_Context>
+    pami_result_t Context<T_Context>::term_wait ()
+    {
+      return static_cast<T_Context*>(this)->term_wait_impl();
     }
 
     template <class T_Context>

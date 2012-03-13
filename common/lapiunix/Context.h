@@ -546,10 +546,20 @@ namespace PAMI
         {
           if(_cau_collreg)
               _cau_collreg->invalidateContext();
-          LapiImpl::Context *ep = (LapiImpl::Context *)(lapi_state_t*)_lapi_state;
-          int rc = LAPI__Term(ep->my_hndl);
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          internal_rc_t rc = (cp->*(cp->pTerm))();
           if (rc) {
             RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
+          }
+          return PAMI_SUCCESS;
+        }
+
+      inline pami_result_t term_wait_impl ()
+        {
+          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+          internal_rc_t rc = (cp->*(cp->pTermWait))();
+          if (rc) {
+            RETURN_ERR_PAMI(PAMI_ERROR, "TermWait failed with rc %d\n", rc);
           }
           return PAMI_SUCCESS;
         }
