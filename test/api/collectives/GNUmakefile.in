@@ -41,6 +41,7 @@ APPS            += alltoallv_subcomm.${EXTENSION}
 APPS            += ambcast.${EXTENSION}
 APPS            += ambcast_contig.${EXTENSION}
 APPS            += amgather.${EXTENSION}
+APPS            += amgather_multiep.${EXTENSION}
 APPS            += amreduce.${EXTENSION}
 APPS            += amscatter.${EXTENSION}
 APPS            += barrier.${EXTENSION}

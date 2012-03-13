@@ -59,12 +59,12 @@ namespace CCMI
 
           AMGatherT (pami_context_t                         ctxt,
                      size_t                                 ctxt_id,
-                     Interfaces::NativeInterface              * native,
-                     T_Conn                                   * cmgr,
-                     pami_callback_t                            cb_scatter_done,
-                     pami_callback_t                            cb_gather_done,
-                     PAMI_GEOMETRY_CLASS                      * geometry,
-                     unsigned                                   root):
+                     Interfaces::NativeInterface          * native,
+                     T_Conn                               * cmgr,
+                     pami_callback_t                        cb_scatter_done,
+                     pami_callback_t                        cb_gather_done,
+                     PAMI_GEOMETRY_CLASS                  * geometry,
+                     unsigned                               root):
               Executor::Composite(),
               _scatter_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
               _gather_executor (native, cmgr, geometry->comm(), (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX)),
@@ -188,7 +188,7 @@ namespace CCMI
 
             co = _free_pool.allocate(key);
 
-            PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amg_xfer->dispatch);
+            PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(_context_id, amg_xfer->dispatch);
             PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amg_xfer->dispatch);
 
             pami_recv_t send = {0,};
@@ -196,14 +196,14 @@ namespace CCMI
             unsigned bytes   = amg_xfer->rtypecount * rtype->GetDataSize();
             // Invoke the dispatch function 
             dispatch->fn.amgather (
-                 this->_context,              // context
-                 dispatch->cookie,      // user cookie
+                 this->_context,           // context
+                 dispatch->cookie,         // user cookie
                  (char *)amg_xfer->headers + topo->endpoint2Index(this->_native->endpoint()) * amg_xfer->headerlen, // User header
-                 amg_xfer->headerlen,   // User header size
-                 bytes,                 // Number of bytes of message data
-                 this->_native->endpoint(),     // origin (root)
-                 g,                     // Geometry
-                 &send);                // recv info
+                 amg_xfer->headerlen,      // User header size
+                 bytes,                    // Number of bytes of message data
+                 this->_native->endpoint(),// origin (root)
+                 g,                        // Geometry
+                 &send);                   // recv info
 
             // Set the completion callback and cookie passed in by the user
             xfer->cb_done = send.local_fn;
@@ -392,7 +392,7 @@ namespace CCMI
                 pami_recv_t send = {0,};
 
                 PAMI::Geometry::DispatchInfo *dispatch =
-                  co->getGeometry()->getDispatch(a_xfer->cmd.xfer_amgather.dispatch);
+                  co->getGeometry()->getDispatch(factory->_context_id, a_xfer->cmd.xfer_amgather.dispatch);
                 PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n",
                              a_xfer->cmd.xfer_amgather.dispatch);
 

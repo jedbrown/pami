@@ -46,7 +46,8 @@ public:
     if (exec)exec->start();
     return PAMI_SUCCESS;
   }
-  inline pami_result_t dispatch_set(size_t                           dispatch,
+  inline pami_result_t dispatch_set(size_t                           context_id,
+                                    size_t                           dispatch,
                                     pami_dispatch_callback_function  fn,
                                     void                            *cookie,
                                     pami_collective_hint_t           options)
@@ -55,7 +56,7 @@ public:
     info.fn = fn;
     info.cookie = cookie;
     info.options = options;
-    _geometry->setDispatch(dispatch, &info);
+    _geometry->setDispatch(context_id, dispatch, &info);
     return PAMI_SUCCESS;
   }
   Factory    *_factory;

@@ -30,6 +30,7 @@ double timer()
 }
 
 #include "coll_util.h"
+#include "coll_validate.h"
 
 #ifndef TRACE_ERR
 #define TRACE_ERR(x)

@@ -886,15 +886,15 @@ namespace PAMI
           return rc;
         }
 
-    inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t            algorithm,
-                                                    size_t                     dispatch,
+    inline pami_result_t amcollective_dispatch_impl (pami_algorithm_t               algorithm,
+                                                    size_t                          dispatch,
                                                     pami_dispatch_callback_function fn,
-                                                    void                     * cookie,
-                                                    pami_collective_hint_t      options)
+                                                    void                           *cookie,
+                                                    pami_collective_hint_t          options)
         {
           std::map<size_t,Geometry::Algorithm<PEGeometry> > *algo =
             (std::map<size_t,Geometry::Algorithm<PEGeometry> > *)algorithm;
-          return (*algo)[0].dispatch_set(dispatch, fn, cookie, options);
+          return (*algo)[0].dispatch_set(_contextid, dispatch, fn, cookie, options);
         }
 
 

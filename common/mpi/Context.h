@@ -603,7 +603,7 @@ namespace PAMI
                                                     pami_collective_hint_t      options)
       {
         Geometry::Algorithm<MPIGeometry> *algo = (Geometry::Algorithm<MPIGeometry> *)algorithm;
-        return algo->dispatch_set(dispatch, fn, cookie, options);
+        return algo->dispatch_set(_contextid, dispatch, fn, cookie, options);
       }
 
       inline pami_result_t dispatch_impl (size_t                         id,

@@ -193,7 +193,7 @@ namespace CCMI
             cb_exec_done.function   = broadcast_exec_done;
             cb_exec_done.clientdata = co;
 
-            PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amr_xfer->dispatch);
+            PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(_context_id, amr_xfer->dispatch);
             PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amr_xfer->dispatch);
 
             pami_recv_t send = {0,};
@@ -491,7 +491,7 @@ namespace CCMI
                 pami_recv_t send = {0,};
 
                 PAMI::Geometry::DispatchInfo *dispatch =
-                  co->getGeometry()->getDispatch(a_xfer->cmd.xfer_amreduce.dispatch);
+                  co->getGeometry()->getDispatch(factory->_context_id, a_xfer->cmd.xfer_amreduce.dispatch);
                 PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", a_xfer->cmd.xfer_amreduce.dispatch);
 
                 dispatch->fn.amreduce (

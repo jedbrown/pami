@@ -192,6 +192,13 @@ namespace PAMI
                                         nctxt*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
+        // Allocate per context active message dispatch information
+        rc = __global.heap_mm->memalign((void **)&_dispatch,
+                                        0,
+                                        nctxt*sizeof(DispatchMap));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
+
+
 
         for(size_t n=start_off; n<nctxt; n++)
         {
@@ -199,6 +206,7 @@ namespace PAMI
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
+          new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
       }
@@ -309,6 +317,12 @@ namespace PAMI
                                         MAX_CONTEXTS*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
+        // Allocate per context active message dispatch information
+        rc = __global.heap_mm->memalign((void **)&_dispatch,
+                                        0,
+                                        MAX_CONTEXTS*sizeof(DispatchMap));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
+
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
         {
@@ -316,6 +330,7 @@ namespace PAMI
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
+          new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
       }
@@ -439,6 +454,12 @@ namespace PAMI
                                         nctxt*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
+        // Allocate per context active message dispatch information
+        rc = __global.heap_mm->memalign((void **)&_dispatch,
+                                        0,
+                                        nctxt*sizeof(DispatchMap));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
+
 
         for(size_t n=start_off; n<nctxt; n++)
         {
@@ -446,6 +467,7 @@ namespace PAMI
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
+          new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
       }
@@ -527,6 +549,12 @@ namespace PAMI
                                         nctxt*sizeof(MatchQueue));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
+        // Allocate per context active message dispatch information
+        rc = __global.heap_mm->memalign((void **)&_dispatch,
+                                        0,
+                                        nctxt*sizeof(DispatchMap));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
+
 
         for(size_t n=start_off; n<nctxt; n++)
         {
@@ -534,6 +562,7 @@ namespace PAMI
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
+          new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
       }
@@ -696,16 +725,16 @@ namespace PAMI
         return _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(ordinal);
       }
 
-      inline void  setDispatch_impl(size_t key, DispatchInfo *value)
+      inline void  setDispatch_impl(size_t context_id, size_t key, DispatchInfo *value)
       {
-        _dispatch[key] = *value;
+        _dispatch[context_id][key] = *value;
       }
 
-      inline DispatchInfo  * getDispatch_impl(size_t key)
+      inline DispatchInfo  * getDispatch_impl(size_t context_id, size_t key)
       {
-        DispatchMap::iterator iter = _dispatch.find(key);
+        DispatchMap::iterator iter = _dispatch[context_id].find(key);
 
-        if(unlikely(iter == _dispatch.end()))
+        if(unlikely(iter == _dispatch[context_id].end()))
         {
           return (DispatchInfo *)NULL;
         }
@@ -1089,7 +1118,7 @@ namespace PAMI
       CleanupFunctions       _cleanupFcns;
       CleanupDatas           _cleanupDatas;
       CheckpointFunctions    _ckptFcns;
-      DispatchMap            _dispatch;
+      DispatchMap           *_dispatch;
     public:
       /// Blue Gene/Q Specific functions
 

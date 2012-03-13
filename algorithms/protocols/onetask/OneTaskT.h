@@ -144,6 +144,7 @@ inline pami_result_t copyData (void               * src_addr,
 template <class T_Collective_type>
 inline void doDispatch(pami_xfer_t                  *xfer,
                        pami_context_t                ctxt,
+                       size_t                        ctxt_id,
                        pami_endpoint_t               endpoint,
                        pami_geometry_t               g,
                        pami_recv_t                  *recv)
@@ -154,6 +155,7 @@ inline void doDispatch(pami_xfer_t                  *xfer,
 template <>
 inline void doDispatch<pami_ambroadcast_t>(pami_xfer_t                  *xfer,
                                            pami_context_t                ctxt,
+                                           size_t                        ctxt_id,
                                            pami_endpoint_t               endpoint,
                                            pami_geometry_t               g,
                                            pami_recv_t                  *recv)
@@ -166,13 +168,14 @@ inline void doDispatch<pami_ambroadcast_t>(pami_xfer_t                  *xfer,
 template <>
 inline void doDispatch<pami_amscatter_t>(pami_xfer_t                  *xfer,
                                          pami_context_t                ctxt,
+                                         size_t                        ctxt_id,
                                          pami_endpoint_t               endpoint,
                                          pami_geometry_t               g,
                                          pami_recv_t                  *recv)
 {
   PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
   pami_amscatter_t *ams_xfer = &(xfer->cmd.xfer_amscatter);
-  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(ams_xfer->dispatch);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(ctxt_id, ams_xfer->dispatch);
   PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", ams_xfer->dispatch);
 
   PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -198,13 +201,14 @@ inline void doDispatch<pami_amscatter_t>(pami_xfer_t                  *xfer,
 template <>
 inline void doDispatch<pami_amgather_t>(pami_xfer_t                  *xfer,
                                         pami_context_t                ctxt,
+                                        size_t                        ctxt_id,
                                         pami_endpoint_t               endpoint,
                                         pami_geometry_t               g,
                                         pami_recv_t                  *send)
 {
   PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
   pami_amgather_t *amg_xfer = &(xfer->cmd.xfer_amgather);
-  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amg_xfer->dispatch);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(ctxt_id, amg_xfer->dispatch);
   PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amg_xfer->dispatch);
 
   PAMI::Topology *topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -228,13 +232,14 @@ inline void doDispatch<pami_amgather_t>(pami_xfer_t                  *xfer,
 template <>
 inline void doDispatch<pami_amreduce_t>(pami_xfer_t                  *xfer,
                                         pami_context_t                ctxt,
+                                        size_t                        ctxt_id,
                                         pami_endpoint_t               endpoint,
                                         pami_geometry_t               g,
                                         pami_recv_t                  *send)
 {
   PAMI_GEOMETRY_CLASS *geometry = (PAMI_GEOMETRY_CLASS *)g;
   pami_amreduce_t *amr_xfer = &(xfer->cmd.xfer_amreduce);
-  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(amr_xfer->dispatch);
+  PAMI::Geometry::DispatchInfo *dispatch = geometry->getDispatch(ctxt_id, amr_xfer->dispatch);
   PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n", amr_xfer->dispatch);
 
   pami_data_function reduce_fn;
@@ -289,7 +294,7 @@ public:
                                            void                      * cmd)
     {
       pami_recv_t recv = {0,};
-      doDispatch<T_Collective_type>((pami_xfer_t *)cmd, _context, _native->endpoint(), g, &recv);
+      doDispatch<T_Collective_type>((pami_xfer_t *)cmd, _context, _context_id, _native->endpoint(), g, &recv);
       if(recv.local_fn)
         recv.local_fn (_context, recv.cookie, PAMI_SUCCESS);
 

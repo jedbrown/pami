@@ -154,8 +154,8 @@ namespace PAMI
       inline pami_endpoint_t             endpoint   (size_t ordinal);
       inline void                       setKey(size_t context_id, ckeys_t key, void*value);
 
-      inline void                       setDispatch(size_t key, DispatchInfo* value);
-      inline DispatchInfo              *getDispatch(size_t key);
+      inline void                       setDispatch(size_t context_id, size_t key, DispatchInfo* value);
+      inline DispatchInfo              *getDispatch(size_t context_id, size_t key);
       inline void                      *getKey(size_t context_id, ckeys_t key);
       inline pami_result_t              default_barrier(pami_event_function,void*,size_t,pami_context_t);
       inline void                       resetDefaultBarrier(size_t ctxt_id);
@@ -318,9 +318,9 @@ namespace PAMI
       return static_cast<T_Geometry*>(this)->endpoint_impl(ordinal);
     }
     template <class T_Geometry>
-    inline void                        Geometry<T_Geometry>::setDispatch (size_t key, DispatchInfo *value)
+    inline void                        Geometry<T_Geometry>::setDispatch (size_t context_id, size_t key, DispatchInfo *value)
     {
-      static_cast<T_Geometry*>(this)->setDispatch_impl(key, value);
+      static_cast<T_Geometry*>(this)->setDispatch_impl(context_id, key, value);
     }
     template <class T_Geometry>
     inline void                        Geometry<T_Geometry>::setKey (size_t context_id, ckeys_t key, void *value)
@@ -328,9 +328,9 @@ namespace PAMI
       static_cast<T_Geometry*>(this)->setKey_impl(context_id, key, value);
     }
     template <class T_Geometry>
-    inline DispatchInfo*               Geometry<T_Geometry>::getDispatch (size_t key)
+    inline DispatchInfo*               Geometry<T_Geometry>::getDispatch (size_t context_id, size_t key)
     {
-      return static_cast<T_Geometry*>(this)->getDispatch_impl(key);
+      return static_cast<T_Geometry*>(this)->getDispatch_impl(context_id, key);
     }
     template <class T_Geometry>
     inline void*                       Geometry<T_Geometry>::getKey (size_t context_id, ckeys_t key)

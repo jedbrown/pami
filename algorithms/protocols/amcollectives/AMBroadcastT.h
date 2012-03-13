@@ -449,7 +449,7 @@ namespace CCMI
                 pami_recv_t recv = {0,};
 
                 PAMI::Geometry::DispatchInfo *dispatch =
-                  co->getGeometry()->getDispatch(a_xfer->cmd.xfer_ambroadcast.dispatch);
+                  co->getGeometry()->getDispatch(factory->_context_id, a_xfer->cmd.xfer_ambroadcast.dispatch);
                 PAMI_assertf(dispatch != NULL, "Invalid dispatch ID: %zu\n",
                              a_xfer->cmd.xfer_ambroadcast.dispatch);
 

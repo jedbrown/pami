@@ -1508,7 +1508,7 @@ namespace PAMI
           (std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)algorithm;
         TRACE_FORMAT("algorithm %p, context %p, dispatch %zu, cookie %p, options %#X",algo,this,dispatch,cookie,*(unsigned*)&options);
         TRACE_FN_EXIT();
-        return (*algo)[0].dispatch_set(dispatch, fn, cookie, options);
+        return (*algo)[0].dispatch_set(_contextid, dispatch, fn, cookie, options);
       }
 
       inline pami_result_t dispatch_impl (size_t                          id,
