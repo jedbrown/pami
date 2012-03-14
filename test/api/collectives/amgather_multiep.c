@@ -332,7 +332,7 @@ static void *amgather_test(void *p)
 
   int                  nalg = 0, i;
   double               ti, tf, usec;
-  int                  rc;
+  int                  rc = 0;
 
   if(gNumRoots == -1) gNumRoots = num_ep;
 

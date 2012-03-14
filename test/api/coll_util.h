@@ -334,7 +334,10 @@ int create_and_query_geometry(pami_client_t           client,
                           must_query_md);
 }
 
-static size_t get_type_size(pami_type_t intype)
+/* If this cannot be inlined, this function definition
+   should be moved into its own .c file
+*/
+static inline size_t get_type_size(pami_type_t intype)
 {
   pami_result_t        res;
   pami_configuration_t config;
