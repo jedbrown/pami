@@ -976,6 +976,7 @@ fprintf(stderr, "%s\n", buf);
 #endif // TRACE_CLASSROUTES
 	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_gicrdata);
+				_inited[id] = 0;
 	      if (last)
 	      {
 	        // see Coll case above...
@@ -996,7 +997,10 @@ fprintf(stderr, "%s\n", buf);
 	  geom->setKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID, NULL);
 	  return PAMI_SUCCESS;
 	}
-
+	void setGITable(uint8_t* tbl)
+	{
+		_inited = tbl;
+	}
       private:
 	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
 	{
@@ -1801,6 +1805,7 @@ fprintf(stderr, "%s\n", buf);
 	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
 	void *_gicrdata; // (ditto)
+  uint8_t             *_inited;
 	// _pinInfo is an array of entries.  Each entry has info for when there
 	// are a specific number of inj fifos in the context.
 	// There are 10 entries, for 1 fifo, 2 fifos, ..., 10 fifos.

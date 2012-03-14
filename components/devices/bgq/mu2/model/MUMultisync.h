@@ -66,6 +66,7 @@ namespace PAMI
           //Initialize comm world
           memset (_inited, 0, sizeof(_inited));
           int rc = 0;
+          __MUGlobal.getMuRM().setGITable(_inited);
           rc = MUSPI_GIBarrierInit ( &_giBarrier[cw_classroute], cw_classroute );
           PAMI_assert (rc == 0);
           _inited[cw_classroute] = 1;
