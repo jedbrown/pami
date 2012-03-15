@@ -218,9 +218,12 @@ namespace PAMI
 
     static void fca_progress_fn(void *arg)
     {
-      PAMI::Context *c  = (PAMI::Context*)arg;
-      pami_result_t res = PAMI_SUCCESS;
-      c->advance(1, res);
+      if ( (arg != NULL) && ((LapiImpl::Context *)arg)->initialized ) {
+        // work around the problem caused by Mellanox FCA invoking progress
+        // function after FCA context is destroyed
+        pami_result_t res = PAMI_SUCCESS;
+        ((PAMI::Context*)arg)->advance(1, res);
+      }
     }
 
     inline pami_result_t initCollectives(Context               *ctxt,
@@ -1089,10 +1092,12 @@ namespace PAMI
         PAMI::Context *ctxt   = (PAMI::Context*)context;
         PAMI::Client  *client = (PAMI::Client*)ctxt->getClient();
         client->lock();
+        classroute->_work.setStatus(PAMI::Device::Idle);
         ctxt->_fca_collreg->analyze(ctxt->getId(),
                                     classroute->_geometry,
                                     &reduce_result[fca_index],&count,
                                     2);
+        classroute->_work.setStatus(PAMI::Device::Ready);
         client->unlock();
       }
 
@@ -1129,11 +1134,13 @@ namespace PAMI
                                      1,
                                      &reduce_result[2]);
 
+        classroute->_work.setStatus(PAMI::Device::Idle);
         ctxt->_fca_collreg->analyze(ctxt->getId(),
                                     classroute->_geometry,
                                     &reduce_result[fca_index],&count,
                                     /*&reduce_result[2],&count,*/
                                     1);
+        classroute->_work.setStatus(PAMI::Device::Ready);
         client->unlock();
       }
       

@@ -83,7 +83,6 @@ public:
         _fca_init_spec.job_id        = _Lapi_env.MP_partition;
         _fca_init_spec.rank_id       = _Lapi_env.MP_child;
         _fca_init_spec.progress.func = func;
-        _fca_init_spec.progress.func = NULL;
         _fca_init_spec.progress.arg  = (void*)context;
         _fca_init_spec.dev_selector  = NULL;
         _fca_init_spec.config        = FCA_Default_config;
