@@ -87,7 +87,7 @@ namespace PAMI
           PAMI_assert(devinfo);
           classroute = (size_t)devinfo - 1;
 
-          if (!_inited[classroute])
+	  //          if (!_inited[classroute])
           {
             TRACE_FORMAT( "<%p> %p connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
             int rc = 0;

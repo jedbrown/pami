@@ -517,6 +517,7 @@ if (rc) fprintf(stderr, "Kernel_AllocateGlobalInterruptClassRoute(%d) failed %d 
 	  _pamiRM( pamiRM ),
 	  _mapping( mapping ),
 	  _pers( pers ),
+    _inited(NULL),
 	  _tSize( mapping.tSize() ),
 	  _myT( mapping.t() ),
 	  _perProcessMaxPamiResources( NULL ),
@@ -976,7 +977,7 @@ fprintf(stderr, "%s\n", buf);
 #endif // TRACE_CLASSROUTES
 	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_gicrdata);
-				_inited[id] = 0;
+	      if(_inited) _inited[id] = 0;
 	      if (last)
 	      {
 	        // see Coll case above...
