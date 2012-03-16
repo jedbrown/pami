@@ -356,7 +356,7 @@ namespace PAMI
 		  dpwq->produceBytes(bytes);
 		}
 	      
-	      cb_done (NULL, cookie, PAMI_SUCCESS);
+	      cb_done (_context, cookie, PAMI_SUCCESS);
 	    }
 	    else 
 	      postShortCompletion(cb_done, cookie, bytes, dpwq);
@@ -373,7 +373,7 @@ namespace PAMI
                 dpwq->produceBytes(bytes);
               }
 
-            cb_done (NULL, cookie, PAMI_SUCCESS);
+            cb_done (_context, cookie, PAMI_SUCCESS);
 #endif
 
             TRACE_FN_EXIT();
@@ -426,7 +426,7 @@ namespace PAMI
 	      if (dpwq)
 		dpwq->produceBytes(bytes);
 	      
-	      cb_done (NULL, cookie, PAMI_SUCCESS);
+	      cb_done (_context, cookie, PAMI_SUCCESS);
 	    }
 	    else
 	      postMidCompletion(cb_done, cookie, bytes, dpwq);
@@ -437,7 +437,7 @@ namespace PAMI
             if (dpwq)
 	      dpwq->produceBytes(bytes);
 	    
-            cb_done (NULL, cookie, PAMI_SUCCESS);
+            cb_done (_context, cookie, PAMI_SUCCESS);
 #endif
 
             TRACE_FN_EXIT();
