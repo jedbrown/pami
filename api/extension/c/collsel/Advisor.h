@@ -18,7 +18,7 @@ public:
   ~Advisor();
 private:
   pami_client_t            _client;
-  advisor_configuration_t *_configuration
+  advisor_configuration_t *_configuration;
   size_t                   _num_configs;
   pami_context_t          *_contexts;
   size_t                   _num_contexts;
@@ -49,4 +49,5 @@ inline Advisor::~Advisor()
   
 }
 
+} // Nnamespace pami
 #endif // __api_extension_c_collsel_Extension_h__
