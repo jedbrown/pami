@@ -37,11 +37,8 @@ namespace PAMI{
     if (strcasecmp (name, "Collsel_destroy_fn") == 0)
       return (void *) PAMI::CollselExtension::Collsel_destroy_fn;
 
-    if (strcasecmp (name, "Collsel_table_create_fn") == 0)
-      return (void *) PAMI::CollselExtension::Collsel_table_create_fn;
-
-    if (strcasecmp (name, "Collsel_table_update_fn") == 0)
-      return (void *) PAMI::CollselExtension::Collsel_table_update_fn;
+    if (strcasecmp (name, "Collsel_table_generate_fn") == 0)
+      return (void *) PAMI::CollselExtension::Collsel_table_generate_fn;
 
     if (strcasecmp (name, "Collsel_table_load_fn") == 0)
       return (void *) PAMI::CollselExtension::Collsel_table_load_fn;

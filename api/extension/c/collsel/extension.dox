@@ -3,6 +3,7 @@ typedef void* advisor_table_t;
 typedef enum {
 
 }  advisor_attribute_name_t;
+
 typedef union
 {
   size_t         intval;
@@ -17,12 +18,24 @@ typedef struct
   advisor_attribute_value_t value;
 } advisor_configuration_t;
 
+/**
+ * Parameters used to generate the selection table
+ */
+typedef struct {
+   pami_xfer_type_t  *collectives;        /** List of collectives to benchmark */
+   size_t             num_collectives;    /** Size of collectives list */
+   size_t            *geometry_sizes;     /** List of geometry sizes */
+   size_t             num_geometry_sizes; /** Size of geometry list */
+   size_t            *message_sizes;      /** List of message sizes */
+   size_t             num_message_sizes;  /** Message sizes list size */
+} advisor_params_t;
+
 typedef struct
 {
   pami_algorithm_t            algo;
   pami_metadata_t             md;
   int                         must_query;
-} sorted_algorithm_t;
+} advisor_algorithm_t;
 
 typedef void* fast_query_t;
 
@@ -44,11 +57,12 @@ int Collsel_init(pami_client_t            client,
                  pami_context_t           contexts[],
                  size_t                   num_contexts,
                  advisor_t               *advisor);
+
 /** \brief finalize the collective runtime advisor
  * \param [in] advisor       A pami collective advisor object pointer
  *
- * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
- * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
+ * \retval ::PAMI_SUCCESS  The advisor has been successfully destroyed.
+ * \retval ::PAMI_INVAL    The advisor handle is invalid, e.g. already destroyed.
  */
 int Collsel_destroy(advisor_t *advisor);
 
@@ -61,11 +75,11 @@ int Collsel_destroy(advisor_t *advisor);
  * This uses the configuration to select which geometries are profiled
  *
  * \param [in] advisor             A pami collective advisor object pointer
- * \param [in] out                 output table
- * \param [in] geometry_sizes      a list of geometry sizes to profile
- * \param [in] num_geometry_sizes  number of entries in the geometry_sizes list
- * \param [in] message_sizes       a list of message sizes
- * \param [in] num_message_sizes   number of entries in the message_sizes list
+ * \param [in] filename            File name for the output table
+ * \param [in] advisor_params      A list of parameters used to generate the table 
+ *                                 eg. Geometry sizes, Message sizes, list of collectives etc
+ * \param [in] mode                1 = Create a new file or overwrite if one already exists
+ *                                 0 = Update an existing file or return an error if one does not exist
  *
  *  If num_geometry_sizes is 0 and num_message_sizes is 0, create a default table
  *  By default, scan powers of 2, and power of (2^n) +/-1 on geometry size
@@ -82,27 +96,18 @@ int Collsel_destroy(advisor_t *advisor);
  *  etc).  For now, we can probably assume the 1 thread per context model will be the default
  *  mode.
  *
- *  If the filename is located in a shared file system, one task will write the table to the fs.
- *  If the filename is located in a local, non-shared file system, each task will write the data.
+ *  The generated file can either be on a shared or local file system.
  *  It is illegal to generate the file on some tasks to a shared file system, and some to local(too restrictive?!).
  *
- * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
- * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
+ * \retval ::PAMI_SUCCESS  The collective selection table was successfuly created/updated
+ * \retval ::PAMI_INVAL    The advisor handle is invalid, e.g. already destroyed.
+ * \retval ::PAMI_ERROR    There was an error creating/updating the selection table
  */
-int Collsel_table_create(advisor_t  advisor,
-                         char      *filename,
-                         size_t     geometry_sizes[],
-                         size_t     num_geometry_sizes,
-                         size_t     message_sizes[],
-                         size_t     num_message_sizes);
-/* Updates for a single collective type */
-int Collsel_table_update(advisor_t         advisor,
-                         char             *filename,
-                         pami_xfer_type_t  xfer_type,
-                         size_t            geometry_sizes[],
-                         size_t            num_geometry_sizes,
-                         size_t            message_sizes[],
-                         size_t            num_message_sizes);
+int Collsel_table_generate(advisor_t         advisor,
+                           char             *filename,
+                           advisor_params_t *params,
+                           int               mode);
+
 
 /* This section is for table query routines
  * Generally used at geometry create time to
@@ -110,19 +115,47 @@ int Collsel_table_update(advisor_t         advisor,
  * and also to merge lists of table data with geometry data
  */
 
-/* At INIT time? */
+/* At INIT time */
+/**
+ * Load the collectives algorithm selection data from file
+ * 
+ * \param [in]  advisor        A pami collective advisor object
+ * \param [in]  filename       File name for the input table
+ * \param [out] advisor_table  A advisor table handle 
+ *
+ * \retval ::PAMI_SUCCESS  The advisor table has been successfully loaded.
+ * \retval ::PAMI_INVAL    The advisor table could not be initialized
+ */
 int Collsel_table_load(advisor_t        advisor,
                        char            *filename,
                        advisor_table_t *advisor_table);
 
+/**
+ * Free up any resources allocated for the advisor table
+ *
+ * \param [in] advisor_table  A advisor table handle
+ *
+ * \retval ::PAMI_SUCCESS  The advisor table resources have been freed
+ * \retval ::PAMI_INVAL    The advisor table handle is invalid
+ */
 int Collsel_table_unload(advisor_table_t *advisor_table);
 
 /*
- * 1) Find a geometry in the table that is "most similar" to the input geometry
+ * Find a geometry in the advisor table that is "most similar" to the input 
+ * geometry. This API is most likely to be used at the time of geometry creation.
+ * Return a fast query object which can be used to query the advisor for 
+ * optimal algorithms at the collective call site.
+ *
+ * \param [in]  advisor_table  A advisor table handle
+ * \param [in]  geometry       A pami geometry
+ * \param [out] fast_query     A query object which can be used for fast lookups
+ *
+ * \retval ::PAMI_SUCCESS  The advisor table lookup was successful
+ * \retval ::PAMI_INVAL    The advisor table does not contain a match for this geometry
  */
 int Collsel_query(advisor_table_t *advisor_table,
                   pami_geometry_t  geometry,
-                  fast_query_t    *fast_query );
+                  fast_query_t    *fast_query);
 
 /*
  * This fast lookup really needs to be FAST.  Therefore, this API
@@ -130,6 +163,12 @@ int Collsel_query(advisor_table_t *advisor_table,
  * to be preserved
  *
  * Another approach may be to let the user build their own table.
+ *
+ * \param [in]  fast_query           A handle to a subset of the advisor table
+ * \param [in]  xfer_type            Collective xfer type 
+ * \param [in]  xfer                 Collective operation arguments 
+ * \param [out] algorithms_optimized Algorithms sorted by relative performance 
+ * \param [in]  max_algorithms       Max number of algorithms that can be returned 
  */
 int Collsel_advise(fast_query_t        fast_query,
                    pami_xfer_type_t    xfer_type,
@@ -147,20 +186,10 @@ typedef int (*Collsel_init_fn)(pami_client_t            client,
 
 typedef int (*Collsel_destroy_fn)(advisor_t *advisor);
 
-typedef int (*Collsel_table_create_fn)(advisor_t  advisor,
-                                       char      *filename,
-                                       size_t     geometry_sizes[],
-                                       size_t     num_geometry_sizes,
-                                       size_t     message_sizes[],
-                                       size_t     num_message_sizes);
-
-typedef int (*Collsel_table_update_fn)(advisor_t         advisor,
-                                       char             *filename,
-                                       pami_xfer_type_t  xfer_type,
-                                       size_t            geometry_sizes[],
-                                       size_t            num_geometry_sizes,
-                                       size_t            message_sizes[],
-                                       size_t            num_message_sizes);
+typedef int (*Collsel_table_generate_fn)(advisor_t         advisor,
+                                         char             *filename,
+                                         advisor_params_t *params,
+                                         int               mode);
 
 typedef int (*Collsel_table_load_fn)(advisor_t        advisor,
                                      char            *filename,

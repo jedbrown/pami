@@ -11,6 +11,7 @@ typedef void* advisor_table_t;
 typedef enum {
 
 }  advisor_attribute_name_t;
+
 typedef union
 {
   size_t         intval;
@@ -24,6 +25,15 @@ typedef struct
   advisor_attribute_name_t  name;
   advisor_attribute_value_t value;
 } advisor_configuration_t;
+
+typedef struct {
+   pami_xfer_type_t  *collectives;
+   size_t             num_collectives;
+   size_t            *geometry_sizes;
+   size_t             num_geometry_sizes;
+   size_t            *message_sizes;
+   size_t             num_message_sizes;
+} advisor_params_t;
 
 typedef struct
 {
@@ -46,20 +56,10 @@ public:
 
   static int Collsel_destroy_fn(advisor_t *advisor);
 
-  static int Collsel_table_create_fn(advisor_t  advisor,
-                                     char      *filename,
-                                     size_t     geometry_sizes[],
-                                     size_t     num_geometry_sizes,
-                                     size_t     message_sizes[],
-                                     size_t     num_message_sizes);
-
-  static int Collsel_table_update_fn(advisor_t         advisor,
-                                     char             *filename,
-                                     pami_xfer_type_t  xfer_type,
-                                     size_t            geometry_sizes[],
-                                     size_t            num_geometry_sizes,
-                                     size_t            message_sizes[],
-                                     size_t            num_message_sizes);
+  static int Collsel_table_generate_fn(advisor_t         advisor,
+                                       char             *filename,
+                                       advisor_params_t *params,
+                                       int               mode);
 
   static int Collsel_table_load_fn(advisor_t        advisor,
                                    char            *filename,
