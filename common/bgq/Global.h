@@ -394,7 +394,7 @@ namespace PAMI
       /// it to start.  If it does not start within a timeout period, a message
       /// will be printed and messaging will run without it.
       ///
-      inline void initializeCommAgent();
+      inline void initializeCommAgent( size_t aCoord, size_t bCoord, size_t cCoord, size_t dCoord, size_t eCoord, size_t tCoord );
 
 
       /// \brief Initialize Remote Get Pacing
@@ -537,7 +537,7 @@ namespace PAMI
 extern PAMI::Device::CommThread::Factory __commThreads;
 #endif // USE_COMMTHREADS
 
-void PAMI::Global::initializeCommAgent()
+void PAMI::Global::initializeCommAgent( size_t aCoord, size_t bCoord, size_t cCoord, size_t dCoord, size_t eCoord, size_t tCoord )
 {
   int rc;
 
@@ -562,7 +562,9 @@ void PAMI::Global::initializeCommAgent()
     // Continue onward without the agent.  
     if ( ( rc == ENOENT ) || ( rc == ENOMEM ) )
     {
-      printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  It may have been disabled (BG_APPAGENTCOMM=DISABLE), or there may be no shared memory available, or redirecting the mmcs console output for the block (redirect_block on) and re-running may show error messages.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
+      // Only print in 1 process.
+      if ( (aCoord + bCoord + cCoord + dCoord + eCoord + tCoord) == 0 )
+        printf("Warning:  The Messaging App Agent (Comm Agent) is not running.  It may have been disabled (BG_APPAGENTCOMM=DISABLE), or there may be no shared memory available, or redirecting the mmcs console output for the block (redirect_block on) and re-running may show error messages.  Messaging will continue to run, but has the following limitations:  1) Remote Get Pacing is not available (potentially causing network congestion, reducing performance), and 2) One-sided-put-fence operations will abort.\n");
     }
     else PAMI_assert_alwaysf(rc==0, "Messaging App Agent (Comm Agent) failed to initialize, rc=%d\n",rc);
   }
@@ -1218,7 +1220,7 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
   size_t eSize  = personality.eSize ();
   size_t tSize  = personality.tSize ();
 
-  initializeCommAgent();
+  initializeCommAgent( aCoord, bCoord, cCoord, dCoord, eCoord, tCoord );
   initializeFlexabilityMetric ( personality );
 
   TRACE_ERR( (stderr, "Global::initializeMapCache() .. myCoords{%zu %zu %zu %zu %zu %zu} size{%zu %zu %zu %zu %zu %zu}\n", aCoord, bCoord, cCoord, dCoord, eCoord, tCoord, aSize, bSize, cSize, dSize, eSize, tSize));
