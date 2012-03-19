@@ -13,8 +13,6 @@
  * Contexts are parallel "threading points" that an application may use to
  * optimize concurrent communications.
  *
- * \todo define a "threading point"
- *
  * Contexts have the following features:
  * - Contexts are a local resource for, and created by, each task
  * - Every context within a client has equivalent connectivity, functionality,

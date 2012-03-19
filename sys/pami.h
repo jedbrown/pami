@@ -1,6 +1,14 @@
+/* ------------------------------------------------------------------------- */
+/* Licensed Materials - Property of IBM                                      */
+/* Blue Gene/Q 5765-PER 5765-PRP                                             */
+/* © Copyright IBM Corp. 2012 All Rights Reserved                            */
+/* US Government Users Restricted Rights - Use, duplication or disclosure    */
+/*   restricted by GSA ADP Schedule Contract with IBM Corp.                  */
+/* ------------------------------------------------------------------------- */
+
 /**
  * \file sys/pami.h
- * \brief Common external interface for IBM's PAMI message layer.
+ * \brief PAMI
  */
 
 #ifndef __pami_h__
@@ -45,13 +53,14 @@ extern "C"
 
   /* The following are setters for various object handles                           */
   /* These allow PAMI users to set and test values for uninitialized object handles */
-  extern pami_client_t    PAMI_CLIENT_NULL;
-  extern pami_type_t      PAMI_TYPE_NULL;
-  extern pami_context_t   PAMI_CONTEXT_NULL;
-  extern pami_geometry_t  PAMI_GEOMETRY_NULL;
-  extern pami_algorithm_t PAMI_ALGORITHM_NULL;
-  extern pami_endpoint_t  PAMI_ENDPOINT_NULL;
-  extern size_t           PAMI_ALL_CONTEXTS;
+  extern pami_client_t    PAMI_CLIENT_NULL;    /**< Uninitialized client */
+  extern pami_type_t      PAMI_TYPE_NULL;      /**< Uninitialized type */
+  extern pami_context_t   PAMI_CONTEXT_NULL;   /**< Uninitialized context */
+  extern pami_geometry_t  PAMI_GEOMETRY_NULL;  /**< Uninitialized geometry */
+  extern pami_algorithm_t PAMI_ALGORITHM_NULL; /**< Uninitialized algorithm */
+  extern pami_endpoint_t  PAMI_ENDPOINT_NULL;  /**< Uninitialized endpoint */
+  extern size_t           PAMI_ALL_CONTEXTS;   /**< Select all endpoints in a task */
+
   /**
    * \brief Event callback function signature of application functions used to
    *        process message events on a communication context
@@ -75,13 +84,13 @@ extern "C"
    *       contexts. Operations on other communication contexts must be
    *       protected from re-entrant access from other execution resources by
    *       the application.
-   * 
+   *
    * \warning The application must take care to avoid deadlocks when protecting
    *          access to a communication context other than the communication
    *          context which invoked the event callback function. It is
    *          recommended that PAMI_Context_trylock() or PAMI_Context_post()
    *          be used instead of PAMI_Context_lock() in this situtation.
-   * 
+   *
    * \param [in] context   Communication context that invoked the callback
    * \param [in] cookie    Event callback application argument
    * \param [in] result    Asynchronous result information
@@ -135,9 +144,9 @@ extern "C"
    *
    * If the work callback function will return ::PAMI_EAGAIN then the
    * application must \b not have altered the pami_work_t object in any way.
-   * 
+   *
    * \see PAMI_Context_post()
-   * 
+   *
    * At the time a work function is invoked the application has already
    * protected access to the associated communication context, either by using
    * PAMI_Context_lock() or by some other mechanism. Consequently, application code
@@ -145,7 +154,7 @@ extern "C"
    * associated communication context and is \b not required to further protect
    * access to the context prior to invoking functions that operate on that
    * context.
-   * 
+   *
    * The work function is invoked as a result of an advance of the internal
    * progress engine of the associated communication context. The application
    * code executed from within a work callback function \b must \b not invoke
@@ -157,7 +166,7 @@ extern "C"
    *       contexts. Operations on other communication contexts must be
    *       protected from re-entrant access from other execution resources by
    *       the application.
-   * 
+   *
    * \warning The application must take care to avoid deadlocks when protecting
    *          access to a communication context other than the communication
    *          context which invoked the work callback function. It is
@@ -180,15 +189,17 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup configuration pami configuration interface
-   *
-   * Some brief documentation on configuration stuff ...
+   * \defgroup configuration Configuration
    * \{
    */
   /*****************************************************************************/
 
   typedef char* pami_user_key_t;   /**< Char string as configuration key */
   typedef char* pami_user_value_t; /**< Char string as configuration value */
+
+  /**
+   * \brief User configuration data structure
+   */
   typedef struct
   {
     pami_user_key_t    key;   /**< The configuration key   */
@@ -201,7 +212,7 @@ extern "C"
   typedef enum {
     /* Attribute            Query / Update                                 */
     PAMI_CLIENT_CLOCK_MHZ = 100,    /**< Q : size_t : Frequency of the CORE clock, in units of 10^6/seconds.  This can be used to approximate the performance of the current task. */
-    PAMI_CLIENT_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same PAMI_CLIENT_NUM_CONTEXTS */
+    PAMI_CLIENT_CONST_CONTEXTS,     /**< Q : size_t : All processes will return the same ::PAMI_CLIENT_NUM_CONTEXTS */
     PAMI_CLIENT_HWTHREADS_AVAILABLE,/**< Q : size_t : The number of HW threads available to a process without over-subscribing (at least 1) */
     PAMI_CLIENT_MEMREGION_SIZE,     /**< Q : size_t : Size of the pami_memregion_t handle in this implementation, in units of Bytes. */
     PAMI_CLIENT_MEM_SIZE,           /**< Q : size_t : Size of the core main memory, in units of 1024^2 Bytes    */
@@ -230,12 +241,15 @@ extern "C"
     PAMI_ATTRIBUTE_NAME_EXT = 1000  /**< Begin extension-specific values */
   } pami_attribute_name_t;
 
+  /**
+   * \brief Attribute value data structure
+   */
   typedef union
   {
-    size_t         intval;
-    double         doubleval;
-    const char *   chararray;
-    const size_t * intarray;
+    size_t         intval;          /**< integer value */
+    double         doubleval;       /**< double value */
+    const char   * chararray;       /**< char array value */
+    const size_t * intarray;        /**< integer array value */
   } pami_attribute_value_t;
 
   /** \} */ /* end of "configuration" group */
@@ -251,7 +265,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup PAMI Collectives Metadata
+   * \defgroup Collectives Metadata
    * \{
    */
   /*****************************************************************************/
@@ -263,153 +277,161 @@ extern "C"
    *  metadata struct.  The user can pass in the call site parameters (the pami_xfer_t)
    *  of the collective into this function and receive a list of failures.
    */
-    typedef union metadata_result_t
+  typedef union metadata_result_t
+  {
+    unsigned bitmask;                 /**< Raw bitmask data                    */
+    struct
     {
-      unsigned bitmask;
-      struct
-      {
-        unsigned unspecified:1;             /*  Unspecified failure              */
-        unsigned range:1;                   /*  Send/Recv bytes are out of range */
-        unsigned align_send_buffer:1;       /*  Send buffer must be aligned     */
-        unsigned align_recv_buffer:1;       /*  Receive buffer must be aligned  */
-        unsigned datatype_op:1;             /*  Datatype/operation not valid    */
-        unsigned contiguous_send:1;         /*  Send data must be contiguous    */
-        unsigned contiguous_recv:1;         /*  Receive data must be contiguous  */
-        unsigned continuous_send:1;         /*  Send data must be continuous    */
-        unsigned continuous_recv:1;         /*  Receive data must be continuous */
-        unsigned nonlocal:1;                /**<The protocol associated with this metadata
-                                                requires "nonlocal" knowledge, meaning that
-                                                the result code from the check_fn must be
-                                                allreduced to determine if the operation
-                                                will work 0:no, >0:  requires nonlocal data  */
+      unsigned unspecified       : 1; /**< Unspecified failure                 */
+      unsigned range             : 1; /**< Send/Recv bytes are out of range    */
+      unsigned align_send_buffer : 1; /**< Send buffer must be aligned         */
+      unsigned align_recv_buffer : 1; /**< Receive buffer must be aligned      */
+      unsigned datatype_op       : 1; /**< Datatype/operation not valid        */
+      unsigned contiguous_send   : 1; /**< Send data must be contiguous        */
+      unsigned contiguous_recv   : 1; /**< Receive data must be contiguous     */
+      unsigned continuous_send   : 1; /**< Send data must be continuous        */
+      unsigned continuous_recv   : 1; /**< Receive data must be continuous     */
+      unsigned nonlocal          : 1; /**< The protocol associated with this
+                                           metadata requires "nonlocal"
+                                           knowledge, meaning that the result
+                                           code from the check_fn must be
+                                           allreduced to determine if the
+                                           operation will work:
+                                           0:no, >0:  requires nonlocal data   */
 
-      }check;
-    }metadata_result_t;
+    } check;                          /**< Metadata 'reason' information       */
+  } metadata_result_t;
 
-  /*  Forward declaration of pami_xfer_t */
+  /* Forward declaration of pami_xfer_t */
   typedef struct pami_xfer_t *xfer_p;
 
   /**
    * \brief Function signature for metadata queries
    *
-   * \param[in] in A "call-site"   collective query parameters
-   * \retval    pami_metadata_check  failure code, 0=success, nonzero
+   * \param [in] in A "call-site"   collective query parameters
+   * \retval pami_metadata_check  failure code, 0=success, nonzero
    *                               bits are OR'd from pami_metadata_check_t
    */
   typedef metadata_result_t (*pami_metadata_function) (struct pami_xfer_t *in);
 
   /**
    * \brief A metadata structure to describe a collective protocol
+   *
+   * \b Correctness \b Parameters
+   *
+   * If an algorithm is placed on the "must query list", then the user must use the metadata
+   * to determine if the protocol can be issued given the call site parameters of the
+   * collective operation.
+   *
+   * This may include calling the check_fn function, which takes as input a pami_xfer_t
+   * corresponding to the call site parameters.  The call site is defined as the code location
+   * where the user will call the PAMI_Collective function.
+   *
+   * The semantics for when the user must call the check_fn function are as follows:
+   * If check_fn is NULL, and checkrequired is 0, the user cannot and is not required
+   * to call the check_fn function.  The user is still required to check the other bits
+   * in the bitmask_correct to determine if the collective parameters satisfy the
+   * requirements.
+   *
+   * check_fn will never be NULL when checkrequired is set to 1
+   *
+   * When check_fn is non-NULL and checkrequired is 1, the user must call the check_fn
+   * function for each call to PAMI_Collective to determine if the collective is valid.
+   * check_fn will return local validity of the parameters, and no other bits in the struct
+   * need to be checked. If the nonlocal bit is set in the return code, a reduction will
+   * be required to determine the validity of the protocol across tasks.
+   *
+   * When check_fn is non-NULL and checkrequired is 0, the user must call the check_fn
+   * for each set of parameters.  For a given pami_xfer_t structure with a given set of
+   * correctness bits set in the metadata, if the values of the parameters will change
+   * and are effected by the associated bits in the metadata, check_fn must be called.
+   * For example, if the alldtop bit is set, the user can cache that the protocol will work
+   * for all datatypes and operations. The user might still need to test a given message
+   * size however.
    */
   typedef struct
   {
-    char                  *name;     /**<  A character string describing the protocol   */
-    unsigned               version;      /**<  A version number for the protocol            */
-    /* Correctness Parameters
-     *
-     * If an algorithm is placed on the "must query list", then the user must use the metadata
-     * to determine if the protocol can be issued given the call site parameters of the
-     * collective operation.
-     *
-     * This may include calling the check_fn function, which takes as input a pami_xfer_t
-     * corresponding to the call site parameters.  The call site is defined as the code location
-     * where the user will call the PAMI_Collective function.
-     *
-     * The semantics for when the user must call the check_fn function are as follows:
-     * * If check_fn is NULL, and checkrequired is 0, the user cannot and is not required
-     *   to call the check_fn function.  The user is still required to check the other bits
-     *   in the bitmask_correct to determine if the collective parameters satisfy the
-     *   requirements.
-     *
-     * * check_fn will never be NULL when checkrequired is set to 1
-     *
-     * * When check_fn is non-NULL and checkrequired is 1, the user must call the check_fn
-     *   function for each call to PAMI_Collective to determine if the collective is valid.
-     *   check_fn will return local validity of the parameters, and no other bits in the struct
-     *   need to be checked. If the nonlocal bit is set in the return code, a reduction will
-     *   be required to determine the validity of the protocol across tasks.
-     *
-     * * When check_fn is non-NULL and checkrequired is 0, the user must call the check_fn
-     *   for each set of parameters.  For a given pami_xfer_t structure with a given set of
-     *   correctness bits set in the metadata, if the values of the parameters will change
-     *   and are effected by the associated bits in the metadata, check_fn must be called.
-     *   For example, if the alldtop bit is set, the user can cache that the protocol will work
-     *   for all datatypes and operations. The user might still need to test a given message
-     *   size however.
-     *
+    char                 * name;             /**<  A character string describing the protocol   */
+    unsigned               version;          /**<  A version number for the protocol            */
+    pami_metadata_function check_fn;         /**<  A function pointer to validate parameters for
+                                                   the collective operation.  Can be NULL if
+                                                   no correctness check is required             */
+    size_t                 range_lo;         /**<  This protocol has minimum bytes to send/recv
+                                                   requirements                                 */
+    size_t                 range_hi;         /**<  This protocol has maximum bytes to send/recv
+                                                   requirements                                 */
+    unsigned               send_min_align;   /**<  This protocol requires a minimum address
+                                                   alignment                                    */
+    unsigned               recv_min_align;   /**<  This protocol requires a minimum address
+                                                   alignment                                    */
+    /**
+     * \brief Bitmask to determine if certain checks are required.
      */
-    pami_metadata_function check_fn;     /**<  A function pointer to validate parameters for
-                                               the collective operation.  Can be NULL if
-                                               no correctness check is required             */
-    size_t                 range_lo;     /**<  This protocol has minimum bytes to send/recv
-                                               requirements                                 */
-    size_t                 range_hi;     /**<  This protocol has maximum bytes to send/recv
-                                               requirements                                 */
-    unsigned               send_min_align; /**<  This protocol requires a minimum address
-                                                  alignment       */
-    unsigned               recv_min_align; /**<  This protocol requires a minimum address
-                                                  alignment      */
-    union {
-      unsigned bitmask_correct;
-      struct {
-        unsigned               checkrequired:1;    /**<  A flag indicating whether or not the user MUST
-                                                  query the metadata or not.  0:query is not
-                                                  necessary.  1: the user must call the check_fn
-                                                  to determine if the call site parameters are
-                                                  correct.                                     */
-        unsigned               nonlocal:1;     /**<  The protocol associated with this metadata
-                                                  requires "nonlocal" knowledge, meaning that
-                                                  the result code from the check_fn must be
-                                                  allreduced to determine if the operation
-                                                  will work 0:no, 1:  requires nonlocal data  */
-        unsigned               rangeminmax:1;  /**<  This protocol only supports a range of bytes
-                                                  sent/received. 0: no min/max, 1: check range_lo/range_hi */
-        unsigned               sendminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of send_min_align bytes.
-                                                  0: no min alignment, 1: check send_min_align */
-        unsigned               recvminalign:1; /**<  This protocol requires a minimum address
-                                                  alignment of recv_min_align bytes
-                                                  0: no min alignment, 1: check recv_min_align */
-        unsigned               alldtop:1;      /**<  This protocol works for all datatypes and
-                                                  operations for reduction/scan
-                                                  0:not for all dt & op, 1:for all dt & op     */
-        unsigned               contigsflags:1; /**<  This protocol requires contiguous data(send)
-                                                  contiguous:  data type must be PAMI_TYPE_BYTE     */
-        unsigned               contigrflags:1; /**<  This protocol requires contiguous data(recv)
-                                                  contiguous:  data type must be PAMI_TYPE_BYTE     */
-        unsigned               continsflags:1; /**<  This protocol requires continuous data(send)
-                                                  continuous:  data type must be PAMI_TYPE_BYTE and
-                                                  for vector collectives, the target buffers
-                                                  of the vectors must be adjacent in memory    */
-        unsigned               continrflags:1; /**<  This protocol requires continuous data(recv)
-                                                  continuous:  data type must be PAMI_TYPE_BYTE and
-                                                  for vector collectives, the target buffers
-                                                  of the vectors must be adjacent in memory    */
-      }values;
-    }check_correct;
-    /* Performance Parameters */
     union
     {
-      unsigned bitmask_perf;
+      unsigned             bitmask_correct;  /**<  Raw bitmask data                             */
       struct
       {
-        unsigned               hw_accel:1;     /**<  This collective is using special purpose
-                                                  hardware to accelerate the collective
-                                                  0:  no 1:  yes                               */
-      }values;
-    }check_perf;
-    size_t                 range_lo_perf;/**<  Estimated performance range in bytes(low)    */
-    size_t                 range_hi_perf;/**<  Estimated performance range in bytes(high)   */
-    unsigned               min_align_perf;/**<  Estimated performance minimum address alignment */
+        unsigned           checkrequired: 1; /**<  A flag indicating whether or not the user MUST
+                                                   query the metadata or not.  0:query is not
+                                                   necessary.  1: the user must call the check_fn
+                                                   to determine if the call site parameters are
+                                                   correct.                                     */
+        unsigned           nonlocal     : 1; /**<  The protocol associated with this metadata
+                                                   requires "nonlocal" knowledge, meaning that
+                                                   the result code from the check_fn must be
+                                                   allreduced to determine if the operation
+                                                   will work 0:no, 1:  requires nonlocal data  */
+        unsigned           rangeminmax  : 1; /**<  This protocol only supports a range of bytes
+                                                   sent/received. 0: no min/max, 1: check range_lo/range_hi */
+        unsigned           sendminalign : 1; /**<  This protocol requires a minimum address
+                                                   alignment of send_min_align bytes.
+                                                   0: no min alignment, 1: check send_min_align */
+        unsigned           recvminalign : 1; /**<  This protocol requires a minimum address
+                                                   alignment of recv_min_align bytes
+                                                   0: no min alignment, 1: check recv_min_align */
+        unsigned           alldtop      : 1; /**<  This protocol works for all datatypes and
+                                                   operations for reduction/scan
+                                                   0:not for all dt & op, 1:for all dt & op     */
+        unsigned           contigsflags : 1; /**<  This protocol requires contiguous data(send)
+                                                   contiguous:  data type must be PAMI_TYPE_BYTE     */
+        unsigned           contigrflags : 1; /**<  This protocol requires contiguous data(recv)
+                                                   contiguous:  data type must be PAMI_TYPE_BYTE     */
+        unsigned           continsflags : 1; /**<  This protocol requires continuous data(send)
+                                                   continuous:  data type must be PAMI_TYPE_BYTE and
+                                                   for vector collectives, the target buffers
+                                                   of the vectors must be adjacent in memory    */
+        unsigned           continrflags : 1; /**<  This protocol requires continuous data(recv)
+                                                   continuous:  data type must be PAMI_TYPE_BYTE and
+                                                   for vector collectives, the target buffers
+                                                   of the vectors must be adjacent in memory    */
+      } values;
+    } check_correct;
+
+    /**
+     * \brief Performance parameters
+     */
+    union
+    {
+      unsigned             bitmask_perf;     /**<  Raw bitmask data                             */
+      struct
+      {
+        unsigned           hw_accel     : 1; /**<  This collective is using special purpose
+                                                   hardware to accelerate the collective
+                                                   0:  no 1:  yes                               */
+      } values;
+    } check_perf;
+    size_t                 range_lo_perf;    /**<  Estimated performance range in bytes(low)    */
+    size_t                 range_hi_perf;    /**<  Estimated performance range in bytes(high)   */
+    unsigned               min_align_perf;   /**<  Estimated performance minimum address alignment */
   } pami_metadata_t;
+
   /** \} */ /* end of "PAMI Collectives Metadata" group */
 
 
   /*****************************************************************************/
   /**
-   * \defgroup activemessage pami active messaging interface
-   *
-   * Some brief documentation on active message stuff ...
+   * \defgroup activemessage Active Message Point-to-Point
    * \{
    */
   /*****************************************************************************/
@@ -421,12 +443,12 @@ extern "C"
    * \see pami_send_hint_t
    */
   typedef enum
-    {
-      PAMI_HINT_DEFAULT = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
-      PAMI_HINT_ENABLE  = 1, /**< A hint that the implementation should enable this option.  */
-      PAMI_HINT_DISABLE = 2, /**< A hint that the implementation should disable this option. */
-      PAMI_HINT_INVALID = 3  /**< An invalid hint value provided for 2 bit completeness.     */
-    } pami_hint_t;
+  {
+    PAMI_HINT_DEFAULT = 0, /**< This hint leaves the option up to the PAMI implementation to choose. */
+    PAMI_HINT_ENABLE  = 1, /**< A hint that the implementation should enable this option.  */
+    PAMI_HINT_DISABLE = 2, /**< A hint that the implementation should disable this option. */
+    PAMI_HINT_INVALID = 3  /**< An invalid hint value provided for 2 bit completeness.     */
+  } pami_hint_t;
 
   /**
    * \brief "hard" hints for registering a send dispatch
@@ -453,95 +475,95 @@ extern "C"
     /**
      * \brief Parallelize communication across multiple contexts
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the send implementation may use other contexts to aid in the
      * communication operation. It is required that all contexts be advanced.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will not use other contexts to aid in the
      * communication operation. It is not required that all contexts be
      * advanced, only the contexts with active communication must be advanced.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_ENABLE
      */
     unsigned  multicontext          : 2;
 
     /**
      * \brief Long (multi-packet) header support
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the send implementation will enable single- and multi-packet header
      * support.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will not attempt to send more than a "single
      * packet" of header information.  This requires that that only up to
-     * pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of
+     * ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX bytes of
      * header information is sent. Failure to limit the number of header bytes
      * sent will result in undefined behavior.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_ENABLE
      */
     unsigned  long_header           : 2;
 
     /**
      * \brief All asynchronous receives will be contiguous using
-     *        PAMI_TYPE_BYTE with a zero offset.
+     *        ::PAMI_TYPE_BYTE with a zero offset.
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * it is not required to set pami_recv_t::type nor pami_recv_t::offset for
      * the receive.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will enable application-specified typed receive
      * support and it is required to set pami_recv_t::type and pami_recv_t::offset
      * for the receive.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_DISABLE
      */
     unsigned  recv_contiguous       : 2;
 
     /**
-     * \brief All asynchronous receives will use PAMI_DATA_COPY and a \c NULL data cookie
+     * \brief All asynchronous receives will use ::PAMI_DATA_COPY and a \c NULL data cookie
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * it is not required to set pami_recv_t::data_fn nor pami_recv_t::data_cookie
      * for the receive.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the send implementation will enable application-specified data function
-     * typed receive support and it is required to set pami_recv_t::type and
-     * pami_recv_t::offset for the receive.
+     * typed receive support and it is required to set pami_recv_t::data_fn and
+     * pami_recv_t::data_cookie for the receive.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_DISABLE
      */
     unsigned  recv_copy             : 2;
 
     /**
      * \brief All sends will result in an 'immediate' receive
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the dispatch function will always receive as 'immediate', and it is not
      * required to initialize the pami_recv_t output parameters. It is also
-     * required that only up to pami_attribute_name_t::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
+     * required that only up to ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX
      * bytes of combined header and data is sent. Failure to limit the number of
      * bytes sent will result in undefined behavior.
      *
      * \note It is not neccessary to set the pami_dispatch_hint_t::recv_contiguous
      *       hint, nor the pami_dispatch_hint_t::recv_copy hint, when the
      *       pami_dispatch_hint_t::recv_immediate hint is set to
-     *       pami_hint_t::PAMI_HINT_ENABLE
+     *       ::PAMI_HINT_ENABLE
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the dispatch function will never receive as 'immediate', even for
      * zero-byte messages, and it is required to always initialize all
      * pami_recv_t output parameters for every receive.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
      * the implementation may provide the source data as an 'immediate' receive
      * or the implementation may provide the source data as an 'asynchronous'
      * receive. The appropriate pami_recv_t output parameters must be initialized
@@ -552,76 +574,76 @@ extern "C"
     /**
      * \brief Force match ordering semantics
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the dispatch functions for all communication between a pair of endpoints
      * will always be invoked in the same order as the send operations were
      * invoked on the context associated with the origin endpoint. The
      * completion callbacks for 'asycnhronous' receives may not be invoked in
      * the same order as the dispatch functions were invoked.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the dispatch functions for all communication between a pair of endpoints
      * may not be invoked in the same order as the send operations were
      * invoked on the context associated with the origin endpoint. The
      * completion callbacks for 'asynchronous' receives may not be invoked in
      * the same order as the dispatch functions were invoked.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_DISABLE
      */
     unsigned  consistency           : 2;
 
     /**
      * \brief Send and receive buffers are ready for RDMA operations
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the application asserts that the memory for the send and receive buffers
      * has been previously registered for rdma transfers using the
      * PAMI_Memregion_create() function.
      *
-     * \note It is an error to specify pami_hint_t::PAMI_HINT_DISABLE for the
+     * \note It is an error to specify ::PAMI_HINT_DISABLE for the
      *       pami_dispatch_hint_t::use_rdma hint when the
      *       pami_dispatch_hint_t::buffer_registered hint is set to
-     *       pami_hint_t::PAMI_HINT_ENABLE
+     *       ::PAMI_HINT_ENABLE
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the memory for the send and receive buffers may, or may not, have been
      * previously registered for rdma transfers using the PAMI_Memregion_create()
      * function.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_DISABLE
      **/
     unsigned  buffer_registered     : 2;
 
     /**
      * \brief Force the destination endpoint to make asynchronous progress
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * an execution resource on the destination endpoint will asynchronously
      * process the receive operation when the context is not advanced.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the destination endpoint will not asynchronously process the receive
      * operation when the context is not advanced.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_DISABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_DISABLE
      **/
     unsigned  remote_async_progress : 2;
 
     /**
      * \brief Communication uses rdma operations
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the implementation must use rdma operations to aid in the communication
      * operation.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the implementation must not use rdma operations to aid in the
      * communication operation.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
      * the implementation may, or may not, use rdma operations to aid in the
      * communication operation.
      */
@@ -630,15 +652,15 @@ extern "C"
     /**
      * \brief Communication uses shared memory optimizations
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the implementation must use shared memory optimizations to aid in the
      * communication operation.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
      * the implementation must not use shared memory optimizations to aid in the
      * communication operation.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_DEFAULT during PAMI_Dispatch_set(),
      * the implementation may, or may not, use shared memory optimizations to
      * aid in the communication operation.
      *
@@ -646,8 +668,8 @@ extern "C"
      * may return ::PAMI_INVAL if shared memory is forced on and the destination
      * endpoint is located on a different node. The number and the list of tasks
      * located on the same node may be queried using PAMI_Client_query() and the
-     * pami_attribute_name_t::PAMI_CLIENT_NUM_LOCAL_TASKS and
-     * pami_attribute_name_t::PAMI_CLIENT_LOCAL_TASKS configuration attributes.
+     * ::PAMI_CLIENT_NUM_LOCAL_TASKS and
+     * ::PAMI_CLIENT_LOCAL_TASKS configuration attributes.
      *
      */
     unsigned  use_shmem             : 2;
@@ -655,16 +677,16 @@ extern "C"
     /**
      * \brief Return an error if PAMI_Send_immediate() resources are not available
      *
-     * If specified as pami_hint_t::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
+     * If specified as ::PAMI_HINT_ENABLE during PAMI_Dispatch_set(),
      * the PAMI_Send_immediate() implementation will internally queue the send
      * operation until network resource become available.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
-     * the PAMI_Send_immediate() implementation will return PAMI_EAGAIN when
+     * If specified as ::PAMI_HINT_DISABLE during PAMI_Dispatch_set(),
+     * the PAMI_Send_immediate() implementation will return ::PAMI_EAGAIN when
      * network resources are unavailable.
      *
-     * If specified as pami_hint_t::PAMI_HINT_DEFAULT, the effect on the
-     * communication is equivalent to the effect of pami_hint_t::PAMI_HINT_ENABLE
+     * If specified as ::PAMI_HINT_DEFAULT, the effect on the
+     * communication is equivalent to the effect of ::PAMI_HINT_ENABLE
      **/
     unsigned  queue_immediate       : 2;
 
@@ -720,6 +742,12 @@ extern "C"
 
   } pami_send_hint_t;
 
+  /**
+   * \brief "Soft" hints for a collective operation
+   *
+   * These hints are considered 'soft' hints that may be silently ignored
+   * by the implementation during a send operation.
+   */
   typedef struct
   {
     /**
@@ -737,9 +765,9 @@ extern "C"
    */
   typedef struct
   {
-    struct iovec      header;   /**< Header buffer address and size in bytes */
-    struct iovec      data;     /**< Data buffer address and size in bytes */
-    size_t            dispatch; /**< Dispatch identifier */
+    struct iovec       header;   /**< Header buffer address and size in bytes */
+    struct iovec       data;     /**< Data buffer address and size in bytes */
+    size_t             dispatch; /**< Dispatch identifier */
     pami_send_hint_t   hints;    /**< Hints for sending the message */
     pami_endpoint_t    dest;     /**< Destination endpoint */
   } pami_send_immediate_t;
@@ -749,7 +777,7 @@ extern "C"
    */
   typedef struct
   {
-    void               * cookie;   /**< Argument to \b all event callbacks */
+    void                * cookie;   /**< Argument to \b all event callbacks */
     pami_event_function   local_fn; /**< Local message completion event */
     pami_event_function   remote_fn;/**< Remote message completion event */
   } pami_send_event_t;
@@ -799,11 +827,11 @@ extern "C"
    * pami_send_immediate_t::data until the pami_send_event_t::local_fn is
    * invoked.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
-   * 
+   *
    * \pre  The pami_send_immediate_t::dispatch identifier must be registered on
    *       the context with PAMI_Dispatch_set().
    *
@@ -855,7 +883,7 @@ extern "C"
    * pami_send_immediate_t::header and pami_send_immediate_t::data after this
    * function returns.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -901,7 +929,7 @@ extern "C"
    * pami_send_immediate_t::data until the pami_send_event_t::local_fn
    * is invoked.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -977,7 +1005,7 @@ extern "C"
    * \note The maximum number of bytes that may be immediately received can be
    *       queried using PAMI_Dispatch_query() with the
    *       ::PAMI_DISPATCH_RECV_IMMEDIATE_MAX configuration attribute.
-   * 
+   *
    * At the time a dispatch function is invoked the application has already
    * protected access to the associated communication context, either by using
    * PAMI_Context_lock() or by some other mechanism. Consequently, application code
@@ -994,13 +1022,13 @@ extern "C"
    *       contexts. Operations on other communication contexts must be
    *       protected from re-entrant access from other execution resources by
    *       the application.
-   * 
+   *
    * \warning The application must take care to avoid deadlocks when protecting
    *          access to a communication context other than the communication
    *          context which invoked the dispatch callback function. It is
    *          recommended that PAMI_Context_trylock() or PAMI_Context_post()
    *          be used instead of PAMI_Context_lock() in this situtation.
-   * 
+   *
    * \param [in] context     Communication context that invoked this function
    * \param [in] cookie      Dispatch callback application argument
    * \param [in] header_addr Application header address
@@ -1008,7 +1036,7 @@ extern "C"
    * \param [in] pipe_addr   Address of the \e immediate receive buffer - valid
    *                         only if non-NULL
    * \param [in] data_size   Application data size in bytes, valid regardless of
-   *                         message type 
+   *                         message type
    * \param [in] origin      Endpoint that originated the transfer
    * \param [in] recv        Receive message structure, only needed if
    *                         \c pipe_addr is non-NULL
@@ -1027,9 +1055,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup rma pami remote memory access data transfer interface
-   *
-   * Some brief documentation on rma stuff ...
+   * \defgroup rma Remote Memory Access
    * \{
    */
   /*****************************************************************************/
@@ -1066,9 +1092,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup put pami remote memory access put transfer interface
-   *
-   * Some brief documentation on put stuff ...
+   * \defgroup put Put
    * \{
    */
   /*****************************************************************************/
@@ -1110,7 +1134,7 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -1154,7 +1178,7 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -1173,9 +1197,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup get pami remote memory access get transfer interface
-   *
-   * Some brief documentation on get stuff ...
+   * \defgroup get Get
    * \{
    */
   /*****************************************************************************/
@@ -1205,7 +1227,7 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -1247,7 +1269,7 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -1265,9 +1287,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup rmw pami remote memory access read-modify-write interface
-   *
-   * Some brief documentation on rmw stuff ...
+   * \defgroup rmw Read-Modify-Write
    * \{
    */
   /*****************************************************************************/
@@ -1311,6 +1331,7 @@ extern "C"
 
   } pami_atomic_t;
 
+  /** \brief Read-Modify-Write parameter structure */
   typedef struct
   {
     pami_endpoint_t       dest;      /**< Destination endpoint */
@@ -1380,7 +1401,7 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
@@ -1397,9 +1418,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup rdma pami remote memory access rdma interfaces
-   *
-   * Some brief documentation on rdma stuff ...
+   * \defgroup rdma RDMA
    * \{
    */
   /*****************************************************************************/
@@ -1426,11 +1445,11 @@ extern "C"
    * \note Memory regions may overlap. When one of the overlapping regions is
    *       destroyed any remaining overlapping memory regions are still usable.
    *
-   * \param[in]  context   Communication context
-   * \param[in]  address   Base virtual address of the memory region
-   * \param[in]  bytes_in  Number of bytes requested
-   * \param[out] bytes_out Number of bytes granted
-   * \param[out] memregion Memory region object to initialize
+   * \param [in]  context   Communication context
+   * \param [in]  address   Base virtual address of the memory region
+   * \param [in]  bytes_in  Number of bytes requested
+   * \param [out] bytes_out Number of bytes granted
+   * \param [out] memregion Memory region object to initialize
    *
    * \retval PAMI_SUCCESS The entire memory region, or a portion of
    *                      the memory region was pinned. The actual
@@ -1459,26 +1478,41 @@ extern "C"
   /**
    * \brief Destroy a local memory region for one sided operations
    *
-   * \param[in] context   Communication context
-   * \param[in] memregion Memory region object
-   *
    * The memregion object will be changed to an invalid value so that
    * it is clearly destroyed.
+   *
+   * \param [in] context   Communication context
+   * \param [in] memregion Memory region object
+   *
+   * \retval ::PAMI_SUCCESS The memory region was successfully destroyed
    */
   pami_result_t PAMI_Memregion_destroy (pami_context_t     context,
                                         pami_memregion_t * memregion);
 
+  /**
+   * \brief RMA memory region parameters
+   */
   typedef struct
   {
     pami_memregion_t      * mr;     /**< Memory region */
     size_t                  offset; /**< Offset from beginning of memory region */
   } pami_rma_mr_t;
 
+  /**
+   * \brief RMA RDMA parameters
+   */
   typedef struct
   {
     pami_rma_mr_t           local;  /**< Local memory region information */
     pami_rma_mr_t           remote; /**< Remote memory region information */
   } pami_rdma_t;
+
+  /*****************************************************************************/
+  /**
+   * \defgroup rput Rput
+   * \{
+   */
+  /*****************************************************************************/
 
   /**
    * \brief Input parameter structure for simple rdma put transfers
@@ -1535,13 +1569,15 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context    Communication context
    * \param [in] parameters Input parameters structure
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Rput (pami_context_t context, pami_rput_simple_t * parameters);
 
@@ -1551,15 +1587,26 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context    Communication context
    * \param [in] parameters Input parameters structure
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Rput_typed (pami_context_t context, pami_rput_typed_t * parameters);
+
+  /** \} */ /* end of "rput" group */
+
+  /*****************************************************************************/
+  /**
+   * \defgroup rget Rget
+   * \{
+   */
+  /*****************************************************************************/
 
   /**
    * \brief Input parameter structure for simple rdma get transfers
@@ -1588,13 +1635,15 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context    Communication context
    * \param [in] parameters Input parameters structure
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Rget (pami_context_t context, pami_rget_simple_t * parameters);
 
@@ -1628,16 +1677,19 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context    Communication context
    * \param [in] parameters Input parameters structure
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Rget_typed (pami_context_t context, pami_rget_typed_t * parameters);
 
+  /** \} */ /* end of "rget" group */
   /** \} */ /* end of "rdma" group */
   /** \} */ /* end of "rma" group */
 
@@ -1645,9 +1697,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup dynamictasks pami dynamic task interface
-   *
-   * Some brief documentation on dynamic task stuff ...
+   * \defgroup dynamictasks Dynamic Tasks
    * \{
    */
   /*****************************************************************************/
@@ -1663,9 +1713,11 @@ extern "C"
    * \note It is \b not \b valid to specify the destination endpoint associated
    *       with the communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] dest       Array of destination endpoints to close connections to
-   * \param[in] count      Number of endpoints in the array dest
+   * \param [in] context    Communication context
+   * \param [in] dest       Array of destination endpoints to close connections to
+   * \param [in] count      Number of endpoints in the array dest
+   *
+   * \retval ::PAMI_SUCCESS The purge operation was successful
    */
 
   pami_result_t PAMI_Purge (pami_context_t    context,
@@ -1679,9 +1731,11 @@ extern "C"
    * \note It is \b not \b valid to specify the destination endpoint associated
    *       with the communication context used to issue the operation.
    *
-   * \param[in] context    Communication context
-   * \param[in] dest       Array of destination endpoints to resume connections to
-   * \param[in] count      Number of endpoints in the array dest
+   * \param [in] context    Communication context
+   * \param [in] dest       Array of destination endpoints to resume connections to
+   * \param [in] count      Number of endpoints in the array dest
+   *
+   * \retval ::PAMI_SUCCESS The resume operation was successful
    */
   pami_result_t PAMI_Resume (pami_context_t    context,
                              pami_endpoint_t * dest,
@@ -1692,9 +1746,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup sync pami memory synchronization and data fence interface
-   *
-   * Some brief documentation on sync stuff ...
+   * \defgroup sync Memory Synchronization and Data Fence
    * \{
    */
   /*****************************************************************************/
@@ -1711,12 +1763,14 @@ extern "C"
    * \warning It is considered \b illegal to begin a fence region inside an
    *          existing fence region. Fence regions can not be nested.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context Communication context
+   *
+   * \retval ::PAMI_SUCCESS The fence region was successfully started
    */
   pami_result_t PAMI_Fence_begin (pami_context_t context);
 
@@ -1732,12 +1786,14 @@ extern "C"
    * \warning It is considered \b illegal to end a fence region outside of an
    *          existing fence region.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
    * \param [in] context Communication context
+   *
+   * \retval ::PAMI_SUCCESS The fence region was successfully closed
    */
   pami_result_t PAMI_Fence_end (pami_context_t context);
 
@@ -1745,14 +1801,16 @@ extern "C"
   /**
    * \brief Synchronize all transfers between all endpoints on a context.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
-   * \param [in] context Communication context
-   * \param [in] done_fn Event callback to invoke when the fence is complete
-   * \param [in] cookie  Event callback argument
+   * \param [in] context    Communication context
+   * \param [in] done_fn    Event callback to invoke when the fence is complete
+   * \param [in] cookie     Event callback argument
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Fence_all (pami_context_t        context,
                                 pami_event_function   done_fn,
@@ -1764,15 +1822,17 @@ extern "C"
    * \note It is valid to specify the destination endpoint associated with the
    *       communication context used to issue the operation.
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
    *
-   * \param [in] context Communication context
-   * \param [in] done_fn Event callback to invoke when the fence is complete
-   * \param [in] cookie  Event callback argument
-   * \param [in] target  Endpoint to synchronize
+   * \param [in] context    Communication context
+   * \param [in] done_fn    Event callback to invoke when the fence is complete
+   * \param [in] cookie     Event callback argument
+   * \param [in] target     Endpoint to synchronize
+   *
+   * \retval ::PAMI_SUCCESS The operation was successfully initiated
    */
   pami_result_t PAMI_Fence_endpoint (pami_context_t        context,
                                      pami_event_function   done_fn,
@@ -1781,10 +1841,9 @@ extern "C"
 
   /** \} */ /* end of "sync" group */
 
-
-  /* ************************************************************************* */
-  /* ********* Transfer Types, used by geometry and xfer routines ************ */
-  /* ************************************************************************* */
+  /**
+   * \brief Collective operation transfer types; used by geometry and xfer routines
+   */
   typedef enum
   {
     PAMI_XFER_BROADCAST = 0,
@@ -1817,68 +1876,76 @@ extern "C"
   /* **************     Geometry (like groups/communicators)  **************** */
   /* ************************************************************************* */
 
+  /**
+   * \brief Task range
+   */
   typedef struct
   {
-    pami_task_t lo, hi;
+    pami_task_t lo; /**< Range lower bounds task identifier */
+    pami_task_t hi; /**< Range lower bounds task identifier */
   } pami_geometry_range_t;
 
 
   /**
-   * \brief Initialize the geometry
-   *        A synchronizing operation will take place during geometry_initialize
-   *        on the parent geometry
-   *        If the output geometry "geometry" pointer is NULL, then no geometry will be
-   *        created, however, all nodes in the parent must participate in the
-   *        geometry_initialize operation, even if they do not create a geometry
+   * \brief Initialize a geometry with a range of tasks
    *
-   *        If a geometry is created without a parent geometry (parent is set to
-   *        PAMI_GEOMETRY_NULL),then an "immediate" geometry will be created.
-   *        In this case, the new geometry will be created and synchronized,
-   *        However, the new geometry cannot take advantage of optimized collectives
-   *        from the parent in the creation of the new geometry.  This kind of
-   *        geometry create may not be as optimal as when a parent has been provided
+   * A synchronizing operation will take place during geometry_initialize
+   * on the parent geometry.
    *
-   *        A unique geometry id is required to give each task described by
-   *        a geometry a unique communication context/channel to the other tasks in
-   *        that geometry.  Many higher level api's have code to manage the creation of
-   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
-   *        higher level API's
+   * If the output geometry "geometry" pointer is NULL, then no geometry will be
+   * created, however, all nodes in the parent must participate in the
+   * geometry_initialize operation, even if they do not create a geometry
    *
-   *        This API takes a context_offset into the array of contexts created
-   *        at PAMI_Context_createv.  There may be more than one context created per
-   *        task, so this offset specifies a set of contexts that will be participating
-   *        in the geometry.  All tasks in the create API must use the same context_offset.
-   *        This effectively selects a single endpoint (associated with this "primary" context)
-   *        per task that will be a participant in the collective communication.
-   *        PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
-   *        in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
+   * If a geometry is created without a parent geometry (parent is set to
+   * PAMI_GEOMETRY_NULL),then an "immediate" geometry will be created.
+   * In this case, the new geometry will be created and synchronized,
+   * However, the new geometry cannot take advantage of optimized collectives
+   * from the parent in the creation of the new geometry.  This kind of
+   * geometry create may not be as optimal as when a parent has been provided
    *
-   *        Note that this does not effect the advance rules, which state that the user
-   *        must advance all contexts unless the multicontext hint is disabled for the
-   *        collective operation.
+   * A unique geometry id is required to give each task described by
+   * a geometry a unique communication context/channel to the other tasks in
+   * that geometry.  Many higher level api's have code to manage the creation of
+   * unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   * higher level API's
    *
-   *        It is an error to post a collective via PAMI_Collective() to a context
-   *        that is not specified by the client/context_offset pair.
+   * This API takes a context_offset into the array of contexts created
+   * at PAMI_Context_createv.  There may be more than one context created per
+   * task, so this offset specifies a set of contexts that will be participating
+   * in the geometry.  All tasks in the create API must use the same context_offset.
+   * This effectively selects a single endpoint (associated with this "primary" context)
+   * per task that will be a participant in the collective communication.
+   * PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
+   * in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
    *
-   * \param[in]  client          pami client
-   * \param[in]  context_offset  The offset of the context to use for task based collectives
-   * \param[in]  configuration   List of configurable attributes and values
-   * \param[in]  num_configs     The number of configuration elements
-   * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in]  parent          Parent geometry containing all the nodes in the task list
-   * \param[in]  id              Identifier for this geometry(must be > 0)
-   *                             which uniquely represents this geometry(if tasks overlap)
-   * \param[in]  task_slices     Array of node slices participating in the geometry
-   *                             User must keep the array of slices in memory for the
-   *                             duration of the geometry's existence
-   * \param[in]  slice_count     Number of task slices participating in the geometry
-   * \param[in]  context         context to deliver async callback to
-   * \param[in]  fn              event function to call when geometry has been created
-   * \param[in]  cookie          user cookie to deliver with the callback
+   * Note that this does not effect the advance rules, which state that the user
+   * must advance all contexts unless the multicontext hint is disabled for the
+   * collective operation.
+   *
+   * It is an error to post a collective via PAMI_Collective() to a context
+   * that is not specified by the client/context_offset pair.
+   *
+   * \param [in]  client          The PAMI client
+   * \param [in]  context_offset  The offset of the context to use for task based collectives
+   * \param [in]  configuration   List of configurable attributes and values
+   * \param [in]  num_configs     The number of configuration elements
+   * \param [out] geometry        Opaque geometry object to initialize
+   * \param [in]  parent          Parent geometry containing all the nodes in the task list
+   * \param [in]  id              Identifier for this geometry(must be > 0)
+   *                              which uniquely represents this geometry(if tasks overlap)
+   * \param [in]  task_slices     Array of node slices participating in the geometry
+   *                              User must keep the array of slices in memory for the
+   *                              duration of the geometry's existence
+   * \param [in]  slice_count     Number of task slices participating in the geometry
+   * \param [in]  context         context to deliver async callback to
+   * \param [in]  fn              event function to call when geometry has been created
+   * \param [in]  cookie          user cookie to deliver with the callback
+   *
+   * \retval ::PAMI_SUCCESS       The task range geometry object initialization was started
    */
 
   pami_result_t PAMI_Geometry_create_taskrange (pami_client_t           client,
-						size_t                  context_offset,
+                                                size_t                  context_offset,
                                                 pami_configuration_t    configuration[],
                                                 size_t                  num_configs,
                                                 pami_geometry_t       * geometry,
@@ -1890,61 +1957,65 @@ extern "C"
                                                 pami_event_function     fn,
                                                 void                  * cookie);
   /**
-   * \brief Initialize the geometry
-   *        A synchronizing operation will take place during geometry_initialize
-   *        on the parent geometry
-   *        If the output geometry "geometry" pointer is NULL, then no geometry will be
-   *        created, however, all nodes in the parent must participate in the
-   *        geometry_initialize operation, even if they do not create a geometry
+   * \brief Initialize a geometry with a list of tasks
    *
-   *        If a geometry is created without a parent geometry (parent is set to
-   *        PAMI_GEOMETRY_NULL),then an "immediate" geometry will be created.
-   *        In this case, the new geometry will be created and synchronized,
-   *        However, the new geometry cannot take advantage of optimized collectives
-   *        from the parent in the creation of the new geometry.  This kind of
-   *        geometry create may not be as optimal as when a parent has been provided
+   * A synchronizing operation will take place during geometry_initialize
+   * on the parent geometry.
    *
-   *        A unique geometry id is required to give each task described by
-   *        a geometry a unique communication context/channel to the other tasks in
-   *        that geometry.  Many higher level api's have code to manage the creation of
-   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
-   *        higher level API's
+   * If the output geometry "geometry" pointer is NULL, then no geometry will be
+   * created, however, all nodes in the parent must participate in the
+   * geometry_initialize operation, even if they do not create a geometry
    *
-   *        This API takes a context_offset into the array of contexts created
-   *        at PAMI_Context_createv.  There may be more than one context created per
-   *        task, so this offset specifies a set of contexts that will be participating
-   *        in the geometry.  All tasks in the create API must use the same context_offset.
-   *        This effectively selects a single endpoint (associated with this "primary" context)
-   *        per task that will be a participant in the collective communication.
-   *        PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
-   *        in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
+   * If a geometry is created without a parent geometry (parent is set to
+   * PAMI_GEOMETRY_NULL),then an "immediate" geometry will be created.
+   * In this case, the new geometry will be created and synchronized,
+   * However, the new geometry cannot take advantage of optimized collectives
+   * from the parent in the creation of the new geometry.  This kind of
+   * geometry create may not be as optimal as when a parent has been provided
    *
-   *        Note that this does not effect the advance rules, which state that the user
-   *        must advance all contexts unless the multicontext hint is disabled for the
-   *        collective operation.
+   * A unique geometry id is required to give each task described by
+   * a geometry a unique communication context/channel to the other tasks in
+   * that geometry.  Many higher level api's have code to manage the creation of
+   * unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   * higher level API's
    *
-   *        It is an error to post a collective via PAMI_Collective() to a context
-   *        that is not specified by the client/context_offset pair.
+   * This API takes a context_offset into the array of contexts created
+   * at PAMI_Context_createv.  There may be more than one context created per
+   * task, so this offset specifies a set of contexts that will be participating
+   * in the geometry.  All tasks in the create API must use the same context_offset.
+   * This effectively selects a single endpoint (associated with this "primary" context)
+   * per task that will be a participant in the collective communication.
+   * PAMI_ALL_CONTEXTS can be passed as the context_offset to select all endpoints
+   * in the task.  Parent must be PAMI_GEOMETRY_NULL if all contexts are selected
    *
-   * \param[in]  client          pami client
-   * \param[in]  context_offset  The offset of the context to use for task based collectives
-   * \param[in]  configuration   List of configurable attributes and values
-   * \param[in]  num_configs     The number of configuration elements
-   * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in]  parent          Parent geometry containing all the nodes in the task list
-   * \param[in]  id              Identifier for this geometry(must be > 0)
-   *                             which uniquely represents this geometry(if tasks overlap)
-   * \param[in]  tasks           Array of tasks to build the geometry list
-   *                             User must keep the task list in memory
-   *                             duration of the geometry's existence
-   * \param[in]  task_count      Number of tasks participating in the geometry
-   * \param[in]  context         context to deliver async callback to
-   * \param[in]  fn              event function to call when geometry has been created
-   * \param[in]  cookie          user cookie to deliver with the callback
+   * Note that this does not effect the advance rules, which state that the user
+   * must advance all contexts unless the multicontext hint is disabled for the
+   * collective operation.
+   *
+   * It is an error to post a collective via PAMI_Collective() to a context
+   * that is not specified by the client/context_offset pair.
+   *
+   * \param [in]  client          The PAMI client
+   * \param [in]  context_offset  The offset of the context to use for task based collectives
+   * \param [in]  configuration   List of configurable attributes and values
+   * \param [in]  num_configs     The number of configuration elements
+   * \param [out] geometry        Opaque geometry object to initialize
+   * \param [in]  parent          Parent geometry containing all the nodes in the task list
+   * \param [in]  id              Identifier for this geometry(must be > 0)
+   *                              which uniquely represents this geometry(if tasks overlap)
+   * \param [in]  tasks           Array of tasks to build the geometry list
+   *                              User must keep the task list in memory
+   *                              duration of the geometry's existence
+   * \param [in]  task_count      Number of tasks participating in the geometry
+   * \param [in]  context         context to deliver async callback to
+   * \param [in]  fn              event function to call when geometry has been created
+   * \param [in]  cookie          user cookie to deliver with the callback
+   *
+   * \retval ::PAMI_SUCCESS       The task list geometry object initialization was started
    */
 
   pami_result_t PAMI_Geometry_create_tasklist (pami_client_t               client,
-					       size_t                      context_offset,
+                                               size_t                      context_offset,
                                                pami_configuration_t        configuration[],
                                                size_t                      num_configs,
                                                pami_geometry_t           * geometry,
@@ -1957,52 +2028,54 @@ extern "C"
                                                void                      * cookie);
 
   /**
-   * \brief Initialize an endpoint based geometry
+   * \brief Initialize a geometry with a list of endpoints
    *
-   *        This call creates and initializes an "endpoint based" geometry.
-   *        An endopint based geometry is scoped to a pami client, and is created
-   *        with a list of endpoints that represent the contexts that will participate
-   *        in the collective operation.  This allows the PAMI library to identify
-   *        multiple participants per task in a collective operation.  Note that this
-   *        is a generalization of PAMI_Geometry_create_tasklist and
-   *        PAMI_Geometry_create_taskrange, both of which only allow one endpoint per task
-   *        to be specified, if PAMI_ALL_CONTEXTS is not specified as the context offset.
+   * This call creates and initializes an "endpoint based" geometry.
+   * An endopint based geometry is scoped to a pami client, and is created
+   * with a list of endpoints that represent the contexts that will participate
+   * in the collective operation.  This allows the PAMI library to identify
+   * multiple participants per task in a collective operation.  Note that this
+   * is a generalization of PAMI_Geometry_create_tasklist and
+   * PAMI_Geometry_create_taskrange, both of which only allow one endpoint per task
+   * to be specified, if PAMI_ALL_CONTEXTS is not specified as the context offset.
    *
-   *        A unique geometry id is required to give each task described by
-   *        a geometry a unique communication context/channel to the other tasks in
-   *        that geometry.  Many higher level api's have code to manage the creation of
-   *        unique geometry id's.  PAMI defers the unique geometry id assignment to these
-   *        higher level API's
+   * A unique geometry id is required to give each task described by
+   * a geometry a unique communication context/channel to the other tasks in
+   * that geometry.  Many higher level api's have code to manage the creation of
+   * unique geometry id's.  PAMI defers the unique geometry id assignment to these
+   * higher level API's
    *
-   *        This operation is nonblocking, and thus must be posted to a context.  The call
-   *        to create the geometry is made only by a single call per task.  This means that
-   *        multiple calls per task are not allowed, although multiple endpoints per task
-   *        may be specified in the endpoint list.
+   * This operation is nonblocking, and thus must be posted to a context.  The call
+   * to create the geometry is made only by a single call per task.  This means that
+   * multiple calls per task are not allowed, although multiple endpoints per task
+   * may be specified in the endpoint list.
    *
-   *        Note that the context this operation is posted to is not necessarily contained
-   *        in the endpoint list.  Completion will be delivered to the context specified
-   *        in the create call.
+   * Note that the context this operation is posted to is not necessarily contained
+   * in the endpoint list.  Completion will be delivered to the context specified
+   * in the create call.
    *
-   *        All contexts associated with the endpoints in the geometry list and the context
-   *        the work is posted to must be advanced until the geometry completion callback(fn)
-   *        has been called.  For simplicity, advancing all contexts is sufficient to
-   *        accomplish this.
+   * All contexts associated with the endpoints in the geometry list and the context
+   * the work is posted to must be advanced until the geometry completion callback(fn)
+   * has been called.  For simplicity, advancing all contexts is sufficient to
+   * accomplish this.
    *
-   *        The same endpoint cannot be specified more than once in the endpoint list
+   * The same endpoint cannot be specified more than once in the endpoint list
    *
-   * \param[in]  client          pami client
-   * \param[in]  configuration   List of configurable attributes and values
-   * \param[in]  num_configs     The number of configuration elements
-   * \param[out] geometry        Opaque geometry object to initialize
-   * \param[in]  id              Identifier for this geometry(must be > 0)
-   *                             which uniquely represents this lgeometry(if tasks overlap)
-   * \param[in]  endpoints       Array of endpoints to build the geometry list
-   *                             User must keep the endpoint list in memory for the
-   *                             duration of the geometry's existence
-   * \param[in]  endpoint_count  Number of endpoints participating in the geometry
-   * \param[in]  context         context to deliver async callback to
-   * \param[in]  fn              event function to call when geometry has been created
-   * \param[in]  cookie          user cookie to deliver with the callback
+   * \param [in]  client          The PAMI client
+   * \param [in]  configuration   List of configurable attributes and values
+   * \param [in]  num_configs     The number of configuration elements
+   * \param [out] geometry        Opaque geometry object to initialize
+   * \param [in]  id              Identifier for this geometry (must be > 0)
+   *                              which uniquely represents this lgeometry (if tasks overlap)
+   * \param [in]  endpoints       Array of endpoints to build the geometry list
+   *                              User must keep the endpoint list in memory for the
+   *                              duration of the geometry's existence
+   * \param [in]  endpoint_count  Number of endpoints participating in the geometry
+   * \param [in]  context         context to deliver async callback to
+   * \param [in]  fn              event function to call when geometry has been created
+   * \param [in]  cookie          user cookie to deliver with the callback
+   *
+   * \retval ::PAMI_SUCCESS       The endpoint list geometry object initialization was started
    */
 
   pami_result_t PAMI_Geometry_create_endpointlist (pami_client_t               client,
@@ -2037,65 +2110,64 @@ extern "C"
    * This geometry represents context offset 0 on all tasks
    * in the current job.
    *
-   * \param[in]  client          pami client
-   * \param[out]  world_geometry  world geometry object
+   * \param [in]  client          The PAMI client
+   * \param [out] world_geometry  world geometry object
+   *
+   * \retval ::PAMI_SUCCESS       The world geometry object was initialized.
    */
   pami_result_t PAMI_Geometry_world (pami_client_t                client,
-				     pami_geometry_t            * world_geometry);
+                                     pami_geometry_t            * world_geometry);
 
   /**
-   * \brief determines the number of algorithms available for a given op
-   *        in the two different lists (always work list,
-   *        under-certain conditions list).
+   * \brief Determines the number of algorithms available for a given collective operation.
    *
-   * \param[in]     geometry      An input geometry to be analyzed.
-   * \param[in]     coll_type     type of collective op.
-   * \param[in,out] lists_lengths array of 2 numbers representing all valid
-   *                              algorithms and optimized algorithms.
+   * The algorithms are returned in two different lists; an "always works" list,
+   * and an "under-certain conditions" list.
    *
-   * \retval        PAMI_SUCCESS  number of algorithms is determined.
-   * \retval        PAMI_INVAL    There is an error with input parameters
+   * \param [in]     geometry      Geometry to be analyzed.
+   * \param [in]     coll_type     Type of collective operation
+   * \param [in,out] lists_lengths Array of 2 elements representing all valid
+   *                               algorithms and optimized algorithms.
+   *
+   * \retval ::PAMI_SUCCESS  number of algorithms is determined.
+   * \retval ::PAMI_INVAL    There is an error with input parameters
    */
-  pami_result_t PAMI_Geometry_algorithms_num (pami_geometry_t   geometry,
-					      pami_xfer_type_t  coll_type,
-					      size_t           *lists_lengths);
+  pami_result_t PAMI_Geometry_algorithms_num (pami_geometry_t    geometry,
+                                              pami_xfer_type_t   coll_type,
+                                              size_t           * lists_lengths);
 
   /**
-   * \brief fills in the protocols and attributes for a set of algorithms
-   *        The first lists are used to populate collectives that work under
-   *        any condition.  The second lists are used to populate
-   *        collectives that the metadata must be checked before use
+   * \brief Query the protocols and attributes available for a set of algorithms.
    *
-   * \param[in,out] algs0          array of algorithms to query
-   * \param[in]     colltype       type of collective op.
-   * \param[in,out] mdata0         metadata array to be filled in if algorithms
-   *                               are applicable, can be NULL.
-   * \param[in]     num0           number of algorithms to fill in.
-   * \param[in,out] algs1          array of algorithms to query
-   * \param[in,out] mdata1         metadata array to be filled in if algorithms
-   *                               are applicable, can be NULL.
-   * \param[in]     num1           number of algorithms to fill in.
+   * The first lists are used to populate collectives that work under
+   * any condition.  The second lists are used to populate
+   * collectives that the metadata must be checked before use.
    *
-   * \retval        PAMI_SUCCESS   algorithm is applicable to geometry.
-   * \retval        PAMI_INVAL     Error in input arguments or not applicable.
+   * \param [in]     geometry  Geometry to be analyzed.
+   * \param [in]     colltype  Type of collective operation to query
+   * \param [in,out] algs0     Array of algorithms to query
+   * \param [in,out] mdata0    Metadata array to be filled in if algorithms
+   *                           are applicable; can be NULL.
+   * \param [in]     num0      Number of algorithms to query
+   * \param [in,out] algs1     Array of algorithms to query
+   * \param [in,out] mdata1    Metadata array to be filled in if algorithms
+   *                           are applicable; can be NULL.
+   * \param [in]     num1      number of algorithms to fill in.
+   *
+   * \retval ::PAMI_SUCCESS    The algorithm is applicable to geometry.
+   * \retval ::PAMI_INVAL      Error in input arguments or not applicable.
    */
-  pami_result_t PAMI_Geometry_algorithms_query (pami_geometry_t   geometry,
-						pami_xfer_type_t  colltype,
-						pami_algorithm_t *algs0,
-						pami_metadata_t  *mdata0,
-						size_t            num0,
-						pami_algorithm_t *algs1,
-						pami_metadata_t  *mdata1,
-						size_t            num1);
+  pami_result_t PAMI_Geometry_algorithms_query (pami_geometry_t    geometry,
+                                                pami_xfer_type_t   colltype,
+                                                pami_algorithm_t * algs0,
+                                                pami_metadata_t  * mdata0,
+                                                size_t             num0,
+                                                pami_algorithm_t * algs1,
+                                                pami_metadata_t  * mdata1,
+                                                size_t             num1);
 
   /**
    * \brief Free any memory allocated inside of a geometry.
-   * \param[in]  client   pami client
-   * \param[in]  geometry The geometry object to free
-   * \param[in]  context  context to deliver async callback to
-   * \param[in]  fn       event function to call when geometry has been destroyed
-   * \param[in]  cookie   user cookie to deliver with the callback
-   * \retval PAMI_SUCCESS Memory free didn't fail
    *
    * PAMI_Geometry_destroy will free any internal resources allocated
    * during a geometry create routine.  This may involve syncronization
@@ -2122,6 +2194,14 @@ extern "C"
    *
    * The geometry handle will be changed to an invalid value so that
    * it is clearly destroyed.
+   *
+   * \param [in]  client    The PAMI client
+   * \param [in]  geometry  The geometry object to free
+   * \param [in]  context   context to deliver async callback to
+   * \param [in]  fn        event function to call when geometry has been destroyed
+   * \param [in]  cookie    user cookie to deliver with the callback
+   *
+   * \retval ::PAMI_SUCCESS Memory free didn't fail
    */
   pami_result_t PAMI_Geometry_destroy(pami_client_t          client,
                                       pami_geometry_t      * geometry,
@@ -2130,519 +2210,270 @@ extern "C"
                                       void                 * cookie);
 
   /**
-   * \brief Create and post a non-blocking alltoall vector operation.
-   *
-   * The alltoallv operation ...
-   *
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
+   * \brief Non-blocking alltoall vector operation parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                    * stypecounts;
-    size_t                    * sdispls;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                    * rtypecounts;
-    size_t                    * rdispls;
+    char        * sndbuf;      /**< The base address of the buffers containing data to be sent */
+    pami_type_t   stype;       /**< Send buffer type */
+    size_t      * stypecounts; /**< Array of type replication counts; size of geometry length */
+    size_t      * sdispls;     /**< Array of stype counts into the sndbuf; size of geometry length */
+    char        * rcvbuf;      /**< The base address of the buffer for data reception */
+    pami_type_t   rtype;       /**< Receive buffer type */
+    size_t      * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    size_t      * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_alltoallv_t;
 
   /**
-   * \brief Create and post a non-blocking alltoall vector operation.
-   *
-   * The alltoallv_int operation ...
-   *
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
+   * \brief Non-blocking alltoall vector operation parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    int                       * stypecounts;
-    int                       * sdispls;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    int                       * rtypecounts;
-    int                       * rdispls;
+    char        * sndbuf;      /**< The base address of the buffers containing data to be sent */
+    pami_type_t   stype;       /**< Send buffer type */
+    int         * stypecounts; /**< Array of type replication counts; size of geometry length */
+    int         * sdispls;     /**< Array of stype counts into the sndbuf; size of geometry length */
+    char        * rcvbuf;      /**< The base address of the buffer for data reception */
+    pami_type_t   rtype;       /**< Receive buffer type */
+    int         * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    int         * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_alltoallv_int_t;
 
-
   /**
-   * \brief Create and post a non-blocking alltoall operation.
-   * The alltoall operation ...
-   *
-   * \param[in]  sndbuf      The base address of the buffers containing data to be sent
-   * \param[in]  stype       Single datatype of the send buffer
-   * \param[in]  stypecount  Single type replication count
-   * \param[out] rbuf        The base address of the buffer for data reception
-   * \param[in]  rtype       Single datatype of the receive buffer
-   * \param[in]  rtypecount  Single type replication count
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking alltoall operation parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    char        * sndbuf;     /**< The base address of the buffers containing data to be sent */
+    pami_type_t   stype;      /**< Send buffer type */
+    size_t        stypecount; /**< Send buffer type count */
+    char        * rcvbuf;     /**< The base address of the buffer for data reception */
+    pami_type_t   rtype;      /**< Receive buffer type */
+    size_t        rtypecount; /**< Receive buffer type count */
   } pami_alltoall_t;
 
   /**
-   * \brief Create and post a non-blocking reduce operation.
-   * The reduce operation ...
-   *
-   * \param[in]  root         endpoint of the reduce root
-   * \param[in]  sndbuf       Source buffer.
-   * \param[in]  stype        Source buffer type and datatype of the operation
-   * \param[in]  stypecount   Source buffer type count
-   * \param[out]  rcvbuf       Receive buffer.
-   * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rtypecount   Receive buffer type count
-   * \param[in]  op           Reduce operation
-   *
-   * \retval     0            Success
+   * \brief Non-blocking reduce operation parameters
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
-    pami_data_function          op;
-    void                      * data_cookie;
-    int                         commutative;
+    pami_endpoint_t      root;        /**< The endpoint of the reduction root */
+    char               * sndbuf;      /**< Send buffer */
+    pami_type_t          stype;       /**< Send buffer type */
+    size_t               stypecount;  /**< Send buffer type count */
+    char               * rcvbuf;      /**< Receive buffer */
+    pami_type_t          rtype;       /**< Receive buffer type */
+    size_t               rtypecount;  /**< Receive buffer type count */
+    pami_data_function   op;          /**< Reduce operation */
+    void               * data_cookie; /**< Cookie to provide to each individual reduce operation */
+    int                  commutative; /**< Inputs to operation are commutative */
   } pami_reduce_t;
 
   /**
-   * \brief Create and post a non-blocking reduce_scatter operation.
-   *
-   * The reduce_scatter operation ...
-   *
-   * \param[in]  sndbuf       Source buffer.
-   * \param[in]  stype        Source buffer type and datatype of the operation
-   * \param[in]  stypecount   Source buffer type count
-   * \param[in]  rcvbuf       Receive buffer.
-   * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rcounts      number of elements to receive from the destinations(common on all nodes)
-   *                          index of my task is the count my task will receive
-   * \param[in]  op           Reduce operation
-   *
-   * \retval     0            Success
-   *
+   * \brief Non-blocking reduce_scatter operation parameters
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                    * rcounts;
-    pami_data_function          op;
-    void                      * data_cookie;
-    int                         commutative;
+    char               * sndbuf;      /**< Send buffer */
+    pami_type_t          stype;       /**< Send buffer type */
+    size_t               stypecount;  /**< Send buffer type count */
+    char               * rcvbuf;      /**< Receive buffer */
+    pami_type_t          rtype;       /**< Receive buffer type */
+    size_t             * rcounts;     /**< Number of elements to receive from the destination,
+                                           common on all nodes; index of my task is the count
+                                           my task will receive */
+    pami_data_function   op;          /**< Reduce operation */
+    void               * data_cookie; /**< Cookie to provide to each individual reduce operation */
+    int                  commutative; /**< Inputs to operation are commutative */
   } pami_reduce_scatter_t;
 
   /**
-   * \brief Create and post a non-blocking broadcast operation.
-   *
-   * The broadcast operation ...
-   *
-   * \param[in]  root         endpoint of the node performing the broadcast.
-   * \param[in]  buf          Source buffer to broadcast on root, dest buffer on non-root
-   * \param[in]  type         data type layout, may be different on root/destinations
-   * \param[in]  count        Single type replication count
-   *
-   * \retval     0            Success
-   *
+   * \brief Non-blocking broadcast operation parameters
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * buf;
-    pami_type_t                 type;
-    size_t                      typecount;
+    pami_endpoint_t   root;      /**< The endpoint performing the broadcast */
+    char            * buf;       /**< Source buffer to broadcast on root, destination buffer on non-root */
+    pami_type_t       type;      /**< Data type layout; may be different on root/destinations */
+    size_t            typecount; /**< Data type of the source buffer */
   } pami_broadcast_t;
 
 
   /**
-   * \brief Create and post a non-blocking allgather
-   *
-   * The allgather
-   *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  srcbuf       Source buffer to send
-   * \param[in]  stype        data layout of send buffer
-   * \param[in]  stypecount   replication count of the type
-   * \param[out]  rcvbuf      Source buffer to receive the data
-   * \param[in]  rtype        data layout of each receive buffer
-   * \param[in]  rtypecount   replication count of the type
-   *
-   * \retval     0            Success
-   *
+   * \brief Non-blocking allgather parameters
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    char        * sndbuf;     /**< Send buffer */
+    pami_type_t   stype;      /**< Data type of send buffer */
+    size_t        stypecount; /**< Send type replication count */
+    char        * rcvbuf;     /**< Receive buffer */
+    pami_type_t   rtype;      /**< Data type of receive buffer */
+    size_t        rtypecount; /**< Receive type replication count */
   } pami_allgather_t;
 
 
   /**
-   * \brief Create and post a non-blocking gather
-   *
-   * The gather
-   *
-   * \param[in]  root         The root endpoint of the gather operation
-   * \param[in]  sndbuf       Source buffer to send
-   * \param[in]  stype        data layout of send buffer
-   * \param[in]  stypecount   replication count of the type
-   * \param[out]  rcvbuf       Source buffer to receive the data
-   * \param[in]  rtype        data layout of each receive buffer
-   * \param[in]  rtypecount   replication count of the type
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking gather parameters
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    pami_endpoint_t   root;       /**< The gather root endpoint */
+    char            * sndbuf;     /**< Send buffer */
+    pami_type_t       stype;      /**< Data type of send buffer */
+    size_t            stypecount; /**< Send type replication count */
+    char            * rcvbuf;     /**< Receive buffer */
+    pami_type_t       rtype;      /**< Data type of receive buffer */
+    size_t            rtypecount; /**< Receive type replication count */
   } pami_gather_t;
 
   /**
-   * \brief Create and post a non-blocking gatherv with size_t-type arrays
-   *
-   * The gatherv
-   *
-   * \param[in]  root         The root endpoint for the gatherv operation
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecount   type replication count.
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking gatherv with size_t-type arrays parameters
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                    * rtypecounts;
-    size_t                    * rdispls;
+    pami_endpoint_t   root;        /**< The gatherv root endpoint */
+    char            * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t       stype;       /**< Type of all source buffers */
+    size_t            stypecount;  /**< Source type replication count */
+    char            * rcvbuf;      /**< Receive buffer */
+    pami_type_t       rtype;       /**< Receive type */
+    size_t          * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    size_t          * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_gatherv_t;
 
   /**
-   * \brief Create and post a non-blocking gatherv with integer-type arrays
-   *
-   * The gatherv_int routine
-   *
-   * \param[in]  root         The root endpoint for the gatherv operation
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecount   type replication count.
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking gatherv with integer-type arrays parameters
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    int                         stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    int                       * rtypecounts;
-    int                       * rdispls;
+    pami_endpoint_t   root;        /**< The gatherv_int root node endpoint */
+    char            * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t       stype;       /**< Type of all source buffers */
+    int               stypecount;  /**< Source type replication count */
+    char            * rcvbuf;      /**< Receive buffer */
+    pami_type_t       rtype;       /**< Receive type */
+    int             * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    int             * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_gatherv_int_t;
 
-
   /**
-   * \brief Create and post a non-blocking allgatherv with size_t-type arrays
-   *
-   * The allgatherv
-   *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecount   type replication count.
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking allgatherv with size_t-type arrays parameters
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                    * rtypecounts;
-    size_t                    * rdispls;
+    char        * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t   stype;       /**< Type of all source buffers */
+    size_t        stypecount;  /**< Source type replication count */
+    char        * rcvbuf;      /**< Receive buffer */
+    pami_type_t   rtype;       /**< Receive type */
+    size_t      * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    size_t      * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_allgatherv_t;
 
   /**
-   * \brief Create and post a non-blocking allgatherv with integer-type arrays
-   *
-   * The allgatherv_int
-   *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecount   type replication count.
-   * \param[out] rcvbuf       The base address of the buffer for data reception
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecounts  Array of type replication counts.  Size of geometry length
-   * \param[in]  rdispls      Array of rtype counts into the rcvbuf.  Size of geometry length
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking allgatherv with integer-type arrays parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    int                         stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    int                       * rtypecounts;
-    int                       * rdispls;
+    char        * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t   stype;       /**< Type of all source buffers */
+    int           stypecount;  /**< Source type replication count */
+    char        * rcvbuf;      /**< Receive buffer */
+    pami_type_t   rtype;       /**< Receive type */
+    int         * rtypecounts; /**< Array of type replication counts; size of geometry length */
+    int         * rdispls;     /**< Array of rtype counts into the rcvbuf; size of geometry length */
   } pami_allgatherv_int_t;
 
 
   /**
-   * \brief Create and post a non-blocking scatter
-   *
-   * The scatter
-   *
-   * \param[in]  root         endopint of the reduce root node.
-   * \param[in]  sndbuf       Source buffer.
-   * \param[in]  stype        Source buffer type
-   * \param[in]  stypecount   Source buffer type count
-   * \param[in]  rcvbuf       Receive buffer.
-   * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rtypecount   Receive buffer type count
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking scatter operation parameters.
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    pami_endpoint_t   root;       /**< The scatter root node endpoint */
+    char            * sndbuf;     /**< Source buffer */
+    pami_type_t       stype;      /**< Source buffer type */
+    size_t            stypecount; /**< Source buffer type count */
+    char            * rcvbuf;     /**< Receive buffer */
+    pami_type_t       rtype;      /**< Receive buffer type */
+    size_t            rtypecount; /**< Receive buffer type count */
   } pami_scatter_t;
 
   /**
-   * \brief Create and post a non-blocking scatterv
-   *
-   * The scatterv
-   *
-   * \param[in]  root         endopint of the scatterv root node.
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
-   * \param[in]  rbuffer      Receive buffer.
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecount   Receive buffer type replication count
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking scatterv operation parameters.
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                    * stypecounts;
-    size_t                    * sdispls;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    pami_endpoint_t   root;        /**< The scatterv root node endpoint */
+    char            * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t       stype;       /**< Source type for all buffers */
+    size_t          * stypecounts; /**< Array of type replication counts; size of geometry length */
+    size_t          * sdispls;     /**< Array of stype counts into the sndbuf; size of geometry length */
+    char            * rcvbuf;      /**< Receive buffer */
+    pami_type_t       rtype;       /**< Receive buffer type */
+    size_t            rtypecount;  /**< Receive buffer type count */
   } pami_scatterv_t;
 
   /**
-   * \brief Create and post a non-blocking scatterv
-   *
-   * The scatterv_int
-   *
-   * \param[in]  root         endopint of the scatterv_int root node.
-   * \param[in]  sndbuf       The base address of the buffers containing data to be sent
-   * \param[in]  stype        A single type datatype
-   * \param[in]  stypecounts  An array of type replication counts.  Size of geometry length
-   * \param[in]  sdispls      Array of stype counts into the sndbuf.  Size of geometry length
-   * \param[in]  rbuffer      Receive buffer.
-   * \param[in]  rtype        A single type datatype
-   * \param[in]  rtypecount   Receive buffer type replication count
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking scatterv_int operation parameters.
    */
   typedef struct
   {
-    pami_endpoint_t             root;
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    int                       * stypecounts;
-    int                       * sdispls;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    int                         rtypecount;
+    pami_endpoint_t   root;        /**< The scatterv_int root node endpoint */
+    char            * sndbuf;      /**< Base address of the buffers containing data to be sent */
+    pami_type_t       stype;       /**< Source type for all buffers */
+    int             * stypecounts; /**< Array of type replication counts; size of geometry length */
+    int             * sdispls;     /**< Array of stype counts into the sndbuf; size of geometry length */
+    char            * rcvbuf;      /**< Receive buffer */
+    pami_type_t       rtype;       /**< Receive buffer type */
+    int               rtypecount;  /**< Receive buffer type count */
   } pami_scatterv_int_t;
 
-
   /**
-   * \brief Create and post a non-blocking allreduce operation.
-   *
-   * The allreduce operation ...
-   *
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \param[in]  geometry     Geometry to use for this collective operation.
-   * \param[in]  sbuffer      Source buffer.
-   * \param[in]  stype        Source buffer type and datatype of the operation
-   * \param[in]  stypecount   Source buffer type count
-   * \param[in]  rbuffer      Receive buffer.
-   * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rtypecount   Receive buffer type count
-   * \param[in]  op           Reduce operation
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking allreduce operation parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
-    pami_data_function          op;
-    void                      * data_cookie;
-    int                         commutative;
+    char               * sndbuf;      /**< Source buffer */
+    pami_type_t          stype;       /**< Source buffer type */
+    size_t               stypecount;  /**< Source buffer type count */
+    char               * rcvbuf;      /**< Receive buffer */
+    pami_type_t          rtype;       /**< Receive buffer type */
+    size_t               rtypecount;  /**< Receive buffer type count */
+    pami_data_function   op;          /**< Reduce operation */
+    void               * data_cookie; /**< Cookie to provide to each individual reduce operation */
+    int                  commutative; /**< Inputs to operation are commutative */
   } pami_allreduce_t;
 
-
   /**
-   * \brief Create and post a non-blocking scan operation.
-   *
-   * The scan operation ...
-   *
-   * \param[in]  sndbuf       Source buffer.
-   * \param[in]  stype        Source buffer type and datatype of the operation
-   * \param[in]  stypecount   Source buffer type count
-   * \param[in]  rcvbuf       Receive buffer.
-   * \param[in]  rtype        Receive buffer layout
-   * \param[in]  rtypecount   Receive buffer type count
-   * \param[in]  op           Reduce operation
-   * \param[in]  exclusive    scan operation is exclusive of current node
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * \brief Non-blocking scan operation parameters.
    */
   typedef struct
   {
-    char                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
-    char                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
-    pami_data_function          op;
-    void                      * data_cookie;
-    int                         exclusive;
+    char               * sndbuf;      /**< Source buffer */
+    pami_type_t          stype;       /**< Source buffer type */
+    size_t               stypecount;  /**< Source buffer type count */
+    char               * rcvbuf;      /**< Receive buffer */
+    pami_type_t          rtype;       /**< Receive buffer type */
+    size_t               rtypecount;  /**< Receive buffer type count */
+    pami_data_function   op;          /**< Reduce operation */
+    void               * data_cookie; /**< Cookie to provide to each individual reduce operation */
+    int                  exclusive;   /**< Scan operation is exclusive of current node */
   } pami_scan_t;
 
   /**
-   * \brief Create and post a non-blocking barrier operation.
-   * The barrier operation ...
-   * \param      geometry     Geometry to use for this collective operation.
-   * \param[in]  cb_done      Callback to invoke when message is complete.
-   * \retval  0            Success
+   * \brief Non-blocking barrier operation parameters.
    *
-   * \see PAMI_Barrier_register
-   *
-   * \todo doxygen
+   * \note The barrier collective operation does not require any additional
+   *       parameters.  This structure is defined for completeness purposes.
    */
   typedef struct
   {
   } pami_barrier_t;
 
-
   /**
-   * \brief Create and post a non-blocking active message broadcast operation.
-   * The Active Message broadcast operation ...
+   * \brief Non-blocking active message broadcast operation parameters.
    *
    * This differs from AMSend in only one particular: it takes geometry/team
    * as an argument. The semantics are as follows: the included header and data
@@ -2651,88 +2482,62 @@ extern "C"
    * side the usual two-phase reception protocol is executed: a header handler
    * determines the address to which to deposit the data and sets the address
    * of a receive completion hander to be invoked once the data has arrived.
-   *
-   * \param[in]  dispatch     registered dispatch id to use
-   * \param[in]  user_header  single metadata to send to destination in the header
-   * \param[in]  headerlen    length of the metadata (can be 0)
-   * \param[in]  src          Base source buffer to broadcast.
-   * \param[in]  stype        Datatype of the send buffer
-   * \param[in]  stypecount   replication count of the send buffer data type
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
    */
   typedef struct
   {
-    size_t                      dispatch;
-    void                      * user_header;
-    size_t                      headerlen;
-    void                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
+    size_t        dispatch;    /**< Registered dispatch id to use */
+    void        * user_header; /**< Single metadata to send to destination in the header */
+    size_t        headerlen;   /**< Number of bytes of the metadata; can be 0 */
+    void        * sndbuf;      /**< Base source buffer to broadcast */
+    pami_type_t   stype;       /**< Datatype of the send buffer */
+    size_t        stypecount;  /**< Replication count of the send buffer data type */
   } pami_ambroadcast_t;
+
   /**
    * \brief The active message callback function for active message broadcast
-   *
-   * \todo doxygen
    */
   typedef void (*pami_dispatch_ambroadcast_function) (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
-						      void                 * cookie,       /**< IN:  dispatch cookie */
-						      const void           * header_addr,  /**< IN:  header address  */
-						      size_t                 header_size,  /**< IN:  header size     */
-						      const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-						      size_t                 data_size,    /**< IN:  number of bytes of message data */
-						      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-						      pami_geometry_t        geometry,     /**< IN:  Geometry */
-						      pami_recv_t          * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+                                                      void                 * cookie,       /**< IN:  dispatch cookie */
+                                                      const void           * header_addr,  /**< IN:  header address  */
+                                                      size_t                 header_size,  /**< IN:  header size     */
+                                                      const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                      size_t                 data_size,    /**< IN:  number of bytes of message data */
+                                                      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                                                      pami_geometry_t        geometry,     /**< IN:  Geometry */
+                                                      pami_recv_t          * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
 
   /**
-   * \brief Create and post a non-blocking active message scatter operation.
-   * The Active Message scatter operation ...
+   * \brief Non-blocking active message scatter operation parameters.
    *
    * This is slightly more complicated than an AMBroadcast, because it allows
    * different headers and data buffers to be sent to everyone in the team.
-   *
-   * \param[in]  dispatch     registered dispatch id to use
-   * \param[in]  headers      array of  metadata to send to destination
-   * \param[in]  headerlength length of every header in the headers array
-   * \param[in]  src          Base source buffer to scatter (size of geometry)
-   * \param[in]  stype        single Datatype of the send buffer
-   * \param[in]  stypecount   replication count of the send buffer data type
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
    */
   typedef struct
   {
-    size_t                      dispatch;
-    void                      * headers;
-    size_t                      headerlen;
-    void                      * sndbuf;
-    pami_type_t                 stype;
-    size_t                      stypecount;
+    size_t        dispatch;   /**< Registered dispatch id to use */
+    void        * headers;    /**< Array of metadata to send to destination */
+    size_t        headerlen;  /**< Number of bytes of every header in headers array */
+    void        * sndbuf;     /**< Base source buffer to scatter (size of geometry) */
+    pami_type_t   stype;      /**< Single datatype of the send buffer */
+    size_t        stypecount; /**< Replication count of the send buffer data type */
   } pami_amscatter_t;
-  /**
-   * \brief The active message callback function for active message scatter
-   *
-   * \todo doxygen
-   */
-  typedef void (*pami_dispatch_amscatter_function) (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
-						    void                 * cookie,       /**< IN:  dispatch cookie */
-						    const void           * header_addr,  /**< IN:  header address  */
-						    size_t                 header_size,  /**< IN:  header size     */
-						    const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-						    size_t                 data_size,    /**< IN:  number of bytes of message data */
-						    pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-						    pami_geometry_t        geometry,     /**< IN:  Geometry */
-						    pami_recv_t          * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
 
   /**
-   * \brief Create and post a non-blocking active message gather operation.
-   * The Active Message gather operation ...
+   * \brief The active message callback function for active message scatter
+   */
+  typedef void (*pami_dispatch_amscatter_function) (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
+                                                    void                 * cookie,       /**< IN:  dispatch cookie */
+                                                    const void           * header_addr,  /**< IN:  header address  */
+                                                    size_t                 header_size,  /**< IN:  header size     */
+                                                    const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                                                    size_t                 data_size,    /**< IN:  number of bytes of message data */
+                                                    pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                                                    pami_geometry_t        geometry,     /**< IN:  Geometry */
+                                                    pami_recv_t          * recv);        /**< OUT: receive message structure, only needed if addr is non-NULL */
+
+  /**
+   * \brief Non-blocking active message gather operation parameters.
    *
    * This is the reverse of amscatter. It works as follows. The header only,
    * no data, is broadcast to the team. Each place in the team executes the
@@ -2740,46 +2545,31 @@ extern "C"
    * then takes place (the buffer is sent from the receiver back to the sender,
    * and deposited in one of the buffers provided as part of the original call
    * (the "data" parameter).
-   *
-   * \param[in]  dispatch     registered dispatch id to use
-   * \param[in]  headers      array of metadata to send to destination
-   * \param[in]  headerlen    length of every header in headers array
-   * \param[in]  rcvbuf       target buffer of the gather operation (size of geometry)
-   * \param[in]  rtype        data layout of the incoming gather
-   * \param[in]  rtypecount   replication count of the incoming gather
-   * \param[in]  cb_info      data done callback to call on completion
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
    */
   typedef struct
   {
-    size_t                      dispatch;
-    void                      * headers;
-    size_t                      headerlen;
-    void                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
+    size_t        dispatch;   /**< Registered dispatch id to use */
+    void        * headers;    /**< Array of metadata to send to destination */
+    size_t        headerlen;  /**< Number of bytes of every header in headers array */
+    void        * rcvbuf;     /**< Target buffer of the gather operation (size of geometry) */
+    pami_type_t   rtype;      /**< Data layout of the incoming gather */
+    size_t        rtypecount; /**< Replication count of the target buffer data type */
   } pami_amgather_t;
 
   /**
    * \brief The active message callback function for active message gather
-   *
-   * \todo doxygen
    */
   typedef void (*pami_dispatch_amgather_function) (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
-						   void                 * cookie,       /**< IN:  dispatch cookie */
-						   const void           * header_addr,  /**< IN:  header address  */
-						   size_t                 header_size,  /**< IN:  header size     */
-						   size_t                 data_size,    /**< IN:  number of bytes of message data */
-						   pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-						   pami_geometry_t        geometry,     /**< IN:  Geometry */
-						   pami_recv_t          * send);        /**< OUT: send message structure */
+                                                   void                 * cookie,       /**< IN:  dispatch cookie */
+                                                   const void           * header_addr,  /**< IN:  header address  */
+                                                   size_t                 header_size,  /**< IN:  header size     */
+                                                   size_t                 data_size,    /**< IN:  number of bytes of message data */
+                                                   pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                                                   pami_geometry_t        geometry,     /**< IN:  Geometry */
+                                                   pami_recv_t          * send);        /**< OUT: send message structure */
 
   /**
-   * \brief Create and post a non-blocking active message reduce operation.
-   * The Active Message reduce operation ...
+   * \brief Non-blocking active message reduce operation parameters.
    *
    * This is fairly straightforward given how amgather works. Instead of
    * collecting the data without processing, all buffers are reduced using the
@@ -2787,35 +2577,22 @@ extern "C"
    * deposited in the original buffer provided by the initiator. On the receive
    * side the algorithm has the right to change the buffers provided by the header
    * handler (this may avoid having the implementor allocate more memory for
-   * internal buffering)
-   *
-   * \param[in]  dispatch     registered dispatch id to use
-   * \param[in]  user_header  metadata to send to destinations in the header
-   * \param[in]  rcvbuf       target buffer of the reduce operation (size of geometry)
-   * \param[in]  rtype        data layout of the incoming reduce
-   * \param[in]  rtypecount   replication count of the incoming reduce
-   * \param[in]  op           operation type
-   *
-   * \retval     0            Success
-   *
-   * \todo doxygen
+   * internal buffering).
    */
   typedef struct
   {
-    size_t                      dispatch;
-    void                      * user_header;
-    size_t                      headerlen;
-    void                      * rcvbuf;
-    pami_type_t                 rtype;
-    size_t                      rtypecount;
-    void                      * data_cookie;
-    int                         commutative;
+    size_t        dispatch;    /**< Registered dispatch id to use */
+    void        * user_header; /**< Metadata to send to destinations in the header */
+    size_t        headerlen;   /**< Number of bytes of metadata to send */
+    void        * rcvbuf;      /**< Target buffer of the reduce operation (size of geometry) */
+    pami_type_t   rtype;       /**< Data layout of the incoming reduce */
+    size_t        rtypecount;  /**< Replication count of the incoming reduce */
+    void        * data_cookie; /**<  */
+    int           commutative; /**< Inputs to operation are commutative */
   } pami_amreduce_t;
 
   /**
    * \brief The active message callback function for active message reduce
-   *
-   * \todo doxygen
    */
   typedef void (*pami_dispatch_amreduce_function) (pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
                                                    void                 * cookie,       /**< IN:  dispatch cookie */
@@ -2827,48 +2604,45 @@ extern "C"
                                                    pami_data_function   * op,           /**< OUT: PAMI math operation to perform on the datatype */
                                                    pami_recv_t          * send);        /**< OUT: send message structure, only needed if addr is non-NULL */
 
+  /**
+   * \brief Collective operation parameters
+   */
   typedef union
   {
-    pami_allreduce_t        xfer_allreduce;
-    pami_broadcast_t        xfer_broadcast;
-    pami_reduce_t           xfer_reduce;
-    pami_allgather_t        xfer_allgather;
-    pami_allgatherv_t       xfer_allgatherv;
-    pami_allgatherv_int_t   xfer_allgatherv_int;
-    pami_scatter_t          xfer_scatter;
-    pami_scatterv_t         xfer_scatterv;
-    pami_scatterv_int_t     xfer_scatterv_int;
-    pami_gather_t           xfer_gather;
-    pami_gatherv_t          xfer_gatherv;
-    pami_gatherv_int_t      xfer_gatherv_int;
-    pami_alltoall_t         xfer_alltoall;
-    pami_alltoallv_t        xfer_alltoallv;
-    pami_alltoallv_int_t    xfer_alltoallv_int;
-    pami_ambroadcast_t      xfer_ambroadcast;
-    pami_amscatter_t        xfer_amscatter;
-    pami_amgather_t         xfer_amgather;
-    pami_amreduce_t         xfer_amreduce;
-    pami_scan_t             xfer_scan;
-    pami_barrier_t          xfer_barrier;
-    pami_reduce_scatter_t   xfer_reduce_scatter;
-    } pami_collective_t;
+    pami_allreduce_t        xfer_allreduce;      /**< Allreduce collective parameters */
+    pami_broadcast_t        xfer_broadcast;      /**< Broadcast collective parameters */
+    pami_reduce_t           xfer_reduce;         /**< Reduce collective parameters */
+    pami_allgather_t        xfer_allgather;      /**< Allgather collective parameters */
+    pami_allgatherv_t       xfer_allgatherv;     /**< Allgatherv collective parameters */
+    pami_allgatherv_int_t   xfer_allgatherv_int; /**< Allgatherv_int collective parameters */
+    pami_scatter_t          xfer_scatter;        /**< Scatter collective parameters */
+    pami_scatterv_t         xfer_scatterv;       /**< Scatterv collective parameters */
+    pami_scatterv_int_t     xfer_scatterv_int;   /**< Scatterv_int collective parameters */
+    pami_gather_t           xfer_gather;         /**< Gather collective parameters */
+    pami_gatherv_t          xfer_gatherv;        /**< Gatherv collective parameters */
+    pami_gatherv_int_t      xfer_gatherv_int;    /**< Gatherv_int collective parameters */
+    pami_alltoall_t         xfer_alltoall;       /**< Alltoall collective parameters */
+    pami_alltoallv_t        xfer_alltoallv;      /**< Alltoallv collective parameters */
+    pami_alltoallv_int_t    xfer_alltoallv_int;  /**< Alltoallv_int collective parameters */
+    pami_ambroadcast_t      xfer_ambroadcast;    /**< Active message broadcast collective parameters */
+    pami_amscatter_t        xfer_amscatter;      /**< Active message scatter collective parameters */
+    pami_amgather_t         xfer_amgather;       /**< Active message gather collective parameters */
+    pami_amreduce_t         xfer_amreduce;       /**< Active message reduce collective parameters */
+    pami_scan_t             xfer_scan;           /**< Scan collective parameters */
+    pami_barrier_t          xfer_barrier;        /**< Barrier collective parameters */
+    pami_reduce_scatter_t   xfer_reduce_scatter; /**< Reduce-Scatter collective parameters */
+  } pami_collective_t;
 
   /**
-   * \brief Collective operation arguments
-   *
-   *  cb_done    callback to call on collective completion
-   *  cookie     cookie to deliver to cb_done function
-   *  algorithm  algorithm object from PAMI_Geometry_algorithms_query
-   *  options    collective hints and options
-   *  cmd        collective specific arguments
+   * \brief Collective operation parameter structure
    */
   typedef struct pami_xfer_t
   {
-    pami_event_function       cb_done;
-    void                     *cookie;
-    pami_algorithm_t          algorithm;
-    pami_collective_hint_t    options;
-    pami_collective_t         cmd;
+    pami_event_function      cb_done;   /**< Callback to invoke on collective completion */
+    void                   * cookie;    /**< Cookie to deliver to cb_done function */
+    pami_algorithm_t         algorithm; /**< Algorithm object from PAMI_Geometry_algorithms_query() */
+    pami_collective_hint_t   options;   /**< Collective hints and options */
+    pami_collective_t        cmd;       /**< Collective specific arguments */
   } pami_xfer_t;
 
 
@@ -2881,14 +2655,16 @@ extern "C"
    * It is illegal to post a collective via PAMI_Collective() to a context
    * that is not accociated with an endpoint in the geometry
    *
-   * \param[in]  context         context to deliver async callback
-   * \param[in]  cmd             Collective operation arguments
+   * \param [in] context     context to deliver async callback
+   * \param [in] cmd         Collective operation arguments
+   *
+   * \retval ::PAMI_SUCCESS  The collective operation has started successfully.
    */
-  pami_result_t PAMI_Collective (pami_context_t context, pami_xfer_t *cmd);
+  pami_result_t PAMI_Collective (pami_context_t context, pami_xfer_t * cmd);
 
   /*****************************************************************************/
   /**
-   * \defgroup datatype pami datatype interface
+   * \defgroup datatype Type System
    *
    * A type is a set of contiguous buffers with a signature
    *    { ( bytes_i, disp_i ) | i = 1..n }
@@ -3328,12 +3104,10 @@ extern "C"
   /**
    * \brief Create a new type for noncontiguous transfers
    *
-   * \todo provide example code
+   * \param [out] type       Type identifier to be created
    *
-   * \param[out] type Type identifier to be created
-   *
-   * \retval PAMI_SUCCESS  The type is created.
-   * \retval PAMI_ENOMEM   Out of memory.
+   * \retval ::PAMI_SUCCESS  The type is created.
+   * \retval ::PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_create (pami_type_t * type);
 
@@ -3356,15 +3130,15 @@ extern "C"
    * buffers in a type but the overlapping buffers hold undefined data when
    * such a type is used in data manipulation.
    *
-   * \param[in,out] type   Type identifier to be modified
-   * \param[in]     bytes  Number of bytes of each contiguous buffer
-   * \param[in]     offset Offset from the cursor to place the buffers
-   * \param[in]     count  Number of buffers
-   * \param[in]     stride Stride between buffers
+   * \param [in,out] type   Type identifier to be modified
+   * \param [in]     bytes  Number of bytes of each contiguous buffer
+   * \param [in]     offset Offset from the cursor to place the buffers
+   * \param [in]     count  Number of buffers
+   * \param [in]     stride Stride between buffers
    *
-   * \retval PAMI_SUCCESS  The buffers are added to the type.
-   * \retval PAMI_INVAL    A completed type cannot be modified.
-   * \retval PAMI_ENOMEM   Out of memory.
+   * \retval ::PAMI_SUCCESS The buffers are added to the type.
+   * \retval ::PAMI_INVAL   A completed type cannot be modified.
+   * \retval ::PAMI_ENOMEM  Out of memory.
    */
   pami_result_t PAMI_Type_add_simple (pami_type_t type,
                                       size_t      bytes,
@@ -3396,16 +3170,16 @@ extern "C"
    * \warning It is considered \b illegal to append an incomplete type to
    *          another type.
    *
-   * \param[in,out] type    Type identifier to be modified
-   * \param[in]     subtype Type of each typed buffer
-   * \param[in]     offset  Offset from the cursor to place the buffers
-   * \param[in]     count   Number of buffers
-   * \param[in]     stride  Stride between buffers
+   * \param [in,out] type    Type identifier to be modified
+   * \param [in]     subtype Type of each typed buffer
+   * \param [in]     offset  Offset from the cursor to place the buffers
+   * \param [in]     count   Number of buffers
+   * \param [in]     stride  Stride between buffers
    *
-   * \retval PAMI_SUCCESS  The buffers are added to the type.
-   * \retval PAMI_INVAL    A completed type cannot be modified or an incomplete
-   *                       subtype cannot be added.
-   * \retval PAMI_ENOMEM   Out of memory.
+   * \retval ::PAMI_SUCCESS  The buffers are added to the type.
+   * \retval ::PAMI_INVAL    A completed type cannot be modified or an incomplete
+   *                         subtype cannot be added.
+   * \retval ::PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_add_typed (pami_type_t type,
                                      pami_type_t subtype,
@@ -3422,11 +3196,11 @@ extern "C"
    * \warning It is considered \b illegal to modify a type layout after it
    *          has been completed.
    *
-   * \param[in] type       Type identifier to be completed
-   * \param[in] atom_size  Atom size of the type
+   * \param [in] type        Type identifier to be completed
+   * \param [in] atom_size   Atom size of the type
    *
-   * \retval PAMI_SUCCESS  The type is complete.
-   * \retval PAMI_INVAL    The atom size in invalid.
+   * \retval ::PAMI_SUCCESS  The type is complete.
+   * \retval ::PAMI_INVAL    The atom size in invalid.
    */
   pami_result_t PAMI_Type_complete (pami_type_t type,
                                     size_t      atom_size);
@@ -3437,7 +3211,9 @@ extern "C"
    * The type handle will be changed to an invalid value so that it is
    * clearly destroyed.
    *
-   * \param[in] type Type identifier to be destroyed
+   * \param [in] type       Type identifier to be destroyed
+   *
+   * \retval ::PAMI_SUCCESS The type has been destroyed and is no longer valid
    */
   pami_result_t PAMI_Type_destroy (pami_type_t * type);
 
@@ -3457,13 +3233,13 @@ extern "C"
    * of a type always serialized. Otherwise, it needs to handle serialization
    * while a type is in use.
    *
-   * \param[in]  type      Type identifier to be serialized
-   * \param[out] address   Address of the serialized type object
-   * \param[out] size      Size of the serialized type object
+   * \param [in]  type       Type identifier to be serialized
+   * \param [out] address    Address of the serialized type object
+   * \param [out] size       Size of the serialized type object
    *
-   * \retval PAMI_SUCCESS  The serialization is successful.
-   * \retval PAMI_INVAL    The type is invalid.
-   * \retval PAMI_ENOMEM   Out of memory.
+   * \retval ::PAMI_SUCCESS  The serialization is successful.
+   * \retval ::PAMI_INVAL    The type is invalid.
+   * \retval ::PAMI_ENOMEM   Out of memory.
    */
   pami_result_t PAMI_Type_serialize (pami_type_t   type,
                                      void       ** address,
@@ -3477,13 +3253,13 @@ extern "C"
    *
    * A reconstructed type can be destroyed by \c PAMI_Type_destroy.
    *
-   * \param[out] type      Type identifier to be created
-   * \param[in]  address   Address of the serialized type object
-   * \param[in]  size      Size of the serialized type object
+   * \param [out] type      Type identifier to be created
+   * \param [in]  address   Address of the serialized type object
+   * \param [in]  size      Size of the serialized type object
    *
-   * \retval PAMI_SUCCESS  The reconstruction is successful.
-   * \retval PAMI_INVAL    The serialized type object is corrupted.
-   * \retval PAMI_ENOMEM   Out of memory.
+   * \retval ::PAMI_SUCCESS The reconstruction is successful.
+   * \retval ::PAMI_INVAL   The serialized type object is corrupted.
+   * \retval ::PAMI_ENOMEM  Out of memory.
    */
   pami_result_t PAMI_Type_deserialize (pami_type_t * type,
                                        void        * address,
@@ -3498,8 +3274,8 @@ extern "C"
    * \param [in] configuration  The configuration attributes to query
    * \param [in] num_configs    The number of configuration elements
    *
-   * \retval PAMI_SUCCESS  The update has completed successfully.
-   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
+   * \retval ::PAMI_SUCCESS     The update has completed successfully.
+   * \retval ::PAMI_INVAL       The update has failed due to invalid parameters.
    */
   pami_result_t PAMI_Type_query (pami_type_t           type,
                                  pami_configuration_t  configuration[],
@@ -3508,19 +3284,19 @@ extern "C"
   /**
    * \brief Transform typed data between buffers in the same address space
    *
-   * \param [in] src_addr       Source buffer address
-   * \param [in] src_type       Source data type
-   * \param [in] src_offset     Starting offset of source data type
-   * \param [in] dst_addr       Destination buffer address
-   * \param [in] dst_type       Destination data type
-   * \param [in] dst_offset     Starting offset of destination data type
-   * \param [in] size           Amount of data to transform
-   * \param [in] data_fn        Function to transform the data
-   * \param [in] cookie         Argument to data function
+   * \param [in] src_addr    Source buffer address
+   * \param [in] src_type    Source data type
+   * \param [in] src_offset  Starting offset of source data type
+   * \param [in] dst_addr    Destination buffer address
+   * \param [in] dst_type    Destination data type
+   * \param [in] dst_offset  Starting offset of destination data type
+   * \param [in] size        Amount of data to transform
+   * \param [in] data_fn     Function to transform the data
+   * \param [in] cookie      Argument to data function
    *
-   * \retval PAMI_SUCCESS  The operation has completed successfully.
-   * \retval PAMI_INVAL    The operation has failed due to invalid parameters,
-   *                       e.g. incomplete types.
+   * \retval ::PAMI_SUCCESS  The operation has completed successfully.
+   * \retval ::PAMI_INVAL    The operation has failed due to invalid parameters,
+   *                         e.g. incomplete types.
    */
   pami_result_t PAMI_Type_transform_data (void               * src_addr,
                                           pami_type_t          src_type,
@@ -3534,22 +3310,16 @@ extern "C"
 
   /** \} */ /* end of "datatype" group */
 
-  /*****************************************************************************/
   /**
-   * \defgroup dispatch pami dispatch interface
-   *
-   * Some brief documentation on dispatch stuff ...
-   * \{
+   * \brief Active message dispatch callbacks
    */
-  /*****************************************************************************/
-
   typedef union
   {
-    pami_dispatch_p2p_function         p2p;
-    pami_dispatch_ambroadcast_function ambroadcast;
-    pami_dispatch_amscatter_function   amscatter;
-    pami_dispatch_amgather_function    amgather;
-    pami_dispatch_amreduce_function    amreduce;
+    pami_dispatch_p2p_function         p2p;         /**< point-to-point dispatch function */
+    pami_dispatch_ambroadcast_function ambroadcast; /**< active message broadcast dispatch function */
+    pami_dispatch_amscatter_function   amscatter;   /**< active message scatter dispatch function */
+    pami_dispatch_amgather_function    amgather;    /**< active message gather dispatch function */
+    pami_dispatch_amreduce_function    amreduce;    /**< active message reduce dispatch function */
   } pami_dispatch_callback_function;
 
   /**
@@ -3573,11 +3343,15 @@ extern "C"
    *       ::PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with
    *       PAMI_Context_query().
    *
+   * \ingroup activemessage
+   *
    * \param [in] context    Communication context
    * \param [in] dispatch   Dispatch identifier to initialize
    * \param [in] fn         Dispatch receive function
    * \param [in] cookie     Dispatch function cookie
    * \param [in] options    Dispatch registration assertions
+   *
+   * \retval PAMI_SUCCESS   The dispatch has been set successfully.
    */
   pami_result_t PAMI_Dispatch_set (pami_context_t                    context,
                                    size_t                            dispatch,
@@ -3601,7 +3375,7 @@ extern "C"
    * tasks. However, there is no specific error check that will prevent
    * the application from specifying different hint assertions. The result of a
    * communication operation using  mismatched hint assertions is \e undefined.
-   * 
+   *
    * \note The maximum allowed dispatch identifier attribute,
    *       ::PAMI_CONTEXT_DISPATCH_ID_MAX, can be queried with
    *       PAMI_Context_query().
@@ -3613,6 +3387,7 @@ extern "C"
    * \param [in] cookie     Dispatch function cookie
    * \param [in] options    Dispatch registration assertions
    *
+   * \retval PAMI_SUCCESS   The dispatch has been set successfully.
    */
   pami_result_t PAMI_AMCollective_dispatch_set(pami_context_t                    context,
                                                pami_algorithm_t                  algorithm,
@@ -3620,11 +3395,13 @@ extern "C"
                                                pami_dispatch_callback_function   fn,
                                                void                            * cookie,
                                                pami_collective_hint_t            options);
-  /** \} */ /* end of "dispatch" group */
 
   /**
    * \brief Query the value of an attribute
    *
+   * \ingroup configuration
+   *
+   * \param [in]     context        Communication context
    * \param [in]     dispatch       The PAMI dispatch
    * \param [in,out] configuration  The configuration attribute of interest
    * \param [in]     num_configs    The number of configuration elements
@@ -3640,6 +3417,9 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
+   * \ingroup configuration
+   *
+   * \param [in] context        Communication context
    * \param [in] dispatch       The PAMI dispatch
    * \param [in] configuration  The configuration attribute to update
    * \param [in] num_configs    The number of configuration elements
@@ -3656,12 +3436,14 @@ extern "C"
   /**
    * \brief Query the value of an attribute
    *
+   * \ingroup configuration
+   *
    * \param [in]     client         The PAMI client
    * \param [in,out] configuration  The configuration attribute of interest
    * \param [in]     num_configs    The number of configuration elements
    *
-   * \retval PAMI_SUCCESS  The query has completed successfully.
-   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
+   * \retval ::PAMI_SUCCESS  The query has completed successfully.
+   * \retval ::PAMI_INVAL    The query has failed due to invalid parameters.
    */
   pami_result_t PAMI_Client_query (pami_client_t         client,
                                    pami_configuration_t  configuration[],
@@ -3670,29 +3452,33 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
+   * \ingroup configuration
+   *
    * \param [in] client         The PAMI client
    * \param [in] configuration  The configuration attribute to update
    * \param [in] num_configs    The number of configuration elements
    *
-   * \retval PAMI_SUCCESS  The update has completed successfully.
-   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
-   *                       For example, trying to update a read-only attribute.
+   * \retval ::PAMI_SUCCESS  The update has completed successfully.
+   * \retval ::PAMI_INVAL    The update has failed due to invalid parameters.
+   *                         For example, trying to update a read-only attribute.
    */
   pami_result_t PAMI_Client_update (pami_client_t         client,
                                     pami_configuration_t  configuration[],
                                     size_t                num_configs);
 
 
-    /**
-   * \brief Query the value of an attribute
+  /**
+  * \brief Query the value of an attribute
+  *
+   * \ingroup configuration
    *
-   * \param [in]     context        The PAMI context
-   * \param [in,out] configuration  The configuration attribute of interest
-   * \param [in]     num_configs    The number of configuration elements
-   *
-   * \retval PAMI_SUCCESS  The query has completed successfully.
-   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
-   */
+  * \param [in]     context        The PAMI context
+  * \param [in,out] configuration  The configuration attribute of interest
+  * \param [in]     num_configs    The number of configuration elements
+  *
+  * \retval ::PAMI_SUCCESS  The query has completed successfully.
+  * \retval ::PAMI_INVAL    The query has failed due to invalid parameters.
+  */
   pami_result_t PAMI_Context_query (pami_context_t        context,
                                     pami_configuration_t  configuration[],
                                     size_t                num_configs);
@@ -3700,10 +3486,12 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
-   * \thread    This operation on the communication context is \b not 
+   * \thread    This operation on the communication context is \b not
    *            \b thread-safe. It is the responsibility of the application to
    *            ensure that only one execution resource operates on a
    *            communication context at any time.
+   *
+   * \ingroup configuration
    *
    * \param [in] context        Communication context
    * \param [in] configuration  The configuration attribute to update
@@ -3722,12 +3510,14 @@ extern "C"
   /**
    * \brief Query the value of an attribute
    *
+   * \ingroup configuration
+   *
    * \param [in]     geometry       The PAMI geometry
    * \param [in,out] configuration  The configuration attribute of interest
    * \param [in]     num_configs    The number of configuration elements
    *
-   * \retval PAMI_SUCCESS  The query has completed successfully.
-   * \retval PAMI_INVAL    The query has failed due to invalid parameters.
+   * \retval ::PAMI_SUCCESS  The query has completed successfully.
+   * \retval ::PAMI_INVAL    The query has failed due to invalid parameters.
    */
   pami_result_t PAMI_Geometry_query (pami_geometry_t       geometry,
                                      pami_configuration_t  configuration[],
@@ -3736,23 +3526,25 @@ extern "C"
   /**
    * \brief Update the value of an attribute
    *
-   * WARNING - Changing a Geometry configuration attribute may fundamentally
-   * alter the Geometry. Any saved knowledge (for example, algorithm lists)
-   * must be discarded and re-queried after a call to PAMI_Geometry_update().
-   *
-   * \param [in] geometry      The PAMI geometry
-   * \param [in] configuration The configuration attribute to update
-   * \param [in] num_configs   The number of configuration elements
-   * \param[in]  context       context to deliver async callback to
-   * \param[in]  fn            event function to call when geometry has been created
-   * \param[in]  cookie        user cookie to deliver with the callback
+   * \warning Changing a Geometry configuration attribute may fundamentally
+   *          alter the Geometry. Any saved knowledge (for example, algorithm lists)
+   *          must be discarded and re-queried after a call to PAMI_Geometry_update().
    *
    * \note This is a collective call, and the configuration variable
    *       must be set collectively
    *
-   * \retval PAMI_SUCCESS  The update has completed successfully.
-   * \retval PAMI_INVAL    The update has failed due to invalid parameters.
-   *                       For example, trying to update a read-only attribute.
+   * \ingroup configuration
+   *
+   * \param [in] geometry      The PAMI geometry
+   * \param [in] configuration The configuration attribute to update
+   * \param [in] num_configs   The number of configuration elements
+   * \param [in] context       context to deliver async callback to
+   * \param [in] fn            event function to call when geometry has been created
+   * \param [in] cookie        user cookie to deliver with the callback
+   *
+   * \retval ::PAMI_SUCCESS  The update has completed successfully.
+   * \retval ::PAMI_INVAL    The update has failed due to invalid parameters.
+   *                         For example, trying to update a read-only attribute.
    */
   pami_result_t PAMI_Geometry_update (pami_geometry_t       geometry,
                                       pami_configuration_t  configuration[],
@@ -3769,8 +3561,8 @@ extern "C"
    *
    * \note  PAMI implementations may provide translated (i18n) text.
    *
-   * \param[in] string Character array to write the descriptive text
-   * \param[in] length Length of the character array
+   * \param [in] string Character array to write the descriptive text
+   * \param [in] length Length of the character array
    *
    * \return Number of characters written into the array
    */
@@ -3779,7 +3571,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup Time Timer functions required by MPI
+   * \defgroup time Time functions
    *
    * \{
    */
@@ -3788,18 +3580,24 @@ extern "C"
   /**
    * \brief  Returns an elapsed time on the calling processor.
    * \note   This has the same definition as MPI_Wtime
+   *
+   * \param [in] client Client handle.
+   *
    * \return Time in seconds since an arbitrary time in the past.
    */
-  double PAMI_Wtime(pami_client_t client);
+  double PAMI_Wtime (pami_client_t client);
 
   /**
    * \brief  Returns the number of "cycles" elapsed on the calling processor.
-   * \return Number of "cycles" since an arbitrary time in the past.
    *
    * "Cycles" could be any quickly and continuously increasing counter
    * if true cycles are unavailable.
+   *
+   * \param [in] client Client handle.
+   *
+   * \return Number of "cycles" since an arbitrary time in the past.
    */
-  unsigned long long PAMI_Wtimebase(pami_client_t client);
+  unsigned long long PAMI_Wtimebase (pami_client_t client);
 
   /** \} */ /* end of "Time" group */
 
@@ -3807,8 +3605,6 @@ extern "C"
   /*****************************************************************************/
   /**
    * \defgroup contexts_and_endpoints Multi-context messaging
-   *
-   * Some brief documentation on context stuff ...
    * \{
    */
   /*****************************************************************************/
@@ -3822,21 +3618,21 @@ extern "C"
    * - "MPI"
    * - "UPC"
    * - "ARMCI"
-   * 
+   *
    * The opaque client object represents a collection of resources to enable
    * network communications. Resources are allocated and assigned when the
    * client is created.
-   * 
+   *
    * A client must be initialized with an identical name and configuration on
    * each process to enable communication between clients. Clients are unable to
    * communicate with any client that has been initialized with a different
    * configuration. This feature enables the independent development of
    * middleware software and allows middleware to be used concurrently by an
    * application.
-   * 
+   *
    * A communication context must be created before any data transfer functions
    * may be invoked.
-   * 
+   *
    * \note Client creation may be a synchronizing event, but is not required
    *       to be implemented as a synchronizing event. Application code must
    *       not make any assumption about synchronization during client
@@ -3865,7 +3661,7 @@ extern "C"
    *
    * The application must destroy any communication contexts associated with
    * the client before the client is destroyed.
-   * 
+   *
    * This function is \b not \b thread-safe and it is the responsibility of the
    * application to ensure that one, and only one, application thread destroys
    * the client. After the client is destroyed the client handle will be changed
@@ -3879,7 +3675,7 @@ extern "C"
    *       have been previously destroyed by the application.
    *
    * \param [in] client Opaque client object
-   * 
+   *
    * \retval ::PAMI_SUCCESS  The client has been successfully destroyed.
    * \retval ::PAMI_INVAL    The client is invalid, e.g. already destroyed.
    */
@@ -3892,13 +3688,13 @@ extern "C"
    * Endpoints are opaque objects that are used to address a destination
    * in a client and are constructed from a client, task, and context offset.
    * The application must not directly read or write the value of the object.
-   * 
+   *
    * - The client is required to disambiguate the task and context offset
    *   identifiers, as these identifiers may be the same for multiple clients
-   * 
+   *
    * - The task is required to construct an endpoint to address the specific
    *   process that contains the destination context
-   * 
+   *
    * - The context offset is required to identify the specific context on the
    *   destination task and corresponds to the location in the array of contexts
    *   created by PAMI_Context_createv()
@@ -3909,15 +3705,15 @@ extern "C"
    * may be constucted from a set of endpoints
    *
    * \par Alternative endpoint identification
-   * 
+   *
    * Applications may prefer to use a unique integer, instead of the endpoint
    * opaque type, to identify all communication destinations for a client. This
    * can be accomplished by creating an array of endpoint opaque objects and
    * using the index into the array as the destination identifier.
-   * 
+   *
    * See to the \link endpoint_table.c endpoint table example \endlink for more
    * information.
-   * 
+   *
    * An array of all endpoints in a client can be large. One strategy to reduce
    * the endpoint array memory requirements is to create the endpoint table in
    * shared memory in an environment where multiple processes have access to the
@@ -3925,13 +3721,13 @@ extern "C"
    * allocate this shared memory area and coordinate the initialization and
    * access of any shared data structures. This includes any endpoint opaque
    * objects which may be created by one process and read by another process.
-   * 
+   *
    * \note The internal implementation of the endpoint opaque object will not
    *       contain any pointers to the local address space of a particular
    *       process, as doing so will prevent the application from placing the
    *       array of endpoints in a shared memory area to be used, read-only, by
    *       all tasks with access to the shared memory area.
-   * 
+   *
    * \{
    */
   /****************************************************************************/
@@ -3940,10 +3736,12 @@ extern "C"
    * \brief Create an individual endpoint identifier to address a destination
    *        for communication operations
    *
-   * \param [in]  client   Opaque destination client object
-   * \param [in]  task     Opaque destination task object
-   * \param [in]  offset   Destination context offset
-   * \param [out] endpoint Opaque endpoint object
+   * \param [in]  client     Opaque destination client object
+   * \param [in]  task       Opaque destination task object
+   * \param [in]  offset     Destination context offset
+   * \param [out] endpoint   Opaque endpoint object
+   *
+   * \retval ::PAMI_SUCCESS  Valid endpoint from client, task, and offset
    */
   pami_result_t PAMI_Endpoint_create (pami_client_t     client,
                                       pami_task_t       task,
@@ -3957,9 +3755,11 @@ extern "C"
    *
    * \see PAMI_Endpoint_create()
    *
-   * \param [in]  endpoint Opaque endpoint object
-   * \param [out] task     Opaque destination task object
-   * \param [out] offset   Destination context offset
+   * \param [in]  endpoint   Opaque endpoint object
+   * \param [out] task       Opaque destination task object
+   * \param [out] offset     Destination context offset
+   *
+   * \retval ::PAMI_SUCCESS  Valid endpoint task and offset
    */
   pami_result_t PAMI_Endpoint_query (pami_endpoint_t   endpoint,
                                      pami_task_t     * task,
@@ -3975,11 +3775,11 @@ extern "C"
    * the client object for each task. Every context within a client has
    * equivalent functionality and semantics. The application must not directly
    * read or write the value of the ::pami_context_t opaque object.
-   * 
+   *
    * It is the responsibility of the application to ensure that all
    * communication contexts created for a client are advanced by a thread or
    * execution resource to prevent deadlocks. This is the "all advance" rule.
-   * 
+   *
    * All point-to-point and collective operations are posted to a local
    * communication context and delivered to a communication context on a remote
    * task. The runtime could implement \e horizontal parallelism by injecting
@@ -3987,7 +3787,7 @@ extern "C"
    * with the client. Consequently, data can be received across multiple
    * communication contexts. To guarantee progress of a single operation, and
    * avoid deadlocks, every context must be advanced.
-   * 
+   *
    * The "all advance" rule may be relaxed for an application with expert
    * knowledge about the communication patterns being used. To do this the
    * application must specify special hints to disable "horizontal", or
@@ -3995,7 +3795,7 @@ extern "C"
    * and pami_collective_hint_t.multicontext option. These options must be set
    * to pami_hint_t::PAMI_HINT_DISABLE to disable multi-context parallelization
    * and relax the "all advance" progress rule.
-   * 
+   *
    * \thread  The progress engine for each communication context is independent
    *          and may be advanced concurrently by using multiple threads to
    *          invoke the progress functions. However, operations on contexts are
@@ -4035,7 +3835,7 @@ extern "C"
    *       associated with each context has not yet been created.
    *
    * Context creation is a local operation and does not involve communication or
-   * synchronization with other tasks. 
+   * synchronization with other tasks.
    *
    * \param [in]  client        Client handle
    * \param [in]  configuration Array of configurable attributes and values
@@ -4060,12 +3860,12 @@ extern "C"
    * This function is \b not \b thread-safe and it is the responsibility of the
    * application to ensure that one, and only one, application thread destroys
    * the communication context(s) for a client.
-   * 
+   *
    * After the context(s) are
    * destroyed the context handles will be changed to an invalid value so that
    * they are clearly destroyed. It is \b illegal to invoke any functions using
    * a destroyed communication context.
-   * 
+   *
    * \note The PAMI_Context_lock(), PAMI_Context_trylock(), and
    *       PAMI_Context_unlock(), functions must not be used to ensure
    *       thread-safe access to the context destroy function as the lock
@@ -4095,7 +3895,7 @@ extern "C"
    * The work callback function, with the associated cookie, will continue to be
    * invoked during communication context advance until the function does not
    * return ::PAMI_EAGAIN.
-   *  
+   *
    * There is no explicit completion notification provided to the \e posting
    * thread when a thread advancing the target context returns ::PAMI_SUCCESS
    * from the work callback function.  If the posting thread desires
@@ -4120,7 +3920,7 @@ extern "C"
    * May complete zero, one, or more outbound transfers. May invoke event
    * callback functions to notify the application of completed events. May
    * invoke dispatch callback functions for incoming transfers. May invoke work
-   * callback functions previously posted to the communication context. 
+   * callback functions previously posted to the communication context.
    *
    * This polling advance function will return after the first poll iteration
    * that results in a processed event or, if no events are processed, after
@@ -4131,7 +3931,7 @@ extern "C"
    * access to this critical section. It is the responsibility of the
    * application to ensure that critical sections are protected from concurrent
    * access by multiple execution resources.
-   * 
+   *
    * \warning This function is \b not \b re-entrant for any given communication
    *          context. Application code that is executed within any callback
    *          function that is invoked as a result of an advance of the internal
@@ -4190,7 +3990,7 @@ extern "C"
    * \param [in] context Array of communication contexts
    * \param [in] count   Number of communication contexts
    * \param [in] maximum Maximum number of internal poll iterations on each context
-   * 
+   *
    * \retval ::PAMI_SUCCESS  An event has occurred and been processed.
    * \retval ::PAMI_EAGAIN   No event has occurred.
    */
@@ -4214,7 +4014,7 @@ extern "C"
    * engine for the communication contexts, however before each individual
    * advance a context lock will be attempted to protected each context from
    * re-entrant access by multiple execution resources.
-   * 
+   *
    * May complete zero, one, or more outbound transfers. May invoke dispatch
    * handlers for incoming transfers. May invoke work event callbacks previously
    * posted to a communication context.
@@ -4237,7 +4037,7 @@ extern "C"
    * \param [in] context Array of communication contexts
    * \param [in] count   Number of communication contexts
    * \param [in] maximum Maximum number of internal poll iterations
-   * 
+   *
    * \retval ::PAMI_SUCCESS  An event has occurred and been processed.
    * \retval ::PAMI_EAGAIN   No event has occurred.
    */
@@ -4289,7 +4089,7 @@ extern "C"
 
   /*****************************************************************************/
   /**
-   * \defgroup extensions PAMI Extensions
+   * \defgroup extensions Extensions
    *
    * A PAMI extension may contain one or more extended functions or variables,
    * using the PAMI_Extension_symbol() interface.
@@ -4308,6 +4108,7 @@ extern "C"
    */
   /*****************************************************************************/
 
+  /** \brief Opaque extension handle */
   typedef void * pami_extension_t;
 
   /**
@@ -4348,6 +4149,8 @@ extern "C"
    *         execution resource closes the extension for a client at any time.
    *
    * \param [in] extension Extension handle
+   *
+   * \retval ::PAMI_SUCCESS The extension is no longer available for use.
    */
   pami_result_t PAMI_Extension_close (pami_extension_t extension);
 
