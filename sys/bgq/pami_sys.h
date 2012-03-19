@@ -1,6 +1,14 @@
+/* ------------------------------------------------------------------------- */
+/* Licensed Materials - Property of IBM                                      */
+/* Blue Gene/Q 5765-PER 5765-PRP                                             */
+/* © Copyright IBM Corp. 2012 All Rights Reserved                            */
+/* US Government Users Restricted Rights - Use, duplication or disclosure    */
+/*   restricted by GSA ADP Schedule Contract with IBM Corp.                  */
+/* ------------------------------------------------------------------------- */
+
 /**
  * \file sys/bgq/pami_sys.h
- * \brief Platform specifc type definitions for IBM's PAMI message layer.
+ * \brief Blue Gene/Q specifc interface definitions
  *
  * \defgroup bgq_pami_sys BG/Q specifc interface definitions.
  *
