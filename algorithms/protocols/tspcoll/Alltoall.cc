@@ -40,8 +40,8 @@ void xlpgas::Alltoall<T_NI>::kick_internal    () {
   // potentially expensive in terms of run time and resources
   // allocated
   int j = _sndstartedcount[_odd];
-  int CSIZE=(int)this->_comm->size();
-  for (; j < CSIZE; j++) {
+  int csize=(int)this->_comm->size();
+  for (; j < csize; j++) {
     if (buffer_full()) {
       MUTEX_UNLOCK(&this->_mutex);
       break;
@@ -85,7 +85,7 @@ void xlpgas::Alltoall<T_NI>::kick_internal    () {
 
     // increment current wrapping arround
     _current += 1;
-    if((int)_current == CSIZE)
+    if((int)_current == csize)
       _current = 0;
   }
 }
