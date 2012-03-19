@@ -349,7 +349,7 @@ void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::reset (int                 
   args.onebuf_bcast    = (void*)_onebuf_bcast;
   args.pipelined_bcast    = (void*)this;
   _onebuf_bcast->setComplete(next_pipelined_phase<T_NI,T_Device>,&args);
-  size_t to_send = (nbytes <= this->_buf_size) ? nbytes : this->_buf_size;
+  //size_t to_send = (nbytes <= this->_buf_size) ? nbytes : this->_buf_size;
   //next line is very important; 
   _onebuf_bcast->setContext(this->_pami_ctxt);//don't move after reset; and you always have to set it
   _onebuf_bcast->reset(root,sbuf,rbuf,(TypeCode*)PAMI_TYPE_BYTE,nbytes);
