@@ -324,17 +324,17 @@ void next_pipelined_phase (void* ctxt, void * arg, pami_result_t){
 
 
 template <class T_NI, class T_Device>
-void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::reset (int root, 
-                                                            const void         * sbuf, 
-                                                            void                   * rbuf, 
+void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::reset (int                 root, 
+                                                            const void        * sbuf, 
+                                                            void              * rbuf, 
                                                             TypeCode          * type,
-                                                            size_t                   typecount) {
+                                                            size_t              typecount) {
   size_t nbytes = type->GetDataSize() * typecount;
   args.root     = root;
   args.buf_size = this->_buf_size;
   args.nbytes   = nbytes;
-  args.ttype    = type;
-  args.tcount   = typecount;
+  args.ttype    = (TypeCode*)PAMI_TYPE_BYTE;
+  args.tcount   = nbytes;
   args.sbuf     = const_cast<void*>(sbuf);
   args.dbuf     = rbuf;
   args.o_sbuf   = args.sbuf;
@@ -352,5 +352,5 @@ void xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::reset (int root,
   size_t to_send = (nbytes <= this->_buf_size) ? nbytes : this->_buf_size;
   //next line is very important; 
   _onebuf_bcast->setContext(this->_pami_ctxt);//don't move after reset; and you always have to set it
-  _onebuf_bcast->reset(root,sbuf,rbuf,type,to_send);
+  _onebuf_bcast->reset(root,sbuf,rbuf,(TypeCode*)PAMI_TYPE_BYTE,nbytes);
 }

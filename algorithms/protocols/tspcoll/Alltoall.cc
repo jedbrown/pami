@@ -40,7 +40,8 @@ void xlpgas::Alltoall<T_NI>::kick_internal    () {
   // potentially expensive in terms of run time and resources
   // allocated
   int j = _sndstartedcount[_odd];
-  for (; j < (int)this->_comm->size(); j++) {
+  int CSIZE=(int)this->_comm->size();
+  for (; j < CSIZE; j++) {
     if (buffer_full()) {
       MUTEX_UNLOCK(&this->_mutex);
       break;
@@ -78,13 +79,13 @@ void xlpgas::Alltoall<T_NI>::kick_internal    () {
       events.remote_fn      = NULL;
       _pwq.configure((char *)_sbuf + _current * _len, this->_len, this->_len, _stype, _rtype);
       _pwq.reset();
-      this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (_current), sizeof(_header),&_header,this->_len, &_pwq, &events);
+      this->_p2p_iface->sendPWQ(this->_pami_ctxt, p_send.send.dest, sizeof(_header),&_header,this->_len, &_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }
 
     // increment current wrapping arround
     _current += 1;
-    if(_current == this->_comm->size())
+    if((int)_current == CSIZE)
       _current = 0;
   }
 }
