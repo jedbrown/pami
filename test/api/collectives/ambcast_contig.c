@@ -17,120 +17,6 @@
 
 #include "../pami_util.h"
 
-
-void initialize_sndbuf (void *sbuf, int count, int root, int dt)
-{
-  int i = count;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  sbuf;
-    unsigned int u = root;
-    for (; i; i--)
-    {
-      ibuf[i-1] = (u++);
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  sbuf;
-    double d = root * 1.0;
-    for (; i; i--)
-    {
-      dbuf[i-1] = d;
-      d = d + 1.0;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fbuf = (float *)  sbuf;
-    float f = root * 1.0;
-    for (; i; i--)
-    {
-      fbuf[i-1] = f;
-      f = f + 1.0;
-    }
-  }
-  else
-  {
-    char *cbuf = (char *)  sbuf;
-    char c = root;
-    for (; i; i--)
-    {
-      cbuf[i-1] = (c++);
-    }
-  }
-}
-
-int check_rcvbuf (void *rbuf, int count, int root, int dt)
-{
-  int i = count;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  rbuf;
-    unsigned int u = root;
-    for (; i; i--)
-    {
-      if (ibuf[i-1] != u)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, count, rbuf, i - 1, ibuf[i-1], u);
-        return 1;
-      }
-
-      u++;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  rbuf;
-    double d = root * 1.0;
-    for (; i; i--)
-    {
-      if (dbuf[i-1] != d)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, count, rbuf, i - 1, dbuf[i-1], d);
-        return 1;
-      }
-
-      d = d + 1.0;
-    }
-  }
-  else   if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fbuf = (float *)  rbuf;
-    float f = root * 1.0;
-    for (; i; i--)
-    {
-      if (fbuf[i-1] != f)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, count, rbuf, i - 1, fbuf[i-1], f);
-        return 1;
-      }
-
-      f = f + 1.0;
-    }
-  }
-  else
-  {
-    unsigned char c = root;
-    unsigned char *cbuf = (unsigned char *)  rbuf;
-
-    for (; i; i--)
-    {
-      if (cbuf[i-1] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, count, rbuf, i - 1, cbuf[i-1], c);
-        return 1;
-      }
-
-      c++;
-    }
-  }
-
-  return 0;
-}
-
 volatile unsigned       _g_total_broadcasts;
 char                   *_g_recv_buffer;
 int                     _gRc = PAMI_SUCCESS;
@@ -149,7 +35,7 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   int rc_check;
   validation_t *v = (validation_t*)clientdata;
 
-  _gRc |= rc_check = check_rcvbuf (v->rbuf, v->count, v->root, v->dt);
+  _gRc |= rc_check = bcast_check_rcvbuf_dt (v->rbuf, v->count, v->root, v->dt);
   if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
   free(clientdata);
@@ -416,7 +302,7 @@ int main(int argc, char*argv[])
                 if (task_id == root_task)
                 {
                   ambroadcast.cmd.xfer_ambroadcast.stypecount = i;
-                  initialize_sndbuf (buf, i, root_task, dt);
+                  bcast_initialize_sndbuf_dt (buf, i, root_task, dt);
                   ti = timer();
 
                   for (j = 0; j < niter; j++)

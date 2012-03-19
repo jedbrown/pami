@@ -20,49 +20,6 @@
 #include "../pami_util.h"
 #include <pthread.h>
 
-void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
-{
-
-  int i;
-  /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  buf;
-    for (i = 0; i < count; i++)
-    {
-      ibuf[i] = i;
-    }
-  }
-  else
-  {
-    size_t sz=get_type_size(dt_array[dt]);
-    memset(buf,  task_id,  count * sz);
-  }
-}
-
-int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id)
-{
-
-  int i, err = 0;
-  /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *rbuf = (unsigned int *)  buf;
-    for (i = 0; i < count / num_tasks; i++)
-    {
-      if (rbuf[i] != (i + task_id * (count / num_tasks))* num_tasks)
-      {
-        fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],(i+task_id * (count/num_tasks))*num_tasks);
-        err = -1;
-        return err;
-      }
-    }
-  }
-
-  return err;
-}
-
-
 static void *reduce_scatter_test(void*);
 pami_geometry_t      newgeometry;
 pami_task_t          task_id;
@@ -343,7 +300,7 @@ static void * reduce_scatter_test(void* p)
               reduce_scatter.cmd.xfer_reduce_scatter.op=op_array[op];
               reduce_scatter.cmd.xfer_reduce_scatter.rcounts=&rcounts[0];
 
-              initialize_sndbuf (sbuf, i, op, dt, td->logical_rank);
+              reduce_scatter_initialize_sndbuf (sbuf, i, op, dt, td->logical_rank);
 
               blocking_coll(myContext, &barrier, &bar_poll_flag);
               ti = timer();
@@ -356,7 +313,7 @@ static void * reduce_scatter_test(void* p)
               blocking_coll(myContext, &barrier, &bar_poll_flag);
 
               int rc_check;
-              rc |= rc_check = check_rcvbuf (rbuf, i, op, dt, num_ep, td->logical_rank);
+              rc |= rc_check = reduce_scatter_check_rcvbuf (rbuf, i, op, dt, num_ep, td->logical_rank);
 
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
               usec = (tf - ti)/(double)niter;

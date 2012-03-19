@@ -22,57 +22,6 @@ size_t *sdispls = NULL;
 size_t *rcvlens = NULL;
 size_t *rdispls = NULL;
 
-void initialize_sndbuf( pami_geometry_range_t  * range,
-			int                      rangecount,
-			size_t                   r, 
-			char                   * sbuf, 
-			char                   * rbuf)
-{
-  size_t k,j =0, nranks=0, cur_range=0, rank=0;
-
-  for (j = 0; j < rangecount; ++j) {      
-    cur_range = (range[j].hi - range[j].lo + 1);
-    if (nranks + cur_range > r) {
-      rank = range[j].lo + r - nranks;
-      break;
-    }
-    nranks += cur_range;
-  }
-
-  if(gVerbose==2) printf("init: r = %zu rank %zu\n", r, rank);
-
-  for (k = 0; k < sndlens[r]; k++)
-  {
-    sbuf[ sdispls[r] + k ] = ((rank + k) & 0xff);
-    rbuf[ rdispls[r] + k ] = 0xff;
-  }
-}
-
-int  check_rcvbuf (  size_t                   sz, 
-		     size_t                   myrank, 
-		     char                   * rbuf )
-{
-  size_t r, k;
-
-  for (r = 0; r < sz; r++)
-    for (k = 0; k < rcvlens[r]; k++)
-    {
-      if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
-      {
-        fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu) %zu\n",
-                gProtocolName, sndlens[r],
-                rdispls[r], k,
-                rbuf[ rdispls[r] + k ],
-                (char)((myrank + k) & 0xff),
-                r,
-		myrank);
-        return 1;
-      }
-    }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -305,8 +254,7 @@ int main(int argc, char*argv[])
               sndlens[j] = rcvlens[j] = i;
               sdispls[j] = rdispls[j] = i * j;
 
-              initialize_sndbuf( range, rangecount, j, sbuf, rbuf );
-
+              alltoallv_initialize_bufs(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j);
             }
 
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
@@ -327,7 +275,7 @@ int main(int argc, char*argv[])
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
             int rc_check;
-            rc |= rc_check = check_rcvbuf(num_tasks, task_id, rbuf);
+            rc |= rc_check = alltoallv_check_rcvbuf(rbuf, rcvlens, rdispls, num_tasks, local_task_id);
 
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

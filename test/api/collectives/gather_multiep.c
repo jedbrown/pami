@@ -19,44 +19,6 @@
 #include "../pami_util.h"
 #include <pthread.h>
 
-void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
-{
-
-  unsigned char *cbuf = (unsigned char *)  buf;
-  unsigned char c = 0x00 + task_id;
-  int i = bytes;
-
-  for (; i; i--)
-    {
-      cbuf[i-1] = c++;
-    }
-}
-
-int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
-{
-
-  int j;
-  for (j = 0; j < num_tasks; j++)
-    {
-      unsigned char *cbuf = (unsigned char *)  buf + j *bytes;
-      unsigned char c = 0x00 + j;
-      int i = bytes;
-      for (; i; i--)
-        {
-          if (cbuf[i-1] != c)
-            {
-              fprintf(stderr, "%s:Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",
-                      gProtocolName,bytes,buf, i, i-1, cbuf[i-1], c);
-              return -1;
-            }
-
-          c++;
-        }
-    }
-  return 0;
-}
-
-
 static void *gather_test(void*);
 
 pami_geometry_t      newgeometry;
@@ -333,7 +295,7 @@ static void * gather_test(void* p) {
               pami_endpoint_t root_ep;
               PAMI_Endpoint_create(client, root_task, ctxt_id, &root_ep);
               gather.cmd.xfer_gather.root       = root_ep;
-              initialize_sndbuf (td->logical_rank, buf, i);
+              gather_initialize_sndbuf (td->logical_rank, buf, i);
               if (root_ep == zero_ep)
                 memset(rbuf, 0xFF, i*num_ep);
               blocking_coll(myContext, &gather, &gather_poll_flag);
@@ -341,7 +303,7 @@ static void * gather_test(void* p) {
               if (my_ep == zero_ep)
                 {
                   int rc_check;
-                  rc |= rc_check =check_rcvbuf(num_ep, rbuf, i);
+                  rc |= rc_check = gather_check_rcvbuf(num_ep, rbuf, i);
                   if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
                 }
               ctxt_id   = (ctxt_id + 1)%gNum_contexts;

@@ -25,7 +25,7 @@ do
         oldpwd=`pwd`
         cd $dirname
         mkdir -p run
-        poe    $basename -procs $proc  >& run/$basename.$proc.out & cmdpid=$!
+        poe    ./$basename -procs $proc > run/$basename.$proc.out 2>&1 & cmdpid=$!
         (echo -n "TC: $tc(timeout=$timeout) procs=$proc:"
          sleep $timeout
          echo -n "KILLING -- "

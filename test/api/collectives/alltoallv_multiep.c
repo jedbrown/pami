@@ -33,40 +33,6 @@ THREAD_LOCAL size_t *sdispls = NULL;
 THREAD_LOCAL size_t *rcvlens = NULL;
 THREAD_LOCAL size_t *rdispls = NULL;
 
-void initialize_sndbuf(size_t r, char *sbuf, char *rbuf)
-{
-  size_t k;
-
-  for (k = 0; k < sndlens[r]; k++)
-    {
-      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
-      rbuf[ rdispls[r] + k ] = 0xff;
-    }
-}
-
-int check_rcvbuf(size_t sz, size_t myrank, char *rbuf)
-{
-  size_t r, k;
-
-  for (r = 0; r < sz; r++)
-    for (k = 0; k < rcvlens[r]; k++)
-      {
-        if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
-          {
-            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
-                    gProtocolName, sndlens[r],
-                    rdispls[r], k,
-                    rbuf[ rdispls[r] + k ],
-                    ((r + k) & 0xff),
-                    r );
-            return 1;
-          }
-      }
-
-  return 0;
-}
-
-
 typedef struct thread_data_t
 {
   pami_context_t context;
@@ -332,7 +298,7 @@ static void * alltoallv_test(void* p)
               sndlens[j] = rcvlens[j] = i;
               sdispls[j] = rdispls[j] = i * j;
 
-              initialize_sndbuf( j, sbuf, rbuf );
+              alltoallv_initialize_bufs(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j);
 
             }
 
@@ -354,7 +320,7 @@ static void * alltoallv_test(void* p)
           blocking_coll(myContext, &barrier, &bar_poll_flag);
 
           int rc_check;
-          rc |= rc_check = check_rcvbuf(num_ep, td->logical_rank, rbuf);
+          rc |= rc_check = alltoallv_check_rcvbuf(rbuf, rcvlens, rdispls, num_ep, td->logical_rank);
 
           if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

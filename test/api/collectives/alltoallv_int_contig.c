@@ -22,117 +22,6 @@ int *sdispls = NULL;
 int *rcvlens = NULL;
 int *rdispls = NULL;
 
-void initialize_sndbuf(size_t r, void *sbuf, void *rbuf, int dt)
-{
-  size_t k;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *isbuf = (unsigned int *)  sbuf;
-    unsigned int *irbuf = (unsigned int *)  rbuf;
-    for (k = 0; k < sndlens[r]; k++)
-    {
-      isbuf[ sdispls[r] + k ] = ((r + k));
-      irbuf[ rdispls[r] + k ] = 0xffffffff;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dsbuf = (double *)  sbuf;
-    double *drbuf = (double *)  rbuf;
-
-    for (k = 0; k < sndlens[r]; k++)
-    {
-      dsbuf[ sdispls[r] + k ] = ((double)((r + k))) * 1.0;
-      drbuf[ sdispls[r] + k ] = 0xffffffffffffffff;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fsbuf = (float *)  sbuf;
-    float *frbuf = (float *)  rbuf;
-
-    for (k = 0; k < sndlens[r]; k++)
-    {
-      fsbuf[ sdispls[r] + k ] = ((float)((r + k))) * 1.0;
-      frbuf[ sdispls[r] + k ] = 0xffffffffffffffff;
-    }
-  }
-  else
-  {
-    char *csbuf = (char *)  sbuf;
-    char *crbuf = (char *)  rbuf;
-
-    for (k = 0; k < sndlens[r]; k++)
-    {
-      csbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
-      crbuf[ sdispls[r] + k ] = 0xff;
-    }
-  }
-}
-
-int check_rcvbuf(size_t sz, size_t myrank, void *rbuf, int dt)
-{
-  size_t r, k;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *irbuf = (unsigned int *)rbuf;
-    for (r = 0; r < sz; r++)
-      for (k = 0; k < rcvlens[r]; k++)
-      {
-        if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
-        {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02zx (rank:%zu)\n",
-                  gProtocolName, sndlens[r],
-                  rdispls[r], k,
-                  irbuf[ rdispls[r] + k ],
-                  ((myrank + k)),
-                  r );
-        return 1;
-        }
-      }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *drbuf = (double *)rbuf;
-    for (r = 0; r < sz; r++)
-      for (k = 0; k < rcvlens[r]; k++)
-      {
-        if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
-        {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
-                  gProtocolName, sndlens[r],
-                  rdispls[r], k,
-                  drbuf[ rdispls[r] + k ],
-                  ((r + k)),
-                  r );
-        return 1;
-        }
-      }
-  }
-  if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *frbuf = (float *)rbuf;
-    for (r = 0; r < sz; r++)
-      for (k = 0; k < rcvlens[r]; k++)
-      {
-        if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
-        {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
-                  gProtocolName, sndlens[r],
-                  rdispls[r], k,
-                  frbuf[ rdispls[r] + k ],
-                  ((r + k)),
-                  r );
-        return 1;
-        }
-      }
-  }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -340,7 +229,7 @@ int main(int argc, char*argv[])
                 sndlens[j] = rcvlens[j] = i;
                 sdispls[j] = rdispls[j] = i * j;
 
-                initialize_sndbuf( j, sbuf, rbuf, dt );
+                alltoallv_int_initialize_bufs_dt(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j, dt);
 
               }
               alltoallv_int.cmd.xfer_alltoallv_int.rtype = dt_array[dt];
@@ -385,7 +274,7 @@ int main(int argc, char*argv[])
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
               int rc_check;
-              rc |= rc_check = check_rcvbuf(num_tasks, task_id, rbuf, dt);
+              rc |= rc_check = alltoallv_int_check_rcvbuf_dt(rbuf, rcvlens, rdispls, num_tasks, task_id, dt);
 
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

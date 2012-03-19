@@ -20,44 +20,6 @@
 char *sbuf = NULL;
 char *rbuf = NULL;
 
-
-void init_bufs(size_t l, size_t r)
-{
-  size_t k;
-  size_t d = l * r;
-
-  for (k = 0; k < l; k++)
-  {
-    sbuf[ d + k ] = ((r + k) & 0xff);
-    rbuf[ d + k ] = 0xff;
-  }
-}
-
-
-int check_bufs(size_t l, size_t nranks, size_t myrank)
-{
-  size_t r, k;
-
-  for (r = 0; r < nranks; r++)
-  {
-    size_t d = l * r;
-    for (k = 0; k < l; k++)
-    {
-      if (rbuf[ d + k ] != (char)((myrank + k) & 0xff))
-      {
-        printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-               myrank,
-               d + k,
-               rbuf[ d + k ],
-               ((r + k) & 0xff),
-               r );
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -191,7 +153,7 @@ int main(int argc, char*argv[])
 
         for (j = 0; j < num_tasks; j++)
         {
-          init_bufs(i, j );
+          alltoall_initialize_bufs(sbuf, rbuf, i, j );
         }
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
@@ -226,7 +188,7 @@ int main(int argc, char*argv[])
 
 
         int rc_check;
-        rc |= rc_check = check_bufs(i, num_tasks, task_id);
+        rc |= rc_check = alltoall_check_rcvbuf(rbuf, i, num_tasks, task_id);
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);

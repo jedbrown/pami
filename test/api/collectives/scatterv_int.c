@@ -206,7 +206,7 @@ int main(int argc, char*argv[])
           result = check_metadata(*next_md,
                                   scatterv,
                                   scatterv.cmd.xfer_scatterv_int.stype,
-                                  scatterv.cmd.xfer_scatterv_int.stypecounts[0], /// \todo Does range metadata make sense?
+                                  scatterv.cmd.xfer_scatterv_int.stypecounts[0], /* \todo Does range metadata make sense? */
                                   scatterv.cmd.xfer_scatterv_int.sndbuf,
                                   scatterv.cmd.xfer_scatterv_int.rtype,
                                   scatterv.cmd.xfer_scatterv_int.rtypecount,

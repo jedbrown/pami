@@ -21,129 +21,6 @@ void *sbuf = NULL;
 void *rbuf = NULL;
 
 
-void init_bufs(size_t l, size_t r, int dt)
-{
-  size_t k;
-  size_t d = l * r;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *isbuf = (unsigned int *)  sbuf;
-    unsigned int *irbuf = (unsigned int *)  rbuf;
-
-    for (k = 0; k < l; k++)
-    {
-      isbuf[ d + k ] = ((unsigned int)((r + k) & 0xffffffff));
-      irbuf[ d + k ] = 0xffffffff;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dsbuf = (double *)  sbuf;
-    double *drbuf = (double *)  rbuf;
-
-    for (k = 0; k < l; k++)
-    {
-      dsbuf[ d + k ] = ((double)((r + k))) * 1.0;
-      drbuf[ d + k ] = 0xffffffffffffffff;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fsbuf = (float *)  sbuf;
-    float *frbuf = (float *)  rbuf;
-
-    for (k = 0; k < l; k++)
-    {
-      fsbuf[ d + k ] = ((float)((r + k))) * 1.0;
-      frbuf[ d + k ] = 0xffffffffffffffff;
-    }
-  }
-  else
-  {
-    char *csbuf = (char *)  sbuf;
-    char *crbuf = (char *)  rbuf;
-
-    for (k = 0; k < l; k++)
-    {
-      csbuf[ d + k ] = ((r + k) & 0xff);
-      crbuf[ d + k ] = 0xff;
-    }
-  }
-
-}
-
-
-int check_bufs(size_t l, size_t nranks, size_t myrank, int dt)
-{
-  size_t r, k;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *irbuf = (unsigned int *)rbuf;
-    for (r = 0; r < nranks; r++)
-    {
-      size_t d = l * r;
-      for (k = 0; k < l; k++)
-      {
-        if ((unsigned)irbuf[ d + k ] != (unsigned)((myrank + k)))
-        {
-          printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-                 myrank,
-                 d + k,
-                 (unsigned int)irbuf[ d + k ],
-                 ((r + k)),
-                 r );
-          return 1;
-        }
-      }
-    }
-  }
-  else  if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *drbuf = (double *)rbuf;
-    for (r = 0; r < nranks; r++)
-    {
-      size_t d = l * r;
-      for (k = 0; k < l; k++)
-      {
-        if ((double)drbuf[ d + k ] != (double)(((myrank*1.0) + (k*1.0))))
-        {
-          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
-                 myrank,
-                 d + k,
-                 (double)drbuf[ d + k ],
-                 ((r + k)),
-                 r );
-          return 1;
-        }
-      }
-    }
-  }
-  else  if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *frbuf = (float *)rbuf;
-    for (r = 0; r < nranks; r++)
-    {
-      size_t d = l * r;
-      for (k = 0; k < l; k++)
-      {
-        if ((float)frbuf[ d + k ] != (float)(((myrank*1.0) + (k*1.0))))
-        {
-          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
-                 myrank,
-                 d + k,
-                 (float)frbuf[ d + k ],
-                 ((r + k)),
-                 r );
-          return 1;
-        }
-      }
-    }
-  }
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -329,7 +206,7 @@ int main(int argc, char*argv[])
 
               for (j = 0; j < num_tasks; j++)
               {
-                init_bufs(i, j , dt);
+                alltoall_initialize_bufs_dt(sbuf, rbuf, i, j, dt);
               }
 
               alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
@@ -378,7 +255,7 @@ int main(int argc, char*argv[])
 
 
               int rc_check;
-              rc |= rc_check = check_bufs(i, num_tasks, task_id, dt);
+              rc |= rc_check = alltoall_check_rcvbuf_dt(rbuf, i, num_tasks, task_id, dt);
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);

@@ -16,148 +16,6 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int count, int taskid, int dt)
-{
-  int i = count;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  sbuf;
-    unsigned int u = taskid;
-    for (; i; i--)
-    {
-      ibuf[i-1] = (u++);
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-  {
-    int *ibuf = (int *)  sbuf;
-    int u = taskid;
-    for (; i; i--)
-    {
-      ibuf[i-1] = (u++);
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  sbuf;
-    double d = taskid * 1.0;
-    for (; i; i--)
-    {
-      dbuf[i-1] = d;
-      d = d + 1.0;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fbuf = (float *)  sbuf;
-    float f = taskid * 1.0;
-    for (; i; i--)
-    {
-      fbuf[i-1] = f;
-      f = f + 1.0;
-    }
-  }
-  else
-  {
-    char *cbuf = (char *)  sbuf;
-    char c = taskid;
-    for (; i; i--)
-    {
-      cbuf[i-1] = (c++);
-    }
-  }
-}
-
-int check_rcvbuf (size_t num_tasks, void *buf, int counts, int dt)
-{
-  int j;
-  for (j = 0; j < num_tasks-1; j++)
-  {
-    if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-    {
-      unsigned int *ibuf = (unsigned int *)  buf + j * counts;
-      unsigned int u = j;
-      int i = counts;
-      for (; i; i--)
-      {
-        if (ibuf[i-1] != u)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, buf, i - 1, ibuf[i-1], u);
-          return -1;
-        }
-
-        u++;
-      }
-    }
-    else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-    {
-      int *ibuf = (int *)  buf + j * counts;
-      int u = j;
-      int i = counts;
-      for (; i; i--)
-      {
-        if (ibuf[i-1] != u)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, buf, i - 1, ibuf[i-1], u);
-          return -1;
-        }
-
-        u++;
-      }
-    }
-	else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-    {
-      double *dbuf = (double *)  buf + j * counts;
-      double d = j * 1.0;
-      int i = counts;
-      for (; i; i--)
-      {
-        if (dbuf[i-1] != d)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, counts, buf, i - 1, dbuf[i-1], d);
-          return -1;
-        }
-
-        d = d + 1.0;
-      }
-    }
-    else   if (dt_array[dt] == PAMI_TYPE_FLOAT)
-    {
-      float *fbuf = (float *)  buf + j * counts;
-      float f = j * 1.0;
-      int i = counts;
-      for (; i; i--)
-      {
-        if (fbuf[i-1] != f)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, counts, buf, i - 1, fbuf[i-1], f);
-          return -1;
-        }
-
-        f = f + 1.0;
-      }
-    }
-    else
-    {
-      unsigned char *cbuf = (unsigned char *)  buf + j *counts;
-      unsigned char c = 0x00 + j;
-      int i = counts;
-      for (; i; i--)
-      {
-        if (cbuf[i-1] != c)
-        {
-          fprintf(stderr, "Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",counts,buf, i, i-1, cbuf[i-1], c);
-          return -1;
-        }
-
-        c++;
-      }
-    }
-  }
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -381,7 +239,7 @@ int main(int argc, char*argv[])
               PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
               gatherv.cmd.xfer_gatherv_int.root        = root_ep;
 
-              initialize_sndbuf (buf, i, task_id, dt);
+              gather_initialize_sndbuf_dt (buf, i, task_id, dt);
               if (task_id == root_zero)
                 memset(rbuf, 0xFF, i*num_tasks);
 
@@ -401,7 +259,7 @@ int main(int argc, char*argv[])
               if (task_id == root_zero)
               {
                 int rc_check;
-                rc |= rc_check =check_rcvbuf(num_tasks, rbuf, i, dt);
+                rc |= rc_check = gather_check_rcvbuf_dt(num_tasks-1, rbuf, i, dt);
                 if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
               }
 

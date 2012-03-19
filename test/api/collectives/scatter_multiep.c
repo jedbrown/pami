@@ -19,35 +19,6 @@
 #include "../pami_util.h"
 #include <pthread.h>
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
-{
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i = 0; i < ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
-{
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
-    }
-
-  return 0;
-}
-
 static void *scatter_test(void*);
 
 pami_geometry_t      newgeometry;
@@ -272,17 +243,13 @@ static void * scatter_test(void* p) {
 
   blocking_coll(myContext, &barrier, &bar_poll_flag);
 
-  pami_endpoint_t my_ep, zero_ep;
+  pami_endpoint_t my_ep, zero_ep, root_ep;
+  pami_task_t root = 0;
   PAMI_Endpoint_create(client,task_id,td->tid,&my_ep);
   PAMI_Endpoint_create(client,0,0,&zero_ep);
 
   for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
     {
-      pami_task_t root = 0;
-      pami_endpoint_t root_ep;
-      PAMI_Endpoint_create(client, root, 0, &root_ep);
-      scatter.cmd.xfer_scatter.root       = root_ep;
-
       scatter.cb_done    = cb_done;
       scatter.cookie     = (void*) & scatter_poll_flag;
       scatter.algorithm  = scatter_always_works_algo[nalg];
@@ -319,11 +286,13 @@ static void * scatter_test(void* p) {
         else
           niter = NITERBW;
 
+        PAMI_Endpoint_create(client, root, 0, &root_ep);
+        scatter.cmd.xfer_scatter.root       = root_ep;
         scatter.cmd.xfer_scatter.stypecount = i;
         scatter.cmd.xfer_scatter.rtypecount = i;
 
         if (my_ep == root_ep)
-          initialize_sndbuf (buf, i, num_ep);
+          scatter_initialize_sndbuf (buf, i, num_ep);
 
         memset(rbuf, 0xFF, i);
 
@@ -339,7 +308,7 @@ static void * scatter_test(void* p) {
         blocking_coll(myContext, &barrier, &bar_poll_flag);
 
         int rc_check;
-        rc |= rc_check = check_rcvbuf (rbuf, i, td->logical_rank);
+        rc |= rc_check = scatter_check_rcvbuf (rbuf, i, td->logical_rank);
 
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
@@ -354,6 +323,7 @@ static void * scatter_test(void* p) {
                  usec);
           fflush(stdout);
         }
+        root = (root + 1) % num_tasks;
       }
     }
   free(bar_always_works_algo);

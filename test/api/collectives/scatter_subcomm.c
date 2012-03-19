@@ -16,41 +16,12 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
-{
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i = 0; i < ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
-{
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
-    }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, local_task_id=0, root=0;
-  size_t               num_tasks;
+  size_t               num_tasks, subgeometry_num_tasks;
   pami_geometry_t      world_geometry;
 
   /* Barrier variables */
@@ -107,6 +78,7 @@ int main(int argc, char*argv[])
     fprintf(stderr, "No subcomms on 1 node\n");
     return 0;
   }
+  subgeometry_num_tasks = num_tasks;
 
   /*  Allocate buffer(s) */
   int err = 0;
@@ -162,7 +134,7 @@ int main(int argc, char*argv[])
   range     = (pami_geometry_range_t *)malloc(((num_tasks + 1) / 2) * sizeof(pami_geometry_range_t));
 
   int unused_non_root[2];
-  get_split_method(&num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
+  get_split_method(&subgeometry_num_tasks, task_id, &rangecount, range, &local_task_id, set, &id, &root,unused_non_root);
 
   for (; iContext < gNum_contexts; ++iContext)
   {
@@ -222,10 +194,6 @@ int main(int argc, char*argv[])
 
     for (nalg = 0; nalg < scatter_num_algorithm[0]; nalg++)
     {
-      pami_endpoint_t root_ep;
-      PAMI_Endpoint_create(client, root, 0, &root_ep);
-      scatter.cmd.xfer_scatter.root       = root_ep;
-
       scatter.cb_done    = cb_done;
       scatter.cookie     = (void*) & scatter_poll_flag;
       scatter.algorithm  = scatter_always_works_algo[nalg];
@@ -272,26 +240,33 @@ int main(int argc, char*argv[])
             scatter.cmd.xfer_scatter.stypecount = i;
             scatter.cmd.xfer_scatter.rtypecount = i;
 
-            if (task_id == root)
-              initialize_sndbuf (buf, i, num_tasks);
-
-            memset(rbuf, 0xFF, i);
-
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
             ti = timer();
 
+            pami_endpoint_t root_ep;
             for (j = 0; j < niter; j++)
             {
+              PAMI_Endpoint_create(client, root, 0, &root_ep);
+              scatter.cmd.xfer_gather.root = root_ep;
+
+              if (task_id == root)
+              {
+                scatter_initialize_sndbuf (buf, i, subgeometry_num_tasks);
+              }
+              memset(rbuf, 0xFF, i);
+
               blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+
+              int rc_check;
+              rc |= rc_check = scatter_check_rcvbuf (rbuf, i, local_task_id);
+              if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
+
+              get_next_root(num_tasks, &root);
             }
 
             tf = timer();
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
-            int rc_check;
-            rc |= rc_check = check_rcvbuf (rbuf, i, local_task_id);
-
-            if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
             usec = (tf - ti) / (double)niter;
 

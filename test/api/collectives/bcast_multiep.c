@@ -19,33 +19,6 @@
 #include "../pami_util.h"
 #include <pthread.h>
 
-void initialize_sndbuf (void *sbuf, int bytes, int root)
-{
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-  for (; i; i--)
-    cbuf[i-1] = (c++);
-}
-
-int check_rcvbuf (void *rbuf, int bytes, int root)
-{
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-  for (; i; i--)
-    {
-      if (cbuf[i-1] != c)
-        {
-          fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n",
-                  gProtocolName, bytes, rbuf, i - 1, cbuf[i-1], c);
-          return 1;
-        }
-      c++;
-    }
-  return 0;
-}
-
 static void *bcast_test(void*);
 
 pami_geometry_t      newgeometry;
@@ -308,7 +281,7 @@ static void * bcast_test(void* p) {
 
                   broadcast.cmd.xfer_broadcast.typecount = i;
                   if (my_ep == root_ep)
-                    initialize_sndbuf (buf, i, root_task);
+                    bcast_initialize_sndbuf (buf, i, root_task);
                   else
                     memset(buf, 0xFF, i);
 
@@ -322,7 +295,7 @@ static void * bcast_test(void* p) {
                   blocking_coll(myContext, &barrier, &bar_poll_flag);
                   tf = timer();
                   int rc_check;
-                  rc |= rc_check = check_rcvbuf (buf, i, root_task);
+                  rc |= rc_check = bcast_check_rcvbuf (buf, i, root_task);
 
                   if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

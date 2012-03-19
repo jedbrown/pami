@@ -16,39 +16,6 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, int root)
-{
-
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (; i; i--)
-  {
-    cbuf[i-1] = (c++);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, int root)
-{
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  for (; i; i--)
-  {
-    if (cbuf[i-1] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, rbuf, i - 1, cbuf[i-1], c);
-      return 1;
-    }
-
-    c++;
-  }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -238,7 +205,7 @@ int main(int argc, char*argv[])
         if (result.bitmask) continue;
 
         if (task_id == root_task)
-          initialize_sndbuf (buf, i, root_task);
+          bcast_initialize_sndbuf (buf, i, root_task);
         else
           memset(buf, 0xFF, i);
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
@@ -258,7 +225,7 @@ int main(int argc, char*argv[])
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         tf = timer();
         int rc_check;
-        rc |= rc_check = check_rcvbuf (buf, i, root_task);
+        rc |= rc_check = bcast_check_rcvbuf (buf, i, root_task);
 
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

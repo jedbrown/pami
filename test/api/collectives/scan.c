@@ -17,64 +17,6 @@
 
 #include "../pami_util.h"
 
-
-void initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
-{
-
-  int i;
-  /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  buf;
-    for (i = 0; i < count; i++)
-    {
-      ibuf[i] = i;
-    }
-  }
-  else
-  {
-    size_t sz=get_type_size(dt_array[dt]);
-    memset(buf,  task_id,  count * sz);
-  }
-}
-
-int check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id, int exclusive)
-{
-
-  int i, err = 0;
-  /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
-  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *rbuf = (unsigned int *)  buf;
-    unsigned int x;
-
-    if(exclusive == 1)
-      {
-        /* Receive buffer is not valid on task 0 for exclusive scan */
-        if(task_id == 0)
-          return 0;
-        else
-          x = task_id;
-      }
-    else
-      {
-        x = task_id +1;
-      }
-    for (i = 0; i < count; i++)
-    {
-      if (rbuf[i] != i * x)
-      {
-        fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],i*x);
-        err = -1;
-        return err;    
-      }
-    }
-  }
-
-  return err;
-}
-
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -230,7 +172,7 @@ int main(int argc, char*argv[])
                 scan.cmd.xfer_scan.stype     =dt_array[dt];
                 scan.cmd.xfer_scan.op        =op_array[op];
 
-                initialize_sndbuf (sbuf, i, op, dt, task_id);
+                scan_initialize_sndbuf (sbuf, i, op, dt, task_id);
                 memset(rbuf, 0xFF, dataSent);
 
                 /* We aren't testing barrier itself, so use context 0. */
@@ -245,7 +187,7 @@ int main(int argc, char*argv[])
                 blocking_coll(context[0], &barrier, &bar_poll_flag);
 
                 int rc_check;
-                rc |= rc_check = check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id, exclusive);
+                rc |= rc_check = scan_check_rcvbuf (rbuf, i, op, dt, num_tasks, task_id, exclusive);
 
                 if (rc_check) fprintf(stderr, "%s scan %s FAILED validation\n", scan_type, gProtocolName);
 

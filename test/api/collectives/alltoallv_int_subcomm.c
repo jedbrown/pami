@@ -22,39 +22,6 @@ int *sdispls = NULL;
 int *rcvlens = NULL;
 int *rdispls = NULL;
 
-void initialize_sndbuf(int r, char *sbuf, char *rbuf)
-{
-  int k;
-
-  for (k = 0; k < sndlens[r]; k++)
-  {
-    sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
-    rbuf[ rdispls[r] + k ] = 0xff;
-  }
-}
-
-int check_rcvbuf(size_t sz, size_t myrank, char *rbuf)
-{
-  int r, k;
-
-  for (r = 0; r < sz; r++)
-    for (k = 0; k < rcvlens[r]; k++)
-    {
-      if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
-      {
-        fprintf(stderr, "%s:Check(%d) failed rbuf[%u+%u]:%02x instead of %02x (rank:%u)\n",
-                gProtocolName, sndlens[r],
-                rdispls[r], k,
-                rbuf[ rdispls[r] + k ],
-                (char)((myrank + k) & 0xff),
-                r );
-        return 1;
-      }
-    }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -287,8 +254,7 @@ int main(int argc, char*argv[])
               sndlens[j] = rcvlens[j] = i;
               sdispls[j] = rdispls[j] = i * j;
 
-              initialize_sndbuf( j, sbuf, rbuf );
-
+              alltoallv_int_initialize_bufs(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j);
             }
 
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
@@ -309,7 +275,7 @@ int main(int argc, char*argv[])
             blocking_coll(context[iContext], &newbarrier, &newbar_poll_flag);
 
             int rc_check;
-            rc |= rc_check = check_rcvbuf(num_tasks, local_task_id, rbuf);
+            rc |= rc_check = alltoallv_int_check_rcvbuf(rbuf, rcvlens, rdispls, num_tasks, local_task_id);
 
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

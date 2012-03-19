@@ -46,38 +46,6 @@ int                 _gRc = PAMI_SUCCESS;
 char                   *_g_buffer;
 validation_t           *_g_val_buffer;
 
-void initialize_sndbuf (void *sbuf, int bytes, int root)
-{
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (; i; i--)
-  {
-    cbuf[i-1] = (c++);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, int root)
-{
-  unsigned char c = root;
-  int i = bytes;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  for (; i; i--)
-  {
-    if (cbuf[i-1] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, rbuf, i - 1, cbuf[i-1], c);
-      return 1;
-    }
-
-    c++;
-  }
-
-  return 0;
-}
-
 /**
  *  Check if we have a valid context
  */
@@ -122,7 +90,7 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   if(my_task_id != v->root)
   {
     int rc_check;
-    _gRc |= rc_check = check_rcvbuf (_g_buffer, v->bytes, v->root);
+    _gRc |= rc_check = bcast_check_rcvbuf (_g_buffer, v->bytes, v->root);
     if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
   }
 
@@ -341,7 +309,7 @@ int main(int argc, char*argv[])
         memset(buf, 0xFF, i);
         root_task = (root_task + num_tasks - 1) % num_tasks;
         if (my_task_id == root_task)
-          initialize_sndbuf (buf, i, root_task);
+          bcast_initialize_sndbuf (buf, i, root_task);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();

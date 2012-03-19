@@ -32,45 +32,6 @@ int                  fence_arrivals;
 THREAD_LOCAL char *sbuf = NULL;
 THREAD_LOCAL char *rbuf = NULL;
 
-
-void init_bufs(size_t l, size_t r)
-{
-  size_t k;
-  size_t d = l * r;
-
-  for (k = 0; k < l; k++)
-  {
-    sbuf[ d + k ] = ((r + k) & 0xff);
-    rbuf[ d + k ] = 0xff;
-  }
-}
-
-
-int check_bufs(size_t l, size_t nranks, size_t myrank)
-{
-  size_t r, k;
-
-  for (r = 0; r < nranks; r++)
-  {
-    size_t d = l * r;
-    for (k = 0; k < l; k++)
-    {
-      if (rbuf[ d + k ] != (char)((myrank + k) & 0xff))
-      {
-        printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
-               myrank,
-               d + k,
-               rbuf[ d + k ],
-               ((r + k) & 0xff),
-               r );
-        return 1;
-      }
-    }
-  }
-  return 0;
-}
-
-
 typedef struct thread_data_t
 {
   pami_context_t context;
@@ -316,7 +277,7 @@ static void * alltoall_test(void* p)
 
         for (j = 0; j < num_ep; j++)
         {
-          init_bufs(i, j );
+          alltoall_initialize_bufs(sbuf, rbuf, i, j );
         }
 
         blocking_coll(myContext, &barrier, &bar_poll_flag);
@@ -350,7 +311,7 @@ static void * alltoall_test(void* p)
         tf = timer();
 
         int rc_check;
-        rc |= rc_check = check_bufs(i, num_ep, td->logical_rank);
+        rc |= rc_check = alltoall_check_rcvbuf(rbuf, i, num_tasks, task_id);
         if (rc_check)
           {
             fprintf(stderr, "%s FAILED validation\n", gProtocolName);

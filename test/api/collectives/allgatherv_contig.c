@@ -14,149 +14,6 @@
 /* see setup_env() for environment variable overrides               */
 #include "../pami_util.h"
 
-
-void initialize_sndbuf (void *sbuf, int count, pami_task_t task, int dt)
-{
-  int i;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  sbuf;
-
-    for (i = 0; i < count; i++)
-    {
-      ibuf[i] = task;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-  {
-    int *ibuf = (int *)  sbuf;
-
-    for (i = 0; i < count; i++)
-    {
-      ibuf[i] = task;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  sbuf;
-
-    for (i = 0; i < count; i++)
-    {
-      dbuf[i] = 1.0 * task;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *dbuf = (float *)  sbuf;
-
-    for (i = 0; i < count; i++)
-    {
-      dbuf[i] = 1.0 * task;
-    }
-  }
-  else
-  {
-    size_t sz=get_type_size(dt_array[dt]);
-    memset(sbuf,  task,  count * sz);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int count, size_t ntasks, int dt)
-{
-  int err = 0;
-
-  int i,j;
-
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *rcvbuf = (unsigned int *)  rbuf;
-
-    for (j = 0; j < ntasks; j++)
-    {
-      for(i=j*count; i<(j+1)*count; i++)
-      {
-        if (rcvbuf[i] != (unsigned) j)
-        {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], j);
-          err = -1;
-          return err;
-        }
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-  {
-    int *rcvbuf = (int *)  rbuf;
-
-    for (j = 0; j < ntasks; j++)
-    {
-      for(i=j*count; i<(j+1)*count; i++)
-      {
-        if (rcvbuf[i] !=  j)
-        {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %u != %u\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], j);
-          err = -1;
-          return err;
-        }
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *rcvbuf = (double *)  rbuf;
-
-    for (j = 0; j < ntasks; j++)
-    {
-      for(i=j*count; i<(j+1)*count; i++)
-      {
-        if (rcvbuf[i] != (double) j)
-        {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], (double)j);
-          err = -1;
-          return err;
-        }
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *rcvbuf = (float *)  rbuf;
-
-    for (j = 0; j < ntasks; j++)
-    {
-      for(i=j*count; i<(j+1)*count; i++)
-      {
-        if (rcvbuf[i] != (float) j)
-        {
-          fprintf(stderr, "%s:Check %s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], count, i, rcvbuf[i], (float)j);
-          err = -1;
-          return err;
-        }
-      }
-    }
-  }
-  else
-  {
-    unsigned char *cbuf = (unsigned char *)  rbuf;
-
-    for (j=0; j<ntasks; j++)
-    {
-      unsigned char c = 0xFF & j;
-
-      for (i=j*count; i<(j+1)*count; i++)
-      if (cbuf[i] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, count, cbuf, i, cbuf[i], c);
-        return -1;
-      }
-    }
-  }
-
-  return err;
-}
-
 int main (int argc, char ** argv)
 {
   pami_client_t        client;
@@ -264,13 +121,13 @@ int main (int argc, char ** argv)
       metadata_result_t result = {0};
       unsigned query_protocol;
       if(nalg < allgatherv_num_algorithm[0])
-      {  
+      {
         query_protocol = 0;
         next_algo = &allgatherv_always_works_algo[nalg];
         next_md  = &allgatherv_always_works_md[nalg];
       }
       else
-      {  
+      {
         query_protocol = 1;
         next_algo = &allgatherv_must_query_algo[nalg-allgatherv_num_algorithm[0]];
         next_md  = &allgatherv_must_query_md[nalg-allgatherv_num_algorithm[0]];
@@ -328,28 +185,28 @@ int main (int argc, char ** argv)
               allgatherv.cmd.xfer_allgatherv.stype            = dt_array[dt];
               allgatherv.cmd.xfer_allgatherv.rtype            = dt_array[dt];
 
-              initialize_sndbuf (buf, i, task_id, dt);
+              gather_initialize_sndbuf_dt (buf, i, task_id, dt);
               memset(rbuf, 0xFF, i);
-                if(query_protocol)
-                {  
-                  size_t sz=get_type_size(dt_array[dt])*i;
-                  result = check_metadata(*next_md,
-                                          allgatherv,
-                                          dt_array[dt],
-                                          sz, /* metadata uses bytes i, */
-                                          allgatherv.cmd.xfer_allgatherv.sndbuf,
-                                          dt_array[dt],
-                                          sz,
-                                          allgatherv.cmd.xfer_allgatherv.rcvbuf);
-                  if (next_md->check_correct.values.nonlocal)
-                  {
-                    /* \note We currently ignore check_correct.values.nonlocal
-                      because these tests should not have nonlocal differences (so far). */
-                    result.check.nonlocal = 0;
-                  }
-
-                  if (result.bitmask) continue;
+              if(query_protocol)
+              {
+                size_t sz=get_type_size(dt_array[dt])*i;
+                result = check_metadata(*next_md,
+                                        allgatherv,
+                                        dt_array[dt],
+                                        sz, /* metadata uses bytes i, */
+                                        allgatherv.cmd.xfer_allgatherv.sndbuf,
+                                        dt_array[dt],
+                                        sz,
+                                        allgatherv.cmd.xfer_allgatherv.rcvbuf);
+                if (next_md->check_correct.values.nonlocal)
+                {
+                  /* \note We currently ignore check_correct.values.nonlocal
+                    because these tests should not have nonlocal differences (so far). */
+                  result.check.nonlocal = 0;
                 }
+
+                if (result.bitmask) continue;
+              }
 
               blocking_coll(context, &barrier, &bar_poll_flag);
               ti = timer();
@@ -367,7 +224,7 @@ int main (int argc, char ** argv)
               blocking_coll(context, &barrier, &bar_poll_flag);
 
               int rc_check;
-              rc |= rc_check = check_rcvbuf (rbuf, i, num_tasks, dt);
+              rc |= rc_check = gather_check_rcvbuf_dt (num_tasks, rbuf, i, dt);
 
               if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

@@ -16,50 +16,12 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
-{
-
-  unsigned char *cbuf = (unsigned char *)  buf;
-  unsigned char c = 0x00 + task_id;
-  int i = bytes;
-
-  for (; i; i--)
-  {
-    cbuf[i-1] = c++;
-  }
-}
-
-int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
-{
-
-  int j;
-  for (j = 0; j < num_tasks; j++)
-  {
-    unsigned char *cbuf = (unsigned char *)  buf + j *bytes;
-    unsigned char c = 0x00 + j;
-    int i = bytes;
-    for (; i; i--)
-    {
-      if (cbuf[i-1] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",
-                gProtocolName,bytes,buf, i, i-1, cbuf[i-1], c);
-        return -1;
-      }
-
-      c++;
-    }
-  }
-  return 0;
-
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, local_task_id=0, root_zero=0;
-  size_t               num_tasks,subgeometry_num_tasks;
+  size_t               num_tasks, subgeometry_num_tasks;
   pami_geometry_t      world_geometry;
 
   /* Barrier variables */
@@ -278,17 +240,19 @@ int main(int argc, char*argv[])
             for (j = 0; j < niter; j++)
             {
               PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
-              gather.cmd.xfer_gather.root       = root_ep;
+              gather.cmd.xfer_gather.root = root_ep;
 
-              initialize_sndbuf (local_task_id, buf, i);
+              gather_initialize_sndbuf (local_task_id, buf, i);
               if (task_id == root_zero)
+              {
                 memset(rbuf, 0xFF, i*subgeometry_num_tasks);
+              }
               blocking_coll(context[iContext], &gather, &gather_poll_flag);
 
               if (task_id == root_zero)
               {
                 int rc_check;
-                rc |= rc_check =check_rcvbuf(subgeometry_num_tasks, rbuf, i);
+                rc |= rc_check = gather_check_rcvbuf(subgeometry_num_tasks, rbuf, i);
                 if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
               }
               get_next_root(num_tasks, &root_zero);

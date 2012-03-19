@@ -21,6 +21,7 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, root_zero=0;
+  pami_task_t          root_task = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 
@@ -134,13 +135,13 @@ int main(int argc, char*argv[])
       metadata_result_t result = {0};
       unsigned query_protocol;
       if(nalg < scatterv_num_algorithm[0])
-      {  
+      {
         query_protocol = 0;
         next_algo = &scatterv_always_works_algo[nalg];
         next_md  = &scatterv_always_works_md[nalg];
       }
       else
-      {  
+      {
         query_protocol = 1;
         next_algo = &scatterv_must_query_algo[nalg-scatterv_num_algorithm[0]];
         next_md  = &scatterv_must_query_md[nalg-scatterv_num_algorithm[0]];
@@ -148,8 +149,6 @@ int main(int argc, char*argv[])
 
       pami_endpoint_t    root_ep;
       pami_task_t root_task = 0;
-      PAMI_Endpoint_create(client, root_task, 0, &root_ep);
-      scatterv.cmd.xfer_scatterv.root        = root_ep;
       scatterv.cb_done                       = cb_done;
       scatterv.cookie                        = (void*) & scatterv_poll_flag;
       scatterv.algorithm                     = *next_algo;
@@ -191,8 +190,11 @@ int main(int argc, char*argv[])
         for (k = 0; k < num_tasks; k++)
         {
           lengths[k] = i;
-          displs[k]  = 0;
+          displs[k]  = k * i;
         }
+        PAMI_Endpoint_create(client, root_task, 0, &root_ep);
+        scatterv.cmd.xfer_scatterv.root       = root_ep;
+        scatterv.cmd.xfer_scatterv.rtypecount = i;
 
         if (dataSent < CUTOFF)
           niter = gNiterlat;
@@ -200,11 +202,11 @@ int main(int argc, char*argv[])
           niter = NITERBW;
 
         if(query_protocol)
-        {  
+        {
           result = check_metadata(*next_md,
                                   scatterv,
                                   scatterv.cmd.xfer_scatterv.stype,
-                                  scatterv.cmd.xfer_scatterv.stypecounts[0], /// \todo Does range metadata make sense?
+                                  scatterv.cmd.xfer_scatterv.stypecounts[0], /* \todo Does range metadata make sense? */
                                   scatterv.cmd.xfer_scatterv.sndbuf,
                                   scatterv.cmd.xfer_scatterv.rtype,
                                   scatterv.cmd.xfer_scatterv.rtypecount,
@@ -219,17 +221,21 @@ int main(int argc, char*argv[])
           if (result.bitmask) continue;
         }
 
+        if (task_id == root_task)
+          scatter_initialize_sndbuf (buf, i, num_tasks);
+
+        memset(rbuf, 0xFF, i);
+
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();
 
         for (j = 0; j < niter; j++)
         {
-          scatterv.cmd.xfer_scatterv.rtypecount = i;
-              if (checkrequired) /* must query every time */
-              {
-                result = next_md->check_fn(&scatterv);
-                if (result.bitmask) continue;
-              }
+          if (checkrequired) /* must query every time */
+          {
+            result = next_md->check_fn(&scatterv);
+            if (result.bitmask) continue;
+          }
           blocking_coll(context[iContext], &scatterv, &scatterv_poll_flag);
         }
 
@@ -237,6 +243,11 @@ int main(int argc, char*argv[])
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         usec = (tf - ti) / (double)niter;
+
+        int rc_check;
+        rc |= rc_check = scatter_check_rcvbuf (rbuf, i, task_id);
+
+        if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
         if (task_id == root_task)
         {
@@ -247,6 +258,7 @@ int main(int argc, char*argv[])
                  usec);
           fflush(stdout);
         }
+        root_task = (root_task + num_tasks - 1) % num_tasks;
       }
     }
 

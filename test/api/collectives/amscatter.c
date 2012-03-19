@@ -47,35 +47,6 @@ char                   *_g_recv_buffer;
 char                   *_g_send_buffer;
 validation_t           *_g_val_buffer;
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
-{
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i = 0; i < ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
-{
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
-    }
-
-  return 0;
-}
-
 /**
  *  Check if we have a valid context
  */
@@ -118,7 +89,7 @@ void cb_amscatter_done (void *context, void * clientdata, pami_result_t err)
   }
 
   int rc_check;
-  _gRc |= rc_check = check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
+  _gRc |= rc_check = scatter_check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
   if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
   (*active)++;
@@ -342,7 +313,7 @@ int main(int argc, char*argv[])
 
         *nscatter = 0;
         memset(rbuf, 0xFF, i);
-        initialize_sndbuf (sbuf, i, num_tasks);
+        scatter_initialize_sndbuf (sbuf, i, num_tasks);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();

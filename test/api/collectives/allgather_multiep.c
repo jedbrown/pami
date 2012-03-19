@@ -28,33 +28,6 @@ pami_context_t      *context;
 pami_client_t        client;
 int                  fence_arrivals;
 
-
-void initialize_sndbuf (void *sbuf, int bytes, int ep_id)
-{
-  unsigned char c = 0xFF & ep_id;
-  memset(sbuf,c,bytes);
-}
-
-int check_rcvbuf (void *rbuf, int bytes, size_t num_ep)
-{
-  int i,j;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  for (j=0; j<num_ep; j++)
-  {
-    unsigned char c = 0xFF & j;
-    for (i=j*bytes; i<(j+1)*bytes; i++)
-      if (cbuf[i] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n",
-                gProtocolName, bytes, cbuf, i, cbuf[i], c);
-        return 1;
-      }
-  }
-  return 0;
-}
-
-
 typedef struct thread_data_t
 {
   pami_context_t context;
@@ -307,7 +280,7 @@ static void * allgather_test(void* p)
           allgather.cmd.xfer_allgather.stypecount = i;
           allgather.cmd.xfer_allgather.rtypecount = i;
 
-          initialize_sndbuf (buf, i, td->logical_rank);
+          allgather_initialize_sndbuf (buf, i, td->logical_rank);
           memset(rbuf, 0xFF, i);
 
           blocking_coll(myContext, &barrier, &bar_poll_flag);
@@ -322,7 +295,7 @@ static void * allgather_test(void* p)
           blocking_coll(myContext, &barrier, &bar_poll_flag);
 
           int rc_check;
-          rc |= rc_check = check_rcvbuf (rbuf, i, num_ep);
+          rc |= rc_check = allgather_check_rcvbuf (rbuf, i, num_ep);
           if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
           usec = (tf - ti) / (double)niter;
 

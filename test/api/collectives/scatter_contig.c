@@ -16,134 +16,6 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int counts, size_t ntasks, int dt)
-{
-  size_t i;
-  size_t j;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  sbuf;
-    for (i = 0; i < ntasks; i++)
-    {
-      unsigned int u = 0xFFFFFFFF & (unsigned)i;
-      for(j = 0; j < counts; j++)
-        ibuf[i*counts+j] = u;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-  {
-    int *ibuf = (int *)  sbuf;
-    for (i = 0; i < ntasks; i++)
-    {
-      int u = 0xFFFFFFFF & (int)i;
-      for(j = 0; j < counts; j++)
-        ibuf[i*counts+j] = u;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  sbuf;
-    for (i = 0; i < ntasks; i++)
-    {
-      double d = (double)i * 1.0;
-      for(j = 0; j < counts; j++)
-        dbuf[i*counts+j] = d;
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fbuf = (float *)  sbuf;
-    for (i = 0; i < ntasks; i++)
-    {
-      float f = (float)i * 1.0;
-      for(j = 0; j < counts; j++)
-        fbuf[i*counts+j] = f;
-    }
-  }
-  else
-  {
-    unsigned char *cbuf = (unsigned char *)  sbuf;
-    for (i = 0; i < ntasks; i++)
-    {
-      unsigned char c = 0xFF & i;
-      memset(cbuf + (i*counts), c, counts);
-    }
-  }
-}
-
-int check_rcvbuf (void *rbuf, int counts, pami_task_t task, int dt)
-{
-  int i;
-
-  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
-  {
-    unsigned int *ibuf = (unsigned int *)  rbuf;
-    unsigned int u = 0xFFFFFFFF & (unsigned)task;
-    for (i = 0; i < counts; i++)
-    {
-      if (ibuf[i] != u)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, ibuf, i, ibuf[i], u);
-        return 1;
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
-  {
-    int *ibuf = (int *)  rbuf;
-    int u = 0xFFFFFFFF & (int)task;
-    for (i = 0; i < counts; i++)
-    {
-      if (ibuf[i] != u)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, ibuf, i, ibuf[i], u);
-        return 1;
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
-  {
-    double *dbuf = (double *)  rbuf;
-    double d = (double)task * 1.0;
-    for (i = 0; i < counts; i++)
-    {
-      if (dbuf[i] != d)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, counts, dbuf, i, dbuf[i], d);
-        return 1;
-      }
-    }
-  }
-  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
-  {
-    float *fbuf = (float *)  rbuf;
-    float f = (float)task * 1.0;
-    for (i = 0; i < counts; i++)
-    {
-      if (fbuf[i] != f)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2f != %.2f \n", gProtocolName, counts, fbuf, i, fbuf[i], f);
-        return 1;
-      }
-    }
-  }
-  else
-  {
-    unsigned char *cbuf = (unsigned char *)  rbuf;
-    unsigned char c = 0xFF & task;
-    for (i = 0; i < counts; i++)
-    {
-      if (cbuf[i] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, cbuf, i, cbuf[i], c);
-        return 1;
-      }
-    }
-  }
-
-  return 0;
-}
 
 int main(int argc, char*argv[])
 {
@@ -341,11 +213,11 @@ int main(int argc, char*argv[])
 
 
             if (task_id == root)
-              initialize_sndbuf (buf, i, num_tasks, dt);
+              scatter_initialize_sndbuf_dt (buf, i, num_tasks, dt);
 
             memset(rbuf, 0xFF, i);
             if(query_protocol)
-            {  
+            {
               size_t sz=get_type_size(dt_array[dt])*i;
               result = check_metadata(*next_md,
                                       scatter,
@@ -382,7 +254,7 @@ int main(int argc, char*argv[])
             blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
             int rc_check;
-            rc |= rc_check = check_rcvbuf (rbuf, i, task_id, dt);
+            rc |= rc_check = scatter_check_rcvbuf_dt (rbuf, i, task_id, dt);
 
             if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

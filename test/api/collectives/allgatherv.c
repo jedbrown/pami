@@ -16,32 +16,6 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, pami_task_t task)
-{
-  unsigned char c = 0xFF & task;
-  memset(sbuf,c,bytes);
-}
-
-int check_rcvbuf (void *rbuf, int bytes, size_t ntasks)
-{
-  int i,j;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  for (j=0; j<ntasks; j++)
-  {
-    unsigned char c = 0xFF & j;
-
-    for (i=j*bytes; i<(j+1)*bytes; i++)
-      if (cbuf[i] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-        return 1;
-      }
-  }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -194,7 +168,7 @@ int main(int argc, char*argv[])
 
         allgatherv.cmd.xfer_allgatherv.stypecount       = i;
 
-        initialize_sndbuf (buf, i, task_id);
+        allgather_initialize_sndbuf (buf, i, task_id);
         memset(rbuf, 0xFF, i);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
@@ -209,7 +183,7 @@ int main(int argc, char*argv[])
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
         int rc_check;
-        rc |= rc_check = check_rcvbuf (rbuf, i, num_tasks);
+        rc |= rc_check = allgather_check_rcvbuf (rbuf, i, num_tasks);
 
         if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 

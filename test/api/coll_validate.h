@@ -57,10 +57,175 @@ int alltoall_check_rcvbuf(char *rbuf, size_t l, size_t nranks, size_t myrank)
   return 0;
 }
 
+void alltoall_initialize_bufs_dt(char *sbuf, char *rbuf, size_t l, size_t r, int dt)
+{
+  size_t k;
+  size_t d = l * r;
+
+  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *isbuf = (unsigned int *)  sbuf;
+    unsigned int *irbuf = (unsigned int *)  rbuf;
+
+    for (k = 0; k < l; k++)
+    {
+      isbuf[ d + k ] = ((unsigned int)((r + k) & 0xffffffff));
+      irbuf[ d + k ] = 0xffffffff;
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *dsbuf = (double *)  sbuf;
+    double *drbuf = (double *)  rbuf;
+
+    for (k = 0; k < l; k++)
+    {
+      dsbuf[ d + k ] = ((double)((r + k))) * 1.0;
+      drbuf[ d + k ] = 0xffffffffffffffff;
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *fsbuf = (float *)  sbuf;
+    float *frbuf = (float *)  rbuf;
+
+    for (k = 0; k < l; k++)
+    {
+      fsbuf[ d + k ] = ((float)((r + k))) * 1.0;
+      frbuf[ d + k ] = 0xffffffffffffffff;
+    }
+  }
+  else
+  {
+    char *csbuf = (char *)  sbuf;
+    char *crbuf = (char *)  rbuf;
+
+    for (k = 0; k < l; k++)
+    {
+      csbuf[ d + k ] = ((r + k) & 0xff);
+      crbuf[ d + k ] = 0xff;
+    }
+  }
+
+}
+
+
+int alltoall_check_rcvbuf_dt(char * rbuf, size_t l, size_t nranks, size_t myrank, int dt)
+{
+  size_t r, k;
+
+  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *irbuf = (unsigned int *)rbuf;
+    for (r = 0; r < nranks; r++)
+    {
+      size_t d = l * r;
+      for (k = 0; k < l; k++)
+      {
+        if ((unsigned)irbuf[ d + k ] != (unsigned)((myrank + k)))
+        {
+          printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+                 myrank,
+                 d + k,
+                 (unsigned int)irbuf[ d + k ],
+                 ((r + k)),
+                 r );
+          return 1;
+        }
+      }
+    }
+  }
+  else  if (dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *drbuf = (double *)rbuf;
+    for (r = 0; r < nranks; r++)
+    {
+      size_t d = l * r;
+      for (k = 0; k < l; k++)
+      {
+        if ((double)drbuf[ d + k ] != (double)(((myrank*1.0) + (k*1.0))))
+        {
+          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
+                 myrank,
+                 d + k,
+                 (double)drbuf[ d + k ],
+                 ((r + k)),
+                 r );
+          return 1;
+        }
+      }
+    }
+  }
+  else  if (dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *frbuf = (float *)rbuf;
+    for (r = 0; r < nranks; r++)
+    {
+      size_t d = l * r;
+      for (k = 0; k < l; k++)
+      {
+        if ((float)frbuf[ d + k ] != (float)(((myrank*1.0) + (k*1.0))))
+        {
+          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
+                 myrank,
+                 d + k,
+                 (float)frbuf[ d + k ],
+                 ((r + k)),
+                 r );
+          return 1;
+        }
+      }
+    }
+  }
+  return 0;
+}
+
+void alltoallv_initialize_bufs(char *sbuf, char *rbuf, size_t *sndlens, size_t *rcvlens,
+                               size_t *sdispls, size_t *rdispls, size_t r)
+{
+  size_t k;
+
+  for (k = 0; k < sndlens[r]; k++)
+    {
+      sbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+      rbuf[ rdispls[r] + k ] = 0xff;
+    }
+}
+
+int alltoallv_check_rcvbuf(char *rbuf, size_t *rcvlens, size_t *rdispls, size_t sz, size_t myrank)
+{
+  size_t r, k;
+
+  for (r = 0; r < sz; r++)
+    for (k = 0; k < rcvlens[r]; k++)
+      {
+        if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
+          {
+            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+                    gProtocolName, rcvlens[r],
+                    rdispls[r], k,
+                    rbuf[ rdispls[r] + k ],
+                    ((r + k) & 0xff),
+                    r );
+            return 1;
+          }
+      }
+
+  return 0;
+}
+
 void alltoallv_initialize_bufs_dt(void *sbuf, void *rbuf, size_t *sndlens, size_t *rcvlens,
                                   size_t *sdispls, size_t *rdispls, size_t r, int dt)
 {
   size_t k;
+  size_t _r = r;
+
+  if(rcvlens == NULL && rdispls == NULL)
+  {
+    rcvlens = sndlens;
+    rdispls = sdispls;
+    r = 0;
+  }
 
   if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
   {
@@ -68,7 +233,7 @@ void alltoallv_initialize_bufs_dt(void *sbuf, void *rbuf, size_t *sndlens, size_
     unsigned int *irbuf = (unsigned int *)  rbuf;
     for (k = 0; k < sndlens[r]; k++)
     {
-      isbuf[ sdispls[r] + k ] = ((r + k));
+      isbuf[ sdispls[r] + k ] = ((_r + k));
       irbuf[ rdispls[r] + k ] = 0xffffffff;
     }
   }
@@ -79,7 +244,7 @@ void alltoallv_initialize_bufs_dt(void *sbuf, void *rbuf, size_t *sndlens, size_
 
     for (k = 0; k < sndlens[r]; k++)
     {
-      dsbuf[ sdispls[r] + k ] = ((double)((r + k))) * 1.0;
+      dsbuf[ sdispls[r] + k ] = ((double)((_r + k))) * 1.0;
       drbuf[ rdispls[r] + k ] = 0xffffffffffffffff;
     }
   }
@@ -90,7 +255,7 @@ void alltoallv_initialize_bufs_dt(void *sbuf, void *rbuf, size_t *sndlens, size_
 
     for (k = 0; k < sndlens[r]; k++)
     {
-      fsbuf[ sdispls[r] + k ] = ((float)((r + k))) * 1.0;
+      fsbuf[ sdispls[r] + k ] = ((float)((_r + k))) * 1.0;
       frbuf[ rdispls[r] + k ] = 0xffffffffffffffff;
     }
   }
@@ -101,7 +266,7 @@ void alltoallv_initialize_bufs_dt(void *sbuf, void *rbuf, size_t *sndlens, size_
 
     for (k = 0; k < sndlens[r]; k++)
     {
-      csbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+      csbuf[ sdispls[r] + k ] = ((_r + k) & 0xff);
       crbuf[ rdispls[r] + k ] = 0xff;
     }
   }
@@ -169,8 +334,8 @@ int alltoallv_check_rcvbuf_dt(void *rbuf, size_t *rcvlens, size_t *rdispls, size
   return 0;
 }
 
-void alltoallv_initialize_bufs(char *sbuf, char *rbuf, size_t *sndlens, size_t *rcvlens,
-                               size_t *sdispls, size_t *rdispls, size_t r)
+void alltoallv_int_initialize_bufs(char *sbuf, char *rbuf, int *sndlens, int *rcvlens,
+                                   int *sdispls, int *rdispls, size_t r)
 {
   size_t k;
 
@@ -181,7 +346,7 @@ void alltoallv_initialize_bufs(char *sbuf, char *rbuf, size_t *sndlens, size_t *
     }
 }
 
-int alltoallv_check_rcvbuf(char *rbuf, size_t *rcvlens, size_t *rdispls, size_t sz, size_t myrank)
+int alltoallv_int_check_rcvbuf(char *rbuf, int *rcvlens, int *rdispls, size_t sz, size_t myrank)
 {
   size_t r, k;
 
@@ -199,6 +364,118 @@ int alltoallv_check_rcvbuf(char *rbuf, size_t *rcvlens, size_t *rdispls, size_t 
             return 1;
           }
       }
+
+  return 0;
+}
+
+void alltoallv_int_initialize_bufs_dt(void *sbuf, void *rbuf, int *sndlens, int *rcvlens,
+                                      int *sdispls, int *rdispls, size_t r, int dt)
+{
+  size_t k;
+
+  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *isbuf = (unsigned int *)  sbuf;
+    unsigned int *irbuf = (unsigned int *)  rbuf;
+    for (k = 0; k < sndlens[r]; k++)
+    {
+      isbuf[ sdispls[r] + k ] = ((r + k));
+      irbuf[ rdispls[r] + k ] = 0xffffffff;
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *dsbuf = (double *)  sbuf;
+    double *drbuf = (double *)  rbuf;
+
+    for (k = 0; k < sndlens[r]; k++)
+    {
+      dsbuf[ sdispls[r] + k ] = ((double)((r + k))) * 1.0;
+      drbuf[ rdispls[r] + k ] = 0xffffffffffffffff;
+    }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *fsbuf = (float *)  sbuf;
+    float *frbuf = (float *)  rbuf;
+
+    for (k = 0; k < sndlens[r]; k++)
+    {
+      fsbuf[ sdispls[r] + k ] = ((float)((r + k))) * 1.0;
+      frbuf[ rdispls[r] + k ] = 0xffffffffffffffff;
+    }
+  }
+  else
+  {
+    char *csbuf = (char *)  sbuf;
+    char *crbuf = (char *)  rbuf;
+
+    for (k = 0; k < sndlens[r]; k++)
+    {
+      csbuf[ sdispls[r] + k ] = ((r + k) & 0xff);
+      crbuf[ rdispls[r] + k ] = 0xff;
+    }
+  }
+}
+
+int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t sz, size_t myrank, int dt)
+{
+  size_t r, k;
+
+  if (dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *irbuf = (unsigned int *)rbuf;
+    for (r = 0; r < sz; r++)
+      for (k = 0; k < rcvlens[r]; k++)
+      {
+        if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
+        {
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+                  gProtocolName, rcvlens[r],
+                  rdispls[r], k,
+                  irbuf[ rdispls[r] + k ],
+                  ((myrank + k)),
+                  r );
+        return 1;
+        }
+      }
+  }
+  else if (dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *drbuf = (double *)rbuf;
+    for (r = 0; r < sz; r++)
+      for (k = 0; k < rcvlens[r]; k++)
+      {
+        if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
+        {
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+                  gProtocolName, rcvlens[r],
+                  rdispls[r], k,
+                  drbuf[ rdispls[r] + k ],
+                  ((r + k)),
+                  r );
+        return 1;
+        }
+      }
+  }
+  if (dt_array[dt] == PAMI_TYPE_FLOAT)
+  {
+    float *frbuf = (float *)rbuf;
+    for (r = 0; r < sz; r++)
+      for (k = 0; k < rcvlens[r]; k++)
+      {
+        if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
+        {
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+                  gProtocolName, rcvlens[r],
+                  rdispls[r], k,
+                  frbuf[ rdispls[r] + k ],
+                  ((r + k)),
+                  r );
+        return 1;
+        }
+      }
+  }
 
   return 0;
 }
@@ -979,6 +1256,104 @@ int scatter_check_rcvbuf_dt (void *rbuf, int counts, pami_task_t task, int dt)
   }
 
   return 0;
+}
+
+void scan_initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
+{
+
+  int i;
+  /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *ibuf = (unsigned int *)  buf;
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = i;
+    }
+  }
+  else
+  {
+    size_t sz=get_type_size(dt_array[dt]);
+    memset(buf,  task_id,  count * sz);
+  }
+}
+
+int scan_check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id, int exclusive)
+{
+
+  int i, err = 0;
+  /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *rbuf = (unsigned int *)  buf;
+    unsigned int x;
+
+    if(exclusive == 1)
+      {
+        /* Receive buffer is not valid on task 0 for exclusive scan */
+        if(task_id == 0)
+          return 0;
+        else
+          x = task_id;
+      }
+    else
+      {
+        x = task_id +1;
+      }
+    for (i = 0; i < count; i++)
+    {
+      if (rbuf[i] != i * x)
+      {
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],i*x);
+        err = -1;
+        return err;    
+      }
+    }
+  }
+
+  return err;
+}
+
+void reduce_scatter_initialize_sndbuf (void *buf, int count, int op, int dt, int task_id)
+{
+
+  int i;
+  /* if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *ibuf = (unsigned int *)  buf;
+    for (i = 0; i < count; i++)
+    {
+      ibuf[i] = i;
+    }
+  }
+  else
+  {
+    size_t sz=get_type_size(dt_array[dt]);
+    memset(buf,  task_id,  count * sz);
+  }
+}
+
+int reduce_scatter_check_rcvbuf (void *buf, int count, int op, int dt, int num_tasks, int task_id)
+{
+
+  int i, err = 0;
+  /*  if (op == PAMI_SUM && dt == PAMI_UNSIGNED_INT) { */
+  if (op_array[op] == PAMI_DATA_SUM && dt_array[dt] == PAMI_TYPE_UNSIGNED_INT)
+  {
+    unsigned int *rbuf = (unsigned int *)  buf;
+    for (i = 0; i < count / num_tasks; i++)
+    {
+      if (rbuf[i] != (i + task_id * (count / num_tasks))* num_tasks)
+      {
+        fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],(i+task_id * (count/num_tasks))*num_tasks);
+        err = -1;
+        return err;    
+      }
+    }
+  }
+
+  return err;
 }
 
 #endif

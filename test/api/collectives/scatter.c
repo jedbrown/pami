@@ -16,35 +16,6 @@
 
 #include "../pami_util.h"
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
-{
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i = 0; i < ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
-{
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
-    }
-
-  return 0;
-}
-
 int main(int argc, char*argv[])
 {
   pami_client_t        client;
@@ -106,12 +77,9 @@ int main(int argc, char*argv[])
   int err = 0;
   void* buf = NULL;
 
-  if (task_id == root)
-  {
-    err = posix_memalign(&buf, 128, (gMax_byte_count * num_tasks) + gBuffer_offset);
-    assert(err == 0);
-    buf = (char*)buf + gBuffer_offset;
-  }
+  err = posix_memalign(&buf, 128, (gMax_byte_count * num_tasks) + gBuffer_offset);
+  assert(err == 0);
+  buf = (char*)buf + gBuffer_offset;
 
   void* rbuf = NULL;
   err = posix_memalign(&rbuf, 128, gMax_byte_count + gBuffer_offset);
@@ -205,26 +173,35 @@ int main(int argc, char*argv[])
         scatter.cmd.xfer_scatter.stypecount = i;
         scatter.cmd.xfer_scatter.rtypecount = i;
 
-        if (task_id == root)
-          initialize_sndbuf (buf, i, num_tasks);
 
-        memset(rbuf, 0xFF, i);
 
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
         ti = timer();
 
         for (j = 0; j < niter; j++)
         {
+          root = (root + num_tasks - 1) % num_tasks;
+          pami_endpoint_t root_ep;
+          PAMI_Endpoint_create(client, root, 0, &root_ep);
+          scatter.cmd.xfer_gather.root = root_ep;
+
+          if (task_id == root)
+          {
+            scatter_initialize_sndbuf (buf, i, num_tasks);
+          }
+          memset(rbuf, 0xFF, i);
+
+
           blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+
+          int rc_check;
+          rc |= rc_check = scatter_check_rcvbuf (rbuf, i, task_id);
+
+          if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
         }
 
         tf = timer();
         blocking_coll(context[iContext], &barrier, &bar_poll_flag);
-
-        int rc_check;
-        rc |= rc_check = check_rcvbuf (rbuf, i, task_id);
-
-        if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
 
         usec = (tf - ti) / (double)niter;
 
@@ -251,11 +228,8 @@ int main(int argc, char*argv[])
 
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
-  if (task_id == root)
-  {
-    buf = (char*)buf - gBuffer_offset;
-    free(buf);
-  }
+  buf = (char*)buf - gBuffer_offset;
+  free(buf);
 
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);

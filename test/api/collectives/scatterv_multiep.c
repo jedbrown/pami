@@ -19,35 +19,6 @@
 #include "../pami_util.h"
 #include <pthread.h>
 
-void initialize_sndbuf (void *sbuf, int bytes, size_t ntasks)
-{
-  size_t i;
-  unsigned char *cbuf = (unsigned char *)  sbuf;
-
-  for (i = 0; i < ntasks; i++)
-  {
-    unsigned char c = 0xFF & i;
-    memset(cbuf + (i*bytes), c, bytes);
-  }
-}
-
-int check_rcvbuf (void *rbuf, int bytes, pami_task_t task)
-{
-  int i;
-  unsigned char *cbuf = (unsigned char *)  rbuf;
-
-  unsigned char c = 0xFF & task;
-
-  for (i = 0; i < bytes; i++)
-    if (cbuf[i] != c)
-    {
-      fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, bytes, cbuf, i, cbuf[i], c);
-      return 1;
-    }
-
-  return 0;
-}
-
 static void *scatterv_test(void*);
 
 pami_geometry_t      newgeometry;

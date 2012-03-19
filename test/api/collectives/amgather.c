@@ -47,43 +47,6 @@ char                   *_g_recv_buffer;
 char                   *_g_send_buffer;
 validation_t           *_g_val_buffer;
 
-void initialize_sndbuf (pami_task_t task_id, void *buf, int bytes )
-{
-
-  unsigned char *cbuf = (unsigned char *)  buf;
-  unsigned char c = 0x00 + task_id;
-  int i = bytes;
-
-  for (; i; i--)
-  {
-    cbuf[i-1] = c++;
-  }
-}
-
-int check_rcvbuf (size_t num_tasks, void *buf, int bytes)
-{
-
-  int j;
-  for (j = 0; j < num_tasks; j++)
-  {
-    unsigned char *cbuf = (unsigned char *)  buf + j *bytes;
-    unsigned char c = 0x00 + j;
-    int i = bytes;
-    for (; i; i--)
-    {
-      if (cbuf[i-1] != c)
-      {
-        fprintf(stderr, "%s:Check(%d) failed <%p> rank=%.2u, buf[%d]=%.2u != %.2u \n",
-                gProtocolName,bytes,buf, i, i-1, cbuf[i-1], c);
-        return -1;
-      }
-
-      c++;
-    }
-  }
-  return 0;
-}
-
 /**
  *  Check if we have a valid context
  */
@@ -128,7 +91,7 @@ void cb_amgather_done (void *context, void * clientdata, pami_result_t err)
   if(my_task_id == v->root)
   {
     int rc_check;
-    _gRc |= rc_check = check_rcvbuf (num_tasks, _g_recv_buffer, v->bytes);
+    _gRc |= rc_check = gather_check_rcvbuf (num_tasks, _g_recv_buffer, v->bytes);
     if (rc_check) fprintf(stderr, "%s FAILED validation\n", gProtocolName);
   }
   (*active)++;
@@ -164,7 +127,7 @@ void cb_amgather_send(pami_context_t         context,      /**< IN:  communicati
   v->cookie = cookie;
   v->bytes  = data_size;
   v->root = task;
-  initialize_sndbuf(my_task_id, v->sbuf, v->bytes);
+  gather_initialize_sndbuf(my_task_id, v->sbuf, v->bytes);
 
   send->cookie      = (void*)v;
   send->local_fn    = cb_amgather_done;
