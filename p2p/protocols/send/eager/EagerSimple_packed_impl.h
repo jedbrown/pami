@@ -171,7 +171,7 @@ inline pami_result_t EagerSimple<T_Model, T_Option>::send_packed (eager_state_t 
       metadata.origin       = _origin;
 
       TRACE_FORMAT("protocol metadata: origin = 0x%08x, header_bytes = %d, data_bytes = %d", metadata.origin, metadata.header_bytes, metadata.data_bytes);
-      TRACE_HEXDATA(&metadata,sizeof(packed_metadata_t));
+      TRACE_HEXDATA(&metadata, sizeof(packed_metadata_t));
 
       // Pack the header and data into a temporary packet payload
       uint8_t * ptr = (uint8_t *) state->origin.packed.packet;
@@ -261,14 +261,67 @@ inline int EagerSimple<T_Model, T_Option>::dispatch_packed (void   * metadata,
   TRACE_FORMAT("protocol metadata: origin = 0x%08x, header_bytes = %d, data_bytes = %d", packed_metadata->origin, packed_metadata->header_bytes, packed_metadata->data_bytes);
 
   // Invoke the registered dispatch function.
-  eager->_dispatch_fn (eager->_context,               // Communication context
-                       eager->_cookie,                // Dispatch cookie
-                       header,                        // Application metadata
-                       packed_metadata->header_bytes, // Application metadata bytes
-                       data,                          // Application data
-                       packed_metadata->data_bytes,   // Application data bytes
-                       packed_metadata->origin,       // Origin endpoint for the transfer
-                       (pami_recv_t *) NULL);         // Synchronous receive
+  if (T_Option & RECV_IMMEDIATE_FORCEOFF)
+    {
+      pami_recv_t info = {0};
+      eager->_dispatch_fn (eager->_context,               // Communication context
+                           eager->_cookie,                // Dispatch cookie
+                           header,                        // Application metadata
+                           packed_metadata->header_bytes, // Application metadata bytes
+                           data,                          // Application data
+                           packed_metadata->data_bytes,   // Application data bytes
+                           packed_metadata->origin,       // Origin endpoint for the transfer
+                           &info);                        // Asynchronous receive information
+
+      TRACE_FORMAT("packed_metadata->data bytes = %d, info.type = %p, info.local_fn = %p, info.cookie = %p", packed_metadata->data_bytes, info.type, info.local_fn, info.cookie);
+
+      if (likely(packed_metadata->data_bytes > 0))
+        {
+          if ((info.type == PAMI_TYPE_BYTE) && (info.data_fn == PAMI_DATA_COPY))
+            {
+              Core_memcpy ((uint8_t *) info.addr, data, packed_metadata->data_bytes);
+            }
+          else
+            {
+              Type::TypeCode * type = (Type::TypeCode *) info.type;
+              PAMI_assert_debugf(type != NULL, "info.type == NULL !");
+
+#ifdef ERROR_CHECKS
+
+              if (! type->IsCompleted())
+                {
+                  //RETURN_ERR_PAMI(PAMI_INVAL, "Using an incompleted type.");
+                  if (info.local_fn != NULL)
+                    info.local_fn (eager->_context, info.cookie, PAMI_INVAL);
+
+                  TRACE_FN_EXIT();
+                  return 1;
+                }
+
+#endif
+
+              // Use a type machine to unpack the source data.
+              Type::TypeMachine machine(type);
+              machine.SetCopyFunc (info.data_fn, info.data_cookie);
+              machine.MoveCursor (info.offset);
+              machine.Unpack (info.addr, data, packed_metadata->data_bytes);
+            }
+        }
+
+      if (likely(info.local_fn != NULL))
+        info.local_fn (eager->_context, info.cookie, PAMI_SUCCESS);
+    }
+  else
+    {
+      eager->_dispatch_fn (eager->_context,               // Communication context
+                           eager->_cookie,                // Dispatch cookie
+                           header,                        // Application metadata
+                           packed_metadata->header_bytes, // Application metadata bytes
+                           data,                          // Application data
+                           packed_metadata->data_bytes,   // Application data bytes
+                           packed_metadata->origin,       // Origin endpoint for the transfer
+                           (pami_recv_t *) NULL);         // Synchronous receive
+    }
 
   TRACE_FN_EXIT();
   return 0;
