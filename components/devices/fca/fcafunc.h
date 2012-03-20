@@ -220,7 +220,7 @@ inline void * FCAFunc::import(const char * funcname)
 inline int FCAFunc::Load()
 {
 #ifdef _LAPI_LINUX // Linux
-  const char *filename = "libfca.so";
+  const char *filename = "/opt/mellanox/fca/lib/libfca.so";
 #else
 #ifdef __64BIT__
   const char *filename = "libfca_r.a(libfca64_r.o)";
