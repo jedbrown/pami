@@ -543,21 +543,36 @@ namespace PAMI
         DO_DEBUGg(pami_task_t *list = NULL);
         DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() DEFAULT_TOPOLOGY rankList %p\n", _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() DEFAULT_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(j), _topos[DEFAULT_TOPOLOGY_INDEX].size())));
-        _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
-        _topos[DEFAULT_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
-        _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
+
+        /* for efficiancy/BGQ-torus reasons, we might want to build master/local topologies from a coordinate
+           topology and not from the input/default topology... determine which to use */
+        topologyIndex_t BASE_INDEX = DEFAULT_TOPOLOGY_INDEX; /* assume we use the input/default topology */
+
+        _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];  // first copy it
+        if(_topos[COORDINATE_TOPOLOGY_INDEX].type() !=  PAMI_COORD_TOPOLOGY) // convert it?
+        {  
+          // Attempt to create a coordinate topo (result may be EMPTY)
+          _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
+
+          // Was it successful?
+          if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
+          {  
+            BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; /* use this coordinate based topology */
+          }
+        }
+
+        /* Use whatever topology we picked above as the basis for Nth masters and local */
+        _topos[BASE_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
+        _topos[BASE_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
 
         // Find master participant on the tree/cau network
-        DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() MASTER_TOPOLOGY_INDEX rankList %p\n", _topos[MASTER_TOPOLOGY_INDEX].rankList(&list), list)));
+        _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
+
+        TRACE_ERR((stderr, "buildSpecialTopologies() COORD created\n"));
+        DO_DEBUGg(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORD_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() MASTER_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j), _topos[MASTER_TOPOLOGY_INDEX].size())));
-        DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() LOCAL_TOPOLOGY rankList %p\n", _topos[LOCAL_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() LOCAL_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(j), _topos[LOCAL_TOPOLOGY_INDEX].size())));
 
-        // Create a coordinate topo (may be EMPTY)
-        _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];
-
-        if (_topos[COORDINATE_TOPOLOGY_INDEX].type() != PAMI_COORD_TOPOLOGY)
-          _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
 
         DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
         DO_DEBUGg(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
@@ -944,7 +959,7 @@ namespace PAMI
         {
           _ue_barrier[ctxt_id]._factory  = f;
           _ue_barrier[ctxt_id]._geometry = this;
-          TRACE_ERR((stderr, "<%p>Common::set(ctxt_id=%d) ue_barrier() %p, %p/%p, %p\n",
+          TRACE_ERR((stderr, "<%p>Common::set(ctxt_id=%zu) ue_barrier() %p, %p/%p, %p\n",
                      this,ctxt_id,
                      &_ue_barrier[ctxt_id],
                      f,
