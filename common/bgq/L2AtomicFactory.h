@@ -95,6 +95,10 @@ namespace BGQ {
 			failed = NULL;
 			void *try1 = NULL;
 			int tries = 0;
+			size_t span = 0;
+			if (sizeof(uint64_t) * size < 1024*1024) {
+				span = 1024*1024 - sizeof(uint64_t) * size;
+			}
 			krc = 0;
 			do {
 				rc = heap_mm->memalign(&try1,
@@ -110,16 +114,18 @@ namespace BGQ {
 				next = (struct _l2maptry *)try1;
 				next->next = failed;
 				failed = next;
-				// bump 1M...
-				rc = heap_mm->memalign(&try1,
-					sizeof(uint64_t),
-					1024*1024 - sizeof(uint64_t) * size,
-					NULL,
-					PAMI::Memory::MemoryManager::memzero, NULL);
-				if (rc != PAMI_SUCCESS) break;
-				next = (struct _l2maptry *)try1;
-				next->next = failed;
-				failed = next;
+				if (span) {
+					// bump 1M...
+					rc = heap_mm->memalign(&try1,
+						sizeof(uint64_t),
+						span,
+						NULL,
+						PAMI::Memory::MemoryManager::memzero, NULL);
+					if (rc != PAMI_SUCCESS) break;
+					next = (struct _l2maptry *)try1;
+					next->next = failed;
+					failed = next;
+				}
 			} while (true); // might be some max num attempts...
 
 			while (failed) {
