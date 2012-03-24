@@ -584,7 +584,8 @@ void PAMI::Global::initializeRgetPacing ( size_t blockSize,
   // defaults to pacing=ON...less than or equal to 1 rack defaults to
   // pacing=OFF.  If PAMI_RGETPACING is specified, then the
   // value of that flag determines whether or not pacing is ON.
-  doRgetPacing = (blockSize > 1024) ? true : false;
+//  doRgetPacing = (blockSize > 1024) ? true : false;  Temporarily turn this off.
+  doRgetPacing = 0;
   hops         = 4;
   dims         = 1;
   size         = 65536;
