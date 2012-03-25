@@ -26,16 +26,12 @@
     j++;
     for (n=2; n < (m << 5); n+=2)
     {
-      res1 = OP(r0, res1);
+      res1 = OP(r0, r2);
       r0  = src0[i];
-
-      res2 = OP(r1, res2);
-      r1  = src0[j];
-
-      res1 = OP(r2, res1);
       r2  = src1[i];
 
-      res2 = OP(r3, res2);
+      res2 = OP(r1, r3);
+      r1  = src0[j];
       r3  = src1[j];
 
       res1 = OP(r4, res1);
@@ -57,13 +53,11 @@
       i++;
       j++;
     }
-      res1 = OP(r0, res1);
-      res1 = OP(r2, res1);
+      res1 = OP(r0, r2);
       res1 = OP(r4, res1);
       res1 = OP(r6, res1);
 
-      res2 = OP(r1, res2);
-      res2 = OP(r3, res2);
+      res2 = OP(r1, r3);
       res2 = OP(r5, res2);
       res2 = OP(r7, res2);
 

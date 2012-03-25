@@ -40,10 +40,8 @@ register  unsigned n;
 
   for (n =1; n < num_ints; n++)
   {
-    res = OP(r0, res);
+    res = OP(r0, r1);
     r0  = src0[n];
-
-    res = OP(r1, res);
     r1  = src1[n];
 
     res = OP(r2, res);
@@ -92,8 +90,7 @@ register  unsigned n;
     res = 0;
   }
 
-  res = OP(r0, res);
-  res = OP(r1, res);
+  res = OP(r0, r1);
   res = OP(r2, res);
   res = OP(r3, res);
   res = OP(r4, res);
