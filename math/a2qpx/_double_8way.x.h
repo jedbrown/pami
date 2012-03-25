@@ -16,10 +16,9 @@ register  unsigned  n;
 
   for (n =1; n < num_dbls; n++)
   {
-    res = OP(f0, res);
-    f0  = src0[n];
+    res = OP(f0, f1);
 
-    res = OP(f1, res);
+    f0  = src0[n];
     f1  = src1[n];
 
     res = OP(f2, res);
@@ -44,8 +43,7 @@ register  unsigned  n;
     res = 0.0;
   }
 
-  res = OP(f0, res);
-  res = OP(f1, res);
+  res = OP(f0, f1);
   res = OP(f2, res);
   res = OP(f3, res);
   res = OP(f4, res);

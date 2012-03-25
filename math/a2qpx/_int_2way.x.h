@@ -31,29 +31,21 @@
 
     for (n=4; n < (m << 6); n+=4,i++,j++,k++,l++)
     {
-      res1 = OP(r0, res1);
+      res1 = OP(r0, r4);
       r0  = src0[i];
-
-      res2 = OP(r1, res2);
-      r1  = src0[j];
-
-      res3 = OP(r2, res3);
-      r2  = src0[k];
-
-      res4 = OP(r3, res4);
-      r3  = src0[l];
-
-      res1 = OP(r4, res1);
       r4  = src1[i];
 
-      res2 = OP(r5, res2);
+      res2 = OP(r1, r5);
+      r1  = src0[j];
       r5  = src1[j];
 
-      res3 = OP(r6, res3);
-      r6  = src1[i];
+      res3 = OP(r2, r6);
+      r2  = src0[k];
+      r6  = src1[k];
 
-      res4 = OP(r7, res4);
-      r7  = src1[j];
+      res4 = OP(r3, r7);
+      r3  = src0[l];
+      r7  = src1[l];
 
       dst[i-1]  = res1;
       dst[j-1]  = res2;
