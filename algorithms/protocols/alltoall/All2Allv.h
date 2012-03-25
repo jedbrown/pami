@@ -212,6 +212,9 @@ namespace CCMI
 	  done(NULL, PAMI_SUCCESS);
 	}
       }
+      size_t numRecvActive() {
+       return _recvpwq.numActive();
+      }
       static void cb_barrier_done(pami_context_t context,
                                   void *arg,
                                   pami_result_t err)
@@ -335,7 +338,8 @@ namespace CCMI
         coll_object->setXfer((pami_xfer_t *)op);
         coll_object->setFlag(LocalPosted);
         coll_object->setFactory(this);
-        geometry->asyncCollectivePostQ(_native->contextid()).pushTail(coll_object);
+	if(a2a->numRecvActive() > 0)
+	  geometry->asyncCollectivePostQ(_native->contextid()).pushTail(coll_object);
         TRACE_ADAPTOR((stderr, "<%p>All2AllvFactoryT::generate() key %u, coll_object %p, a2a %p\n", this, key, coll_object, a2a));
         return a2a;
       }
