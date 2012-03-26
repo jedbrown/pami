@@ -512,15 +512,29 @@ void reduce_initialize_sndbuf(void *buf, int count, int op, int dt, int task_id,
       dbuf[i] = 1.0 * i;
     }
   }
-  else if ((op_array[op] == PAMI_DATA_MAX || op_array[op] == PAMI_DATA_MIN) && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  else if (op_array[op] == PAMI_DATA_MAX && dt_array[dt] == PAMI_TYPE_DOUBLE)
   {
-    memset(buf,  0,  count * sizeof(double));
+    memset(buf,  0x0,  count * sizeof(double));
     double *dbuf = (double *)  buf;
 
     for (i = task_id; i < count; i += num_tasks)
     {
       dbuf[i] = 1.0 * task_id;
     }
+    if(task_id == 0) dbuf[0] = -0.01; /* max - more interesting data than 0 */
+    else dbuf[0] = -1.01 * task_id; /* more interesting data than 0 */
+  }
+  else if (op_array[op] == PAMI_DATA_MIN && dt_array[dt] == PAMI_TYPE_DOUBLE)
+  {
+    double *dbuf = (double *)  buf;
+
+    for (i = 0; i < count; i++)
+      if ((i % num_tasks) == task_id)
+        dbuf[i] = 1.01 * task_id; /* min == i on task_id */
+      else 
+        dbuf[i] = 1.01 * num_tasks; /* not min */
+
+      if(task_id == 0) dbuf[0] = -0.01; /* more interesting data than 0 */
   }
   else
   {
@@ -652,11 +666,17 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
   {
     double *rcvbuf = (double *)  buf;
 
-    for (i = 0; i < count; i++)
+    if (rcvbuf[0] != -0.01)
     {
-      if (rcvbuf[i] != 0.0)
+      fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, 0, rcvbuf[0], -0.01);
+      err = -1;
+      return err;
+    }
+    for (i = 1; i < count; i++)
+    {
+      if (rcvbuf[i] != 1.01 * (i % num_tasks))
       {
-        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], (double)0.0);
+        fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, i, rcvbuf[i], 1.01 * (i % num_tasks));
         err = -1;
         return err;
       }
@@ -666,7 +686,13 @@ int reduce_check_rcvbuf(void *buf, int count, int op, int dt, int task_id, int n
   {
     double *rcvbuf = (double *)  buf;
 
-    for (i = 0; i < count; i++)
+    if (rcvbuf[0] != -0.01)
+    {
+      fprintf(stderr, "%s:Check %s/%s(%d) failed rcvbuf[%d] %f != %f\n", gProtocolName, dt_array_str[dt], op_array_str[op], count, 0, rcvbuf[0], -0.01);
+      err = -1;
+      return err;
+    }
+    for (i = 1; i < count; i++)
     {
       if (rcvbuf[i] != 1.0 * (i % num_tasks))
       {
