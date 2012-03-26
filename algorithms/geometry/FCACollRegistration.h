@@ -68,7 +68,11 @@ public:
     _allgatherv_int_f(context,context_id,mapidtogeometry),
     _barrier_f(context,context_id,mapidtogeometry)
   {
-    if(num_contexts > 1 || !_Lapi_env.collective_offload) return;
+    if (num_contexts > 1 || !_Lapi_env.collective_offload) {
+      if (_Lapi_env.MP_infolevel >= 2 && num_contexts > 1 && _Lapi_env.collective_offload)  
+          fprintf(stderr, "ATTENTION: FCA is not supported with multi-endpoint.\n");  
+      return;
+    }
     void * rc = FCA_Dlopen(0);
     if(!rc) return;
     else
