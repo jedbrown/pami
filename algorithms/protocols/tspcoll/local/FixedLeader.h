@@ -62,7 +62,7 @@ namespace xlpgas
       State*     _state;
       int        _N, _me, _nchildren;
       int        _children[128], _parent, _leader;
-      static const int BusyWaitCycles=1000000;
+      static const int BusyWaitCycles=500;
       bool _done;
       //handle cb
       xlpgas_LCompHandler_t     _cb_complete;
