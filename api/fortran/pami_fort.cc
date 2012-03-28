@@ -18,6 +18,7 @@ extern "C" {
     void *pami_addr_null = NULL;
 
 #ifdef _LAPI_LINUX
+void *&pami_addr_null_ = pami_addr_null;
 #define COMMON_BLOCK pami_fort_globals_
 #else
 #define COMMON_BLOCK pami_fort_globals
@@ -752,7 +753,6 @@ extern "C" void pami_address (void* addr_in, size_t* addr_out, pami_result_t* re
 }
 
 #ifdef _LAPI_LINUX
-#pragma weak pami_addr_null_=pami_addr_null
 
 #define ALIAS(FUNC2,FUNC,PARAMS) extern "C" void pami_##FUNC2 PARAMS __attribute__ ((weak,alias("pami_"#FUNC)));
 
