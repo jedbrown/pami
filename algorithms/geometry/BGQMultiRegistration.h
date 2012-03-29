@@ -904,7 +904,6 @@ namespace PAMI
       _context(context),
       _context_id(context_id),
       _dispatch_id(dispatch_id),
-      _phase_1_done(0),
       _geometry_map(geometry_map),
       _allocator (allocator),
       _big_allocator (big_allocator),
@@ -1314,9 +1313,13 @@ namespace PAMI
                 geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
             }
           }
+          geometry->setKey(_context_id, PAMI::Geometry::CKEY_PHASE_1_DONE,(void*)0); /* Phase 1 not done */
         }
         else if (phase == 1)
         {
+          /* Check if phase 1 was previously done at least once. This affects some opt/de-opt protocols */
+          void *valP = geometry->getKey(_context_id,PAMI::Geometry::CKEY_PHASE_1_DONE);
+          bool phase_1_done = (valP && valP != PAMI_CR_CKEY_FAIL); 
           /// A simple check (of sizes) to see if this subgeometry is all global,
           /// then the geometry topology is usable by 'pure' MU protocols
           bool usePureMu = topology->size() == master_sub_topology->size() ? true : false;
@@ -1328,8 +1331,10 @@ namespace PAMI
           {  
           /* With analyze, de-optimize, analyze, optimize, analyze, ... processing, the factory may have
                      already been added to the algorithm list, so check first  */
-            if(_phase_1_done)
+            if(!phase_1_done)
+            {  
               geometry->addCollective(PAMI_XFER_BARRIER, _binomial_barrier_factory, _context, _context_id);
+            }
           }
 
           if (_alltoall_factory)
@@ -1347,7 +1352,7 @@ namespace PAMI
           TRACE_FORMAT("<%p>CKEY_MSYNC_CLASSROUTEID %p", this, val);
           void *valr;
           valr = geometry->getKey(_context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID); // Rectangle 'class route'
-          TRACE_FORMAT("<%p>(%u)CKEY_RECTANGLE_CLASSROUTEID %p %s", this, __LINE__,valr, valr != PAMI_CR_CKEY_FAIL?" ":"PAMI_CR_CKEY_FAIL");
+          TRACE_FORMAT("(%u)CKEY_RECTANGLE_CLASSROUTEID %p %s, rectangle_topo %u", __LINE__,valr, valr != PAMI_CR_CKEY_FAIL?" ":"PAMI_CR_CKEY_FAIL",rectangle_topo);
 
           if (val && val != PAMI_CR_CKEY_FAIL && rectangle_topo)// We have a class route
           {
@@ -1424,7 +1429,7 @@ namespace PAMI
                 TRACE_FORMAT("<%p>Register 2D MU Rectangle msync 2", this);
                 /* With analyze, de-optimize, analyze, optimize, analyze, ... processing, the composite may have
                    already been created and added to the algorithm list, so check first  */
-                if(_phase_1_done)
+                if(!phase_1_done)
                 {
                   CCMI::Executor::Composite *composite;
                   composite = _msync2d_rectangle_composite_factory->generate(geometry, &xfer);
@@ -1571,7 +1576,7 @@ namespace PAMI
 #endif
               }
           }
-          _phase_1_done = 1; /* Indicate that we've done phase 1 at least one time */
+          geometry->setKey(_context_id, PAMI::Geometry::CKEY_PHASE_1_DONE,(void*)1);/* Phase 1 done */
         }
         else if (phase == -1)
         {
@@ -1589,12 +1594,12 @@ namespace PAMI
 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _mu_rectangle_msync_factory,               _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BARRIER,        _gi_msync_factory,                         _context, _context_id);
-/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check _phase_1_done before (re)adding it. 
+/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check CKEY_PHASE_1_DONE before (re)adding it. 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _binomial_barrier_factory,                 _context, _context_id);
 */
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_composite_factory,                _context, _context_id);
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_gishm_composite_factory,          _context, _context_id);
-/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check _phase_1_done before (re)adding it. 
+/* Do not remove this barrier - it isn't de-optimized.  The addCollective will check CKEY_PHASE_1_DONE before (re)adding it. 
           geometry->rmCollective(PAMI_XFER_BARRIER,        _msync2d_rectangle_composite_factory,      _context, _context_id);
 */
 
@@ -1626,7 +1631,6 @@ namespace PAMI
       // This is a pointer to the current dispatch id of the context
       // This will be decremented by the ConstructNativeInterface routines
       int                                            *_dispatch_id;
-      int                                             _phase_1_done;
       std::map<unsigned, pami_geometry_t>            *_geometry_map;
 
       T_Allocator                                    &_allocator;
