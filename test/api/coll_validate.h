@@ -355,7 +355,7 @@ int alltoallv_int_check_rcvbuf(char *rbuf, int *rcvlens, int *rdispls, size_t sz
       {
         if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
           {
-            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+            fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02zx (rank:%zu)\n",
                     gProtocolName, rcvlens[r],
                     rdispls[r], k,
                     rbuf[ rdispls[r] + k ],
@@ -430,7 +430,7 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02zx (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   irbuf[ rdispls[r] + k ],
@@ -448,7 +448,7 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   drbuf[ rdispls[r] + k ],
@@ -466,7 +466,7 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   frbuf[ rdispls[r] + k ],
