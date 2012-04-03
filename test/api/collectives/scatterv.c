@@ -21,7 +21,6 @@ int main(int argc, char*argv[])
   pami_client_t        client;
   pami_context_t      *context;
   pami_task_t          task_id, root_zero=0;
-  pami_task_t          root_task = 0;
   size_t               num_tasks;
   pami_geometry_t      world_geometry;
 

@@ -245,6 +245,7 @@ static void * scatter_test(void* p) {
 
   pami_endpoint_t my_ep, zero_ep, root_ep;
   pami_task_t root = 0;
+  PAMI_Endpoint_create(client, root, 0, &root_ep);
   PAMI_Endpoint_create(client,task_id,td->tid,&my_ep);
   PAMI_Endpoint_create(client,0,0,&zero_ep);
 
