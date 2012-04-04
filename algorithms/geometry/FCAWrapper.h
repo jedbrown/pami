@@ -18,6 +18,7 @@
 #include "algorithms/composite/Composite.h"
 #include "algorithms/geometry/Metadata.h"
 #include "components/devices/fca/fcafunc.h"
+#include "lapi_itrace.h"
 
 namespace PAMI{namespace CollRegistration{
 // The following classes are used to implement a CCMI wrapper
@@ -243,6 +244,14 @@ public:
   }
   virtual void start()
   {
+    ITRC(IT_FCA, 
+         "FCA_reduce: root %d sbuf 0x%p rbuf 0x%p dtype %d len %d op %d\n",
+         _spec.root,
+         _spec.sbuf,
+         _spec.rbuf,
+         _spec.dtype,
+         _spec.length,
+         _spec.op);
     int rc = FCA_Do_reduce(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_reduce failed with rc=%d [%s]",
             rc,
@@ -293,6 +302,14 @@ public:
   }
   virtual void start()
   {
+    ITRC(IT_FCA, 
+         "FCA_allreduce: root %d sbuf 0x%p rbuf 0x%p dtype %d len %d op %d\n",
+         _spec.root,
+         _spec.sbuf,
+         _spec.rbuf,
+         _spec.dtype,
+         _spec.length,
+         _spec.op);
     int rc = FCA_Do_all_reduce(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_all_reduce failed with rc=%d [%s]",
             rc,
@@ -342,6 +359,11 @@ public:
     }
   virtual void start()
   {
+    ITRC(IT_FCA, 
+         "FCA_bcast: root %d buf 0x%p size %d\n",
+         _spec.root,
+         _spec.buf,
+         _spec.size);
     int rc = FCA_Do_bcast(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_bcast failed with rc=%d [%s]",
             rc,
@@ -384,6 +406,12 @@ public:
     }
   virtual void start()
   {
+    ITRC(IT_FCA, 
+         "FCA_allgather: root %d sbuf 0x%p rbuf 0x%p size %d\n",
+         _spec.root,
+         _spec.sbuf,
+         _spec.rbuf,
+         _spec.size);
     int rc = FCA_Do_allgather(this->_c, &_spec);(void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_allgather failed with rc=%d [%s]",
             rc,
@@ -427,6 +455,12 @@ public:
     }
   virtual void start()
   {
+    ITRC(IT_FCA, 
+         "FCA_allgatherv: root %d sbuf 0x%p rbuf 0x%p sendsize %d\n",
+         _spec.root,
+         _spec.sbuf,
+         _spec.rbuf,
+         _spec.sendsize);
     int rc = FCA_Do_allgatherv(this->_c, &_spec); (void)rc;
     PAMI_assertf(rc == 0, "FCA_Do_allgatherv failed with rc=%d [%s]",
             rc, 

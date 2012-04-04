@@ -218,11 +218,18 @@ namespace PAMI
 
     static void fca_progress_fn(void *arg)
     {
+      PAMI::Context *ctxt = (PAMI::Context *)arg;
+      PAMI::Client  *clnt = (PAMI::Client *)ctxt->getClient();
+      
       if ( (arg != NULL) && ((LapiImpl::Context *)arg)->initialized ) {
         // work around the problem caused by Mellanox FCA invoking progress
         // function after FCA context is destroyed
-        pami_result_t res = PAMI_SUCCESS;
-        ((PAMI::Context*)arg)->advance(1, res);
+        __lwsync();  
+        if(clnt->_advance_is_safe == true)
+        {
+          pami_result_t res = PAMI_SUCCESS;
+          ((PAMI::Context*)arg)->advance(1, res);
+        }
       }
     }
 
@@ -1729,6 +1736,8 @@ namespace PAMI
               if(gc == master)
                 {
                   PAMI::Client  *clnt         = (PAMI::Client*)ctxt->getClient();
+                  clnt->_advance_is_safe = false;
+                  __lwsync();  
                   clnt->lock();
                   clnt->_geometry_map[g->comm()] = NULL;
                   clnt->_geometry_map.erase(g->comm());
@@ -1745,6 +1754,8 @@ namespace PAMI
                     }
                   __global.heap_mm->free(gc);
                   clnt->unlock();
+                  clnt->_advance_is_safe = true;
+                  __lwsync();  
                   return PAMI_SUCCESS;
                 }
               __global.heap_mm->free(gc);
@@ -1938,6 +1949,10 @@ namespace PAMI
 
     // Client Lock, to lock resources for the client
     LAPICSMutex                                  _lock;
+
+    // multi-endpoint geometry destroy thread safety (fca_progress)
+    // protection flag
+    bool                                          _advance_is_safe;
   }; // end class PAMI::Client
 }; // end namespace PAMI
 

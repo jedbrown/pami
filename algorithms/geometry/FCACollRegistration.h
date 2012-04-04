@@ -111,8 +111,9 @@ public:
         _fca_rank_info = FCA_Get_rank_info(_fca_context, &_fca_rank_info_sz);
         if (_fca_rank_info == NULL)
           {
-            fprintf(stderr, "FCA_Get_rank_info failed with ptr %p\n", 
-                    _fca_rank_info);
+            fprintf(stderr, "FCA_Get_rank_info failed with ptr %p\n", _fca_rank_info);
+            ITRC(IT_FCA, "FCA_Get_rank_info failed with ptr %p\n", _fca_rank_info);
+            FCA_Cleanup(_fca_context);  
             exit(0);
           }
         ITRC(IT_FCA, "FCA_Get_rank_info succeeded with rank_info at %p\n",
@@ -129,6 +130,14 @@ public:
       }
   }
 
+  ~FCARegistration()
+  {
+    if(_enabled) {
+      FCA_Free_rank_info(_fca_rank_info);  
+      FCA_Cleanup(_fca_context);  
+    }
+  }
+
   // Return the number of integers to reduce
   inline uint64_t analyze_count_impl(size_t      context_id,
                               T_Geometry *geometry)
@@ -138,7 +147,7 @@ public:
         return 0;
       }
     Topology *master_topo = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
-    size_t    bufsz       = (master_topo->size()*_fca_rank_info_sz)+sizeof(fca_comm_desc_t);
+    size_t    bufsz       = (master_topo->size()*_fca_rank_info_sz)+sizeof(fca_comm_desc_t)+sizeof(uint64_t);
     size_t    extrapad    = (bufsz%sizeof(uint64_t))?1:0;
     return (bufsz/sizeof(uint64_t))+extrapad;
   }
@@ -159,15 +168,19 @@ public:
       if(topo->size() == 1)
         return PAMI_SUCCESS;
 
-      Topology        *master_topo      = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
-      Topology        *local_topo       = (Topology *) (geometry->getTopology(G::LOCAL_TOPOLOGY_INDEX));
-      //Topology        *my_master_topo   = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
+      uint             numtasks         = topo->size();
 
+      Topology        *local_topo       = (Topology *) (geometry->getTopology(G::LOCAL_TOPOLOGY_INDEX));
+      if(numtasks == local_topo->size())
+        return PAMI_SUCCESS;
+
+      //Topology        *my_master_topo   = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
+      Topology        *master_topo      = (Topology *) (geometry->getTopology(G::MASTER_TOPOLOGY_INDEX));
+
+      uint             num_local_tasks  = local_topo->size();
       pami_endpoint_t  master_ep        = local_topo->index2Endpoint(0);
       pami_endpoint_t  root_ep          = master_topo->index2Endpoint(0);
       uint             master_index     = master_topo->endpoint2Index(master_ep);
-      uint             numtasks         = topo->size();
-      uint             num_local_tasks  = local_topo->size();
       uint             num_master_tasks = master_topo->size();
       bool             amLeader         = master_topo->isEndpointMember(_my_endpoint);
       bool             amRoot           = (root_ep == _my_endpoint);
@@ -192,25 +205,23 @@ public:
             // Set up the first phase reduction buffer
             uint64_t *uptr      = (uint64_t*)inout_val;
             uint64_t  count     = analyze_count_impl(context_id, geometry);
-            for(int i=0; i<(int)count; i++)
+            // clear the 8 bytes used to indicate FCA errors encountered
+            uptr[0] = 0x0ULL;
+            for(int i=1; i<(int)count; i++)
               uptr[i] = 0xFFFFFFFFFFFFFFFFULL;
             if(amLeader)
             {
               // master_index is my index in the master topology
               // for a leader (leader is master)
-              char *ptr       = ((char*)inout_val)+(master_index*_fca_rank_info_sz);
+              char *ptr       = ((char*)inout_val)+sizeof(uint64_t)+(master_index*_fca_rank_info_sz);
               memcpy(ptr, _fca_rank_info, _fca_rank_info_sz);
-            }
-            else
-            {
-
             }
             return PAMI_SUCCESS;
           }
           break;
           case 1:
           {
-            char *ptr       = ((char*)inout_val)+(master_topo->size()*_fca_rank_info_sz);
+            char *ptr       = ((char*)inout_val)+sizeof(uint64_t)+(master_topo->size()*_fca_rank_info_sz);
             memset(ptr, 0xFF,sizeof(fca_comm_desc_t));
             ITRC(IT_FCA, "PHASE 1:  ptr is at %p\n", ptr);
             if(amRoot)
@@ -218,7 +229,7 @@ public:
               GeometryInfo   *gi = (GeometryInfo*)geometry->getKey(_context_id,
                                                                    G::CKEY_FCAGEOMETRYINFO);
               fca_comm_new_spec_t cs;
-              cs.rank_info     = (void*)(&inout_val[0]);
+              cs.rank_info     = (void*)(&(inout_val[1]));
               cs.rank_count    = num_master_tasks;
               cs.is_comm_world = 0;
               fca_comm_desc_t *comm_desc = (fca_comm_desc_t*) ptr;
@@ -237,6 +248,8 @@ public:
               {
                 ITRC(IT_FCA, "FCA_Comm_new failed with rc %d [%s]\n",
                      rc, FCA_Strerror(rc));
+                // to indicate the failure of FCA_Comm_new
+                ((char*)(inout_val))[0] = 1; 
                 return PAMI_ERROR;
               }
 
@@ -248,56 +261,60 @@ public:
           break;
           case 2:
           {
-            fca_comm_init_spec is;
-            char            *ptr       = ((char*)inout_val)+(num_master_tasks*_fca_rank_info_sz);
-            fca_comm_desc_t *d         = (fca_comm_desc_t*)ptr;
-            GeometryInfo    *gi        = (GeometryInfo*)geometry->getKey(_context_id,
-                                                                         G::CKEY_FCAGEOMETRYINFO);
-            gi->_fca_comm_desc         = *d;
-            is.desc                    = *d;
-            is.rank                    = topo->endpoint2Index(_my_endpoint);
-            is.size                    = numtasks;
-            is.proc_idx                = local_topo->endpoint2Index(_my_endpoint);
-            is.num_procs               = num_local_tasks;
+            if (((char*)(inout_val))[0] == 0) {
+              fca_comm_init_spec is;
+              char            *ptr       = ((char*)inout_val)+sizeof(uint64_t)+(num_master_tasks*_fca_rank_info_sz);
+              fca_comm_desc_t *d         = (fca_comm_desc_t*)ptr;
+              GeometryInfo    *gi        = (GeometryInfo*)geometry->getKey(_context_id,
+                                                                           G::CKEY_FCAGEOMETRYINFO);
+              gi->_fca_comm_desc         = *d;
+              is.desc                    = *d;
+              is.rank                    = topo->endpoint2Index(_my_endpoint);
+              is.size                    = numtasks;
+              is.proc_idx                = local_topo->endpoint2Index(_my_endpoint);
+              is.num_procs               = num_local_tasks;
+  
+              rc = FCA_Comm_init(_fca_context,
+                                 &is,
+                                 &gi->_fca_comm);
+              if (rc < 0) {
+                ITRC(IT_FCA, "FCA_Comm_init failed with rc %d [%s]\n", 
+                     rc, FCA_Strerror(rc));
+                return PAMI_ERROR;
+              }
 
-            rc = FCA_Comm_init(_fca_context,
-                               &is,
-                               &gi->_fca_comm);
-            if (rc < 0) {
-              ITRC(IT_FCA, "FCA_Comm_init failed with rc %d [%s]\n", 
-                   rc, FCA_Strerror(rc));
-              return PAMI_ERROR;
-            }
-
-            ITRC(IT_FCA, "FCA_Comm_init succeeded.\n");
-          }
-          geometry->addCollectiveCheck(PAMI_XFER_REDUCE,
-                                       &_reduce_f,
-                                       _context,
-                                       _context_id);
-          geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
-                                       &_allreduce_f,
-                                       _context,
-                                       _context_id);
-          geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
-                                       &_broadcast_f,
-                                       _context,
-                                       _context_id);
-          geometry->addCollectiveCheck(PAMI_XFER_ALLGATHER,
-                                       &_allgather_f,
-                                       _context,
-                                       _context_id);
-          geometry->addCollectiveCheck(PAMI_XFER_ALLGATHERV_INT,
-                                       &_allgatherv_int_f,
-                                       _context,
-                                       _context_id);
-          geometry->addCollective(PAMI_XFER_BARRIER,
-                                  &_barrier_f,
-                                  _context,
-                                  _context_id);
-          return PAMI_SUCCESS;
-          default:
-            return PAMI_SUCCESS;
+              ITRC(IT_FCA, "FCA_Comm_init succeeded.\n");
+            
+              geometry->addCollectiveCheck(PAMI_XFER_REDUCE,
+                                           &_reduce_f,
+                                           _context,
+                                           _context_id);
+              geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+                                           &_allreduce_f,
+                                           _context,
+                                           _context_id);
+              geometry->addCollectiveCheck(PAMI_XFER_BROADCAST,
+                                           &_broadcast_f,
+                                           _context,
+                                           _context_id);
+              geometry->addCollectiveCheck(PAMI_XFER_ALLGATHER,
+                                           &_allgather_f,
+                                           _context,
+                                           _context_id);
+              geometry->addCollectiveCheck(PAMI_XFER_ALLGATHERV_INT,
+                                           &_allgatherv_int_f,
+                                           _context,
+                                           _context_id);
+              geometry->addCollective(PAMI_XFER_BARRIER,
+                                      &_barrier_f,
+                                      _context,
+                                      _context_id);
+              return PAMI_SUCCESS;
+            } else
+              return PAMI_ERROR;  
+        }
+        default:
+        return PAMI_SUCCESS;
       }
 
   }
