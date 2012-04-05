@@ -196,6 +196,7 @@ namespace PAMI
               MUHWI_PACKET_VIRTUAL_CHANNEL_USER_SUB_COMM |
               MUHWI_COLLECTIVE_TYPE_ALLREDUCE;
             coll.Class_Route = 0;
+            coll.Skip = 8;
 
             _modeldesc.setCollectiveFields (&coll);
             _modeldesc.setDataPacketType (MUHWI_COLLECTIVE_DATA_PACKET_TYPE);

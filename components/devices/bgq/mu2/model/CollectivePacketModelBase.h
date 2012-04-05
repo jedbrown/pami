@@ -258,7 +258,7 @@ namespace PAMI
         collective.Word_Length = 4;
         collective.Class_Route = 0;
         collective.Misc = T_Channel | T_Collective;
-        collective.Skip = 0;
+        collective.Skip = 8;
 
         _singlepkt.setDataPacketType (MUHWI_COLLECTIVE_DATA_PACKET_TYPE);
         _singlepkt.PacketHeader.NetworkHeader.collective.Byte8.Size = 16;
