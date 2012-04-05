@@ -544,24 +544,14 @@ namespace PAMI
 
       inline pami_result_t destroy_impl ()
         {
-          if(_cau_collreg)
+          // destroy is non-blocking now and can return EGAIN
+          if(_cau_collreg) {
               _cau_collreg->invalidateContext();
+              _cau_collreg = NULL;
+          }
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_rc_t rc = (cp->*(cp->pTerm))();
-          if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "LAPI__Term failed with rc %d\n", rc);
-          }
-          return PAMI_SUCCESS;
-        }
-
-      inline pami_result_t term_wait_impl ()
-        {
-          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_rc_t rc = (cp->*(cp->pTermWait))();
-          if (rc) {
-            RETURN_ERR_PAMI(PAMI_ERROR, "TermWait failed with rc %d\n", rc);
-          }
-          return PAMI_SUCCESS;
+          return PAMI_RC(rc);
         }
 
       inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
