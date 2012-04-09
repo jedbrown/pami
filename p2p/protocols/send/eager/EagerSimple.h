@@ -43,6 +43,8 @@
 #ifndef __p2p_protocols_send_eager_EagerSimple_h__
 #define __p2p_protocols_send_eager_EagerSimple_h__
 
+#include <limits.h>
+
 #include "components/devices/PacketInterface.h"
 #include "components/memory/MemoryAllocator.h"
 #include "math/Memcpy.x.h"
@@ -300,6 +302,12 @@ namespace PAMI
             // enough to transfer a single virtual address. This is used in
             // the postPacket() calls to transfer the ack information.
             COMPILE_TIME_ASSERT(sizeof(void *) <= T_Model::packet_model_payload_bytes);
+
+            // Assert that the size of the packet payload area not larger than
+            // the maximum number of bytes that can be sent in a single packet
+            // transfer. This is a restriction based on the data type used for
+            // the packed_metadata_t::header_bytes field.
+            COMPILE_TIME_ASSERT(T_Model::packet_model_payload_bytes <= USHRT_MAX);
 
             // ----------------------------------------------------------------
             // Compile-time assertions (end)
