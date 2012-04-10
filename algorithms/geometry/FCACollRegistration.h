@@ -111,13 +111,17 @@ public:
         _fca_rank_info = FCA_Get_rank_info(_fca_context, &_fca_rank_info_sz);
         if (_fca_rank_info == NULL)
           {
-            printf("fca_get_rank_info failed with ptr %p\n", _fca_rank_info);
+            fprintf(stderr, "FCA_Get_rank_info failed with ptr %p\n", 
+                    _fca_rank_info);
             exit(0);
           }
-        else
-          {
-          }
+        ITRC(IT_FCA, "FCA_Get_rank_info succeeded with rank_info at %p\n",
+                _fca_rank_info);
+                
         _enabled=true;
+        if (_Lapi_env.MP_infolevel >= 2) {
+          fprintf(stderr, "FCA OFFLOAD is enabled and ready.\n");  
+        }
 
         _my_endpoint = PAMI_ENDPOINT_INIT(_client_id,
                                           __global.mapping.task(),
