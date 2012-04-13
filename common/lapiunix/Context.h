@@ -932,7 +932,7 @@ namespace PAMI
                     internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-                    rc = (cp->*(cp->pConfigQuery))(configuration);
+                    rc = (cp->*(cp->pConfigQuery))(&configuration[i]);
                     if(rc != SUCCESS)
                       result = PAMI_INVAL;
                   }
@@ -957,7 +957,7 @@ namespace PAMI
                     internal_rc_t rc;
                     lapi_state_t *lp      = getLapiState();
                     LapiImpl::Context *cp = (LapiImpl::Context *)lp;
-                    rc = (cp->*(cp->pConfigUpdate))(configuration);
+                    rc = (cp->*(cp->pConfigUpdate))(&configuration[i]);
                     if(rc != SUCCESS)
                       result = PAMI_INVAL;
                   }
