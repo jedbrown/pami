@@ -51,7 +51,7 @@ external PAMI_ADDR_NULL
     integer PAMI_CLIENT_MEMREGION_SIZE_STATIC ! //TODO: this value differs from BG and power
     integer PAMI_GEOMETRY_T
     integer PAMI_ALGORITHM_T
-    integer PAMI_OP_T
+    integer PAMI_DATA_FUNCTION_T
     integer PAMI_SIZE_T
     integer PAMI_VOID_T
     integer PAMI_INT_T
@@ -68,11 +68,11 @@ external PAMI_ADDR_NULL
     parameter (PAMI_SIZE_T=WORDSIZE)
     parameter (PAMI_VOID_T=WORDSIZE)
     parameter (PAMI_EXTENSION_T=WORDSIZE)
+    parameter (PAMI_DATA_FUNCTION_T=WORDSIZE)
     ! same for 32/64 bit
     parameter (PAMI_CLIENT_MEMREGION_SIZE_STATIC=64)
     parameter (PAMI_TASK_T=4)
     parameter (PAMI_ENDPOINT_T=4)
-    parameter (PAMI_OP_T=4)
     parameter (PAMI_INT_T=4)
     parameter (PAMI_DBL_T=8)
 
@@ -722,17 +722,17 @@ external PAMI_ADDR_NULL
 !
     type pami_xfer_reduce_t
         sequence
-        type(pami_xfer_comm_t):: xfer
-        integer(PAMI_SIZE_T)  :: root
-        integer(PAMI_VOID_T)  :: sndbuf
-        integer(PAMI_TYPE_T)  :: stype
-        integer(PAMI_SIZE_T)  :: stypecount
-        integer(PAMI_VOID_T)  :: rcvbuf
-        integer(PAMI_TYPE_T)  :: rtype
-        integer(PAMI_SIZE_T)  :: rtypecount
-        integer(PAMI_OP_T)    :: op
-        integer(PAMI_VOID_T)  :: data_cookie
-        integer(PAMI_INT_T)   :: commutative
+        type(pami_xfer_comm_t)        :: xfer
+        integer(PAMI_SIZE_T)          :: root
+        integer(PAMI_VOID_T)          :: sndbuf
+        integer(PAMI_TYPE_T)          :: stype
+        integer(PAMI_SIZE_T)          :: stypecount
+        integer(PAMI_VOID_T)          :: rcvbuf
+        integer(PAMI_TYPE_T)          :: rtype
+        integer(PAMI_SIZE_T)          :: rtypecount
+        integer(PAMI_DATA_FUNCTION_T) :: op
+        integer(PAMI_VOID_T)          :: data_cookie
+        integer(PAMI_INT_T)           :: commutative
     end type pami_xfer_reduce_t
 
 !
@@ -740,16 +740,16 @@ external PAMI_ADDR_NULL
 !
     type pami_xfer_reduce_scatter_t
         sequence
-        type(pami_xfer_comm_t):: xfer
-        integer(PAMI_VOID_T)  :: sndbuf
-        integer(PAMI_TYPE_T)  :: stype
-        integer(PAMI_SIZE_T)  :: stypecount
-        integer(PAMI_VOID_T)  :: rcvbuf
-        integer(PAMI_TYPE_T)  :: rtype
-        integer(PAMI_SIZE_T)  :: rcounts
-        integer(PAMI_OP_T)    :: op
-        integer(PAMI_VOID_T)  :: data_cookie
-        integer(PAMI_INT_T)   :: commutative
+        type(pami_xfer_comm_t)        :: xfer
+        integer(PAMI_VOID_T)          :: sndbuf
+        integer(PAMI_TYPE_T)          :: stype
+        integer(PAMI_SIZE_T)          :: stypecount
+        integer(PAMI_VOID_T)          :: rcvbuf
+        integer(PAMI_TYPE_T)          :: rtype
+        integer(PAMI_SIZE_T)          :: rcounts
+        integer(PAMI_DATA_FUNCTION_T) :: op
+        integer(PAMI_VOID_T)          :: data_cookie
+        integer(PAMI_INT_T)           :: commutative
     end type pami_xfer_reduce_scatter_t
 
 !
@@ -907,16 +907,16 @@ external PAMI_ADDR_NULL
 !
     type pami_xfer_allreduce_t
         sequence
-        type(pami_xfer_comm_t):: xfer
-        integer(PAMI_VOID_T)  :: sndbuf
-        integer(PAMI_TYPE_T)  :: stype
-        integer(PAMI_SIZE_T)  :: stypecount
-        integer(PAMI_VOID_T)  :: rcvbuf
-        integer(PAMI_TYPE_T)  :: rtype
-        integer(PAMI_SIZE_T)  :: rtypecount
-        integer(PAMI_OP_T)    :: op
-        integer(PAMI_VOID_T)  :: data_cookie
-        integer(PAMI_INT_T)   :: commutative
+        type(pami_xfer_comm_t)        :: xfer
+        integer(PAMI_VOID_T)          :: sndbuf
+        integer(PAMI_TYPE_T)          :: stype
+        integer(PAMI_SIZE_T)          :: stypecount
+        integer(PAMI_VOID_T)          :: rcvbuf
+        integer(PAMI_TYPE_T)          :: rtype
+        integer(PAMI_SIZE_T)          :: rtypecount
+        integer(PAMI_DATA_FUNCTION_T) :: op
+        integer(PAMI_VOID_T)          :: data_cookie
+        integer(PAMI_INT_T)           :: commutative
     end type pami_xfer_allreduce_t
 
 !
@@ -924,16 +924,16 @@ external PAMI_ADDR_NULL
 !
     type pami_xfer_scan_t
         sequence
-        type(pami_xfer_comm_t):: xfer
-        integer(PAMI_VOID_T)  :: sndbuf
-        integer(PAMI_TYPE_T)  :: stype
-        integer(PAMI_SIZE_T)  :: stypecount
-        integer(PAMI_VOID_T)  :: rcvbuf
-        integer(PAMI_TYPE_T)  :: rtype
-        integer(PAMI_SIZE_T)  :: rtypecount
-        integer(PAMI_OP_T)    :: op
-        integer(PAMI_VOID_T)  :: data_cookie
-        integer(PAMI_INT_T)   :: exclusive
+        type(pami_xfer_comm_t)        :: xfer
+        integer(PAMI_VOID_T)          :: sndbuf
+        integer(PAMI_TYPE_T)          :: stype
+        integer(PAMI_SIZE_T)          :: stypecount
+        integer(PAMI_VOID_T)          :: rcvbuf
+        integer(PAMI_TYPE_T)          :: rtype
+        integer(PAMI_SIZE_T)          :: rtypecount
+        integer(PAMI_DATA_FUNCTION_T) :: op
+        integer(PAMI_VOID_T)          :: data_cookie
+        integer(PAMI_INT_T)           :: exclusive
     end type pami_xfer_scan_t
 
 !
@@ -999,16 +999,16 @@ external PAMI_ADDR_NULL
 !
     type pami_xfer_amreduce_t
         sequence
-        type(pami_xfer_comm_t):: xfer
-        integer(PAMI_SIZE_T)  :: dispatch
-        integer(PAMI_VOID_T)  :: user_header
-        integer(PAMI_SIZE_T)  :: headerlen
-        integer(PAMI_VOID_T)  :: rcvbuf
-        integer(PAMI_TYPE_T)  :: rtype
-        integer(PAMI_SIZE_T)  :: rtypecount
-        integer(PAMI_OP_T)    :: op
-        integer(PAMI_VOID_T)  :: data_cookie
-        integer(PAMI_INT_T)   :: commutative
+        type(pami_xfer_comm_t)        :: xfer
+        integer(PAMI_SIZE_T)          :: dispatch
+        integer(PAMI_VOID_T)          :: user_header
+        integer(PAMI_SIZE_T)          :: headerlen
+        integer(PAMI_VOID_T)          :: rcvbuf
+        integer(PAMI_TYPE_T)          :: rtype
+        integer(PAMI_SIZE_T)          :: rtypecount
+        integer(PAMI_DATA_FUNCTION_T) :: op
+        integer(PAMI_VOID_T)          :: data_cookie
+        integer(PAMI_INT_T)           :: commutative
     end type pami_xfer_amreduce_t
 
 !
