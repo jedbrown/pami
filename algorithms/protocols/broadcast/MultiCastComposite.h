@@ -309,7 +309,7 @@ namespace CCMI
       };
 
 
-      template < class T_Geometry, bool T_Endpoint_support = true, bool T_Sync = false >
+      template < class T_Geometry, bool T_Endpoint_support = false >
       class MultiCastComposite2DeviceAS : public CCMI::Executor::Composite
       {
       public:
@@ -320,14 +320,25 @@ namespace CCMI
         {
           TRACE_FN_ENTER();
           MultiCastComposite2DeviceAS *m = (MultiCastComposite2DeviceAS*) cookie;
-          m->_count--;
-          TRACE_FORMAT( "MultiCastComposite2DeviceAS:  composite done:  count=%ld", m->_count);
-
-          if (m->_count == 0)
-            m->_master_done.function(context, m->_master_done.clientdata, result);
+          /* 999 is special case. It means the local mcast is done, start global mcast. */
+          if(m->_count == 999)
+          {
+            TRACE_FORMAT( "<%p>MultiCastComposite2DeviceAS:  local multicast done:  start global->multicast",m);
+            PAMI_assert(m->_native_g); /* This is intentionally null except this special case. */
+            m->_count = 1; /* One mcast left to finish, after we start it. */
+            m->_native_g->multicast(&m->_minfo_g,m->_deviceInfo);
+            m->_native_g = NULL;
+          }
+          else
+          {
+            m->_count--;
+            TRACE_FORMAT( "MultiCastComposite2DeviceAS:  composite done:  count=%ld", m->_count);
+  
+            if (m->_count == 0)
+              m->_master_done.function(context, m->_master_done.clientdata, result);
+          }
           TRACE_FN_EXIT();
         }
-
 
         ~MultiCastComposite2DeviceAS()
         {
@@ -348,7 +359,9 @@ namespace CCMI
         _justme_ep(native_l->endpoint()),
         _root_topo(_root_ep),    // assume !T_Endpoint_support so a single ep/rank topology
         _justme_topo(_justme_ep),// assume !T_Endpoint_support so a single ep/rank topology
-        _count(0)
+        _count(0),
+        _native_g(NULL),         // NULL unless it is specifically setup for count=999
+        _deviceInfo(NULL)
         {
           TRACE_FN_ENTER();
           if(T_Endpoint_support) // replace assumption above with ep_list topology
@@ -356,14 +369,13 @@ namespace CCMI
             new (&_root_topo)   PAMI::Topology(&_root_ep,1,PAMI::tag_eplist());
             new (&_justme_topo) PAMI::Topology(&_justme_ep,1,PAMI::tag_eplist());
           }
-          pami_multicast_t                    minfo_g;
           pami_multicast_t                    minfo_l;
 
           PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
           PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
           PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
 
-          // Discover the root node and intereesting topology information
+          // Discover the root node and interesting topology information
           bool             amRoot      = (_root_ep == native_l->endpoint());
           bool             amMaster    = false;
           bool             isRootLocal = false;
@@ -377,7 +389,8 @@ namespace CCMI
             amMaster    = t_my_master->isRankMember((pami_task_t)native_l->endpoint());
             isRootLocal = t_local->isRankMember((pami_task_t)_root_ep);
           }
-          void *deviceInfo             = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
+
+          _deviceInfo             = _geometry->getKey(native_l->contextid(),PAMI::Geometry::CKEY_MCAST_CLASSROUTEID);
           PAMI::Type::TypeCode *tc     = (PAMI::Type::TypeCode*)cmd->cmd.xfer_broadcast.type;
           size_t           bytes       = cmd->cmd.xfer_broadcast.typecount * tc->GetDataSize();
           size_t           numMasters  = t_master->size();
@@ -421,7 +434,7 @@ namespace CCMI
           _pwq0.reset();
           _pwq1.reset();
 
-          minfo_g.cb_done.function   = composite_done;
+          _minfo_g.cb_done.function   = composite_done;
           minfo_l.cb_done.function   = composite_done;
           _master_done.function       = fn;
           _master_done.clientdata     = cookie;   
@@ -433,22 +446,22 @@ namespace CCMI
 
             if (numMasters > 1)
             {
-              //minfo_g.client             = NULL;              // Not used by device
-              //minfo_g.context            = NULL;              // Not used by device
-              minfo_g.cb_done.clientdata = this;
-              minfo_g.connection_id      = _geometry->comm();
-              minfo_g.roles              = -1U;
-              minfo_g.bytes              = bytes;
-              minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
-              minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-              minfo_g.dst                = NULL;
-              minfo_g.dst_participants   = (pami_topology_t*)t_master;
-              minfo_g.msginfo            = 0;
-              minfo_g.msgcount           = 0;     
+              //_minfo_g.client             = NULL;              // Not used by device
+              //_minfo_g.context            = NULL;              // Not used by device
+              _minfo_g.cb_done.clientdata = this;
+              _minfo_g.connection_id      = _geometry->comm();
+              _minfo_g.roles              = -1U;
+              _minfo_g.bytes              = bytes;
+              _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq1;
+              _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
+              _minfo_g.dst                = NULL;
+              _minfo_g.dst_participants   = (pami_topology_t*)t_master;
+              _minfo_g.msginfo            = 0;
+              _minfo_g.msgcount           = 0;     
               _count++;
               TRACE_STRING( "MultiCastComposite2Device:  Global NI, start multicast");
               PAMI_assert (native_g != NULL);
-              native_g->multicast(&minfo_g, deviceInfo);
+              native_g->multicast(&_minfo_g, _deviceInfo);
             }
 
             if (numLocal > 1)
@@ -467,7 +480,7 @@ namespace CCMI
               minfo_l.msgcount           = 0;
               TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
               PAMI_assert (native_l != NULL);
-              native_l->multicast(&minfo_l, deviceInfo);
+              native_l->multicast(&minfo_l, _deviceInfo);
             }
           }
           else if (amRoot)
@@ -491,55 +504,63 @@ namespace CCMI
               minfo_l.msgcount           = 0;
               TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
               PAMI_assert (native_l != NULL);
-              native_l->multicast(&minfo_l, deviceInfo);
+              native_l->multicast(&minfo_l, _deviceInfo);
             }
           }
-            else if (amMaster && isRootLocal)
-              {
-                TRACE_STRING( "MultiCastComposite2DeviceAS:  Master, Root is Local");
+          else if (amMaster && isRootLocal)
+          {
+            TRACE_STRING( "MultiCastComposite2DeviceAS:  Master, Root is Local");
 
-                // I am the master task, and on the same node as the root
-                // so I will participate in the local broadcast (as a receiver)
-                // and I will participate in the global broadcast as a sender
-                if (numMasters > 1)
-                  {
-                    //minfo_g.client             = NULL;              // Not used by device
-                    //minfo_g.context            = NULL;              // Not used by device
-                    minfo_g.cb_done.clientdata = this;
-                    minfo_g.connection_id      = _geometry->comm();
-                    minfo_g.roles              = -1U;
-                    minfo_g.bytes              = bytes;
-                    minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
-                    minfo_g.src_participants   = (pami_topology_t*) & _justme_topo;
-                    minfo_g.dst                = NULL;
-                    minfo_g.dst_participants   = (pami_topology_t*)t_master;
-                    minfo_g.msginfo            = 0;
-                    minfo_g.msgcount           = 0;
-                    _count ++;
-                    TRACE_STRING( "MultiCastComposite2Device:  Global NI, start multicast");
-                    PAMI_assert (native_g != NULL);
-                    native_g->multicast(&minfo_g, deviceInfo);
-                  }
-
-                if (numLocal > 1)
-                  {
-                    //minfo_l.client             = NULL;              // Not used by device
-                    //minfo_l.context            = NULL;              // Not used by device
-                    minfo_l.cb_done.clientdata = this;
-                    minfo_l.connection_id      = _geometry->comm();
-                    minfo_l.roles              = -1U;
-                    minfo_l.bytes              = bytes;
-                    minfo_l.src                = NULL;
-                    minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
-                    minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
-                    minfo_l.dst_participants   = (pami_topology_t*)t_local;
-                    minfo_l.msginfo            = 0;
-                    minfo_l.msgcount           = 0;
-                    TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
-                    PAMI_assert (native_l != NULL);
-                    native_l->multicast(&minfo_l, deviceInfo);
-                  }
+            // I am the master task, and on the same node as the root
+            // so I will participate in the local broadcast (as a receiver)
+            // and I will participate in the global broadcast as a sender
+            if (numMasters > 1)
+            {
+              //_minfo_g.client             = NULL;              // Not used by device
+              //_minfo_g.context            = NULL;              // Not used by device
+              _minfo_g.cb_done.clientdata = this;
+              _minfo_g.connection_id      = _geometry->comm();
+              _minfo_g.roles              = -1U;
+              _minfo_g.bytes              = bytes;
+              _minfo_g.src                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
+              _minfo_g.src_participants   = (pami_topology_t*) & _justme_topo;
+              _minfo_g.dst                = NULL;
+              _minfo_g.dst_participants   = (pami_topology_t*)t_master;
+              _minfo_g.msginfo            = 0;
+              _minfo_g.msgcount           = 0;
+              TRACE_STRING( "MultiCastComposite2Device:  Global NI, start multicast");
+              PAMI_assert (native_g != NULL);
+              if (numLocal > 1) /* Global is started when local finishes.*/
+              {  /* We wait for local data before starting global */
+                _count = 999;  /* flag this special case with 999 */
+                _native_g = native_g; 
               }
+              else /* No local, start global now*/
+              {  
+                _count ++;
+                native_g->multicast(&_minfo_g, _deviceInfo);
+              }
+            }
+
+            if (numLocal > 1)
+            {
+              //minfo_l.client             = NULL;              // Not used by device
+              //minfo_l.context            = NULL;              // Not used by device
+              minfo_l.cb_done.clientdata = this;
+              minfo_l.connection_id      = _geometry->comm();
+              minfo_l.roles              = -1U;
+              minfo_l.bytes              = bytes;
+              minfo_l.src                = NULL;
+              minfo_l.src_participants   = (pami_topology_t*) & _root_topo;
+              minfo_l.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- target buffer
+              minfo_l.dst_participants   = (pami_topology_t*)t_local;
+              minfo_l.msginfo            = 0;
+              minfo_l.msgcount           = 0;
+              TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
+              PAMI_assert (native_l != NULL);
+              native_l->multicast(&minfo_l, _deviceInfo);
+            }
+          }
           else if (amMaster)
           {
             TRACE_STRING( "MultiCastComposite2DeviceAS:  Master, Root is nonlocal");
@@ -550,22 +571,22 @@ namespace CCMI
             // Do not explicitly participate in the multicast because it is active
             if (numMasters > 1)
             {
-              //minfo_g.client             = NULL;              // Not used by device
-              //minfo_g.context            = NULL;              // Not used by device
-              minfo_g.cb_done.clientdata = this;
-              minfo_g.connection_id      = _geometry->comm();
-              minfo_g.roles              = -1U;
-              minfo_g.bytes              = bytes;
-              minfo_g.src                = NULL;
-              minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
-              minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
-              minfo_g.dst_participants   = (pami_topology_t*)t_master;
-              minfo_g.msginfo            = 0;
-              minfo_g.msgcount           = 0;
+              //_minfo_g.client             = NULL;              // Not used by device
+              //_minfo_g.context            = NULL;              // Not used by device
+              _minfo_g.cb_done.clientdata = this;
+              _minfo_g.connection_id      = _geometry->comm();
+              _minfo_g.roles              = -1U;
+              _minfo_g.bytes              = bytes;
+              _minfo_g.src                = NULL;
+              _minfo_g.src_participants   = (pami_topology_t*) & _root_topo;
+              _minfo_g.dst                = (pami_pipeworkqueue_t*) & _pwq0;  // <--- src buffer
+              _minfo_g.dst_participants   = (pami_topology_t*)t_master;
+              _minfo_g.msginfo            = 0;
+              _minfo_g.msgcount           = 0;
               _count ++;
               TRACE_STRING( "MultiCastComposite2Device:  Global NI, start multicast");
               PAMI_assert (native_g != NULL);
-              native_g->multicast(&minfo_g, deviceInfo);
+              native_g->multicast(&_minfo_g, _deviceInfo);
             }
 
             if (numLocal > 1)
@@ -584,7 +605,7 @@ namespace CCMI
               minfo_l.msgcount           = 0;
               TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
               PAMI_assert (native_l != NULL);
-              native_l->multicast(&minfo_l, deviceInfo);
+              native_l->multicast(&minfo_l, _deviceInfo);
             }
           }
           else
@@ -609,7 +630,7 @@ namespace CCMI
               minfo_l.msgcount           = 0;
               TRACE_STRING( "MultiCastComposite2Device:  Local NI, start multicast");
               PAMI_assert (native_l != NULL);
-              native_l->multicast(&minfo_l, deviceInfo);
+              native_l->multicast(&minfo_l, _deviceInfo);
             }
 
             TRACE_FORMAT( "MultiCastComposite2DeviceAS:  Non-master, Non-root, numLocal=%zu, src %p, dst %p", numLocal, minfo_l.src_participants, minfo_l.dst_participants);
@@ -634,6 +655,9 @@ namespace CCMI
         PAMI::Topology                      _justme_topo;
         pami_callback_t                     _master_done;
         size_t                              _count;
+        Interfaces::NativeInterface       * _native_g;
+        pami_multicast_t                    _minfo_g;
+        void                              * _deviceInfo;
       };
 
 

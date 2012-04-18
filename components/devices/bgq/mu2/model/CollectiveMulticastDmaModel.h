@@ -83,16 +83,12 @@ namespace PAMI
             {
 	      char *src = NULL;
 	      PipeWorkQueue *dst = NULL;
-	      unsigned sbytes = 0;
 
 	      if (isroot)
               {
 		PipeWorkQueue *spwq = (PipeWorkQueue *) mcast->src;
 		src = spwq->bufferToConsume();
-		sbytes = spwq->bytesAvailableToConsume();
-		
-		if (sbytes != mcast->bytes)
-		  goto longmsg;
+		PAMI_assert(mcast->bytes == spwq->bytesAvailableToConsume());
 	      }
 	      else
               {
@@ -151,7 +147,6 @@ namespace PAMI
             if (result == PAMI_SUCCESS)
               return result;
 	    
-longmsg:
             return CollectiveDmaModelBase::postBroadcast (mcast->bytes,
                                                           (PipeWorkQueue *) mcast->src,
                                                           (PipeWorkQueue *) mcast->dst,
