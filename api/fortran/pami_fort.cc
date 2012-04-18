@@ -575,6 +575,13 @@ extern "C" void pami_context_advancev (pami_context_t context[],
     *result = PAMI_Context_advancev(context, *count, *maximum);
 }
 
+extern "C" void pami_context_trylock_advancev (pami_context_t context[],
+        size_t*        count,
+        size_t*        maximum,
+        pami_result_t* result)
+{
+    *result = PAMI_Context_trylock_advancev(context, *count, *maximum);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // Functions from pami_p2p.h                                                   //
 ////////////////////////////////////////////////////////////////////////////////
@@ -847,6 +854,8 @@ ALIAS(context_unlock_,context_unlock,(pami_context_t* context, pami_result_t* re
 ALIAS(context_advance_,context_advance,(pami_context_t* context, size_t* maximum, pami_result_t* result));
 
 ALIAS(context_advancev_,context_advancev,(pami_context_t context[], size_t* count, size_t* maximum, pami_result_t* result));
+
+ALIAS(context_trylock_advancev_,context_trylock_advancev,(pami_context_t context[], size_t* count, size_t* maximum, pami_result_t* result));
 
 ALIAS(send_,send,(pami_context_t* context, pami_send_t* parameters, pami_result_t* result));
 
