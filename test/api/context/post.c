@@ -93,13 +93,13 @@ int main (int argc, char ** argv)
   while (_info[0].value || _info[1].value)
   {
     result = PAMI_Context_advance (context[0], 1);
-    if (result != PAMI_SUCCESS)
+    if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
     {
       fprintf (stderr, "Error. Unable to advance the first pami context. result = %d\n", result);
       return 1;
     }
     result = PAMI_Context_advance (context[1], 1);
-    if (result != PAMI_SUCCESS)
+    if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
     {
       fprintf (stderr, "Error. Unable to advance the second pami context. result = %d\n", result);
       return 1;

@@ -138,7 +138,7 @@ int main ()
   pami_configuration_t configuration;
 
   configuration.name = PAMI_CLIENT_TASK_ID;
-  result = PAMI_Client_query (_g_context, &configuration,1);
+  result = PAMI_Client_query (_g_client, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration task ID (%d). result = %d\n", configuration.name, result);
@@ -149,7 +149,7 @@ int main ()
   _my_rank = task_id;
 
   configuration.name = PAMI_CLIENT_NUM_TASKS;
-  result = PAMI_Client_query (_g_context, &configuration,1);
+  result = PAMI_Client_query (_g_client, &configuration,1);
   if (result != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable query configuration NumTasks (%d). result = %d\n", configuration.name, result);

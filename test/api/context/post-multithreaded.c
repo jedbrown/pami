@@ -109,7 +109,7 @@ void * endpoint (void * arg)
     while (_endpoint[0].recv)
     {
       result = PAMI_Context_advance (_endpoint[0].context, 1);
-      if (result != PAMI_SUCCESS)
+      if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
       {
         fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
         exit(1);
@@ -124,7 +124,7 @@ void * endpoint (void * arg)
     while (_endpoint[1].recv)
     {
       result = PAMI_Context_advance (_endpoint[1].context, 1);
-      if (result != PAMI_SUCCESS)
+      if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
       {
         fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
         exit(1);

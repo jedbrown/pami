@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
   size_t i;
   for (i=0; i<num; i++)
   {
-    if (result == PAMI_SUCCESS)
+    if ((result == PAMI_SUCCESS) || (result == PAMI_EAGAIN))
     {
       fprintf (stdout, "Before PAMI_Context_advance(), context = %zu\n", i);
       result = PAMI_Context_advance (context[i], 1);

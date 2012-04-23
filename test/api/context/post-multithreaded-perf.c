@@ -86,7 +86,7 @@ void * thread_main (void * arg)
       result = PAMI_Context_advance (context, 100);
 #ifdef TRACE
 
-      if (result != PAMI_SUCCESS)
+      if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
         {
           fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
           exit(1);
@@ -327,7 +327,7 @@ int main (int argc, char ** argv)
               result = PAMI_Context_advance (_context[0], 100);
 #ifdef TRACE
 
-              if (result != PAMI_SUCCESS)
+              if ((result != PAMI_SUCCESS) && (result != PAMI_EAGAIN))
                 {
                   fprintf (stderr, "Error. Unable to advance the pami context. result = %d\n", result);
                   exit(1);
