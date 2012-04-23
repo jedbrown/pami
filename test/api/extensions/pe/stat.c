@@ -62,7 +62,8 @@ int main(int argc, char ** argv)
   /* display all the statistics counters */
   stat_p = (pami_statistics_t*)stat_config.value.chararray;
   stat_counters = stat_p->counters;
-  for (int i = 0; i < stat_p->count; i ++) {
+  int i;
+  for (i = 0; i < stat_p->count; i ++) {
       printf("#%2d STAT\t%s:%lu\n", i+1, stat_counters[i].name,
              stat_counters[i].value);
   } 

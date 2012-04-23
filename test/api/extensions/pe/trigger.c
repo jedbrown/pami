@@ -33,7 +33,8 @@ volatile int trigger_bool;
 int my_trigger(pami_context_t pc, int argc, char *argv[])
 {
   printf("Entered my_trigger with %d args: context at 0x%p\n", argc, pc);
-  for (int i = 0; i < argc; i ++) {
+  int i;
+  for (i = 0; i < argc; i ++) {
       printf("\tArg #%d:\t%s\n", i+1, argv[i]);
   }
   trigger_bool = 0;

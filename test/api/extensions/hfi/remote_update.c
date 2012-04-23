@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
     DBG_FPRINTF((stderr,"%d-%d algorithms are available for barrier op\n",
                 barrier_alg_num[0], barrier_alg_num[1]));
     if (barrier_alg_num[0] <= 0) {
-        fprintf (stderr, "Error. No (%d) algorithm is available for barrier op\n",
+        fprintf (stderr, "Error. No (%lu) algorithm is available for barrier op\n",
                 barrier_alg_num[0]);
         return 1;
     }
@@ -124,7 +124,8 @@ int main(int argc, char ** argv)
     int                       offset = (operand)%MAX_TABLE_SZ;
 
     /* initialize table for remote update operation */
-    for (int i = 0; i < MAX_TABLE_SZ; i ++) {
+    int i;
+    for (i = 0; i < MAX_TABLE_SZ; i ++) {
         table[i] = (unsigned long long) i;
     }
     orig_val = table[offset];
