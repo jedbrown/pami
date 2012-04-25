@@ -19,5 +19,6 @@
 #include "api/extension/c/collsel/Extension.h"
 #include "api/extension/c/bgq_l2atomic/Extension.h"
 #include "api/extension/c/bgq_mapping/Extension.h"
+#include "api/extension/c/is_local_task/Extension.h"
 
 #endif
