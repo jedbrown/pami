@@ -451,7 +451,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
                 {
                   RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
                   recvstr->pwq.configure (_tmpbuf + (_curphase + 1)* _buflen, _buflen, 0, _stype, _rtype);
-                  recvstr->pwq.reset();
                   recvstr->subsize    = _buflen;
                   recvstr->rank       = _srcranks[i];
                 }
@@ -480,7 +479,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::sendNext ()
 
               size_t buflen = _buflen;
               _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
-              _pwq[i].reset();
               _pwq[i].produceBytes(buflen);
 
 
@@ -566,7 +564,6 @@ inline void  CCMI::Executor::ScanExec<T_ConnMgr, T_Schedule>::notifyRecv
                           cdata->_phase, _buflen, i, _srclens[i], i, _srcranks[i]);)
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
           recvstr->pwq.configure (_tmpbuf + (cdata->_phase + 1) * _buflen, buflen, 0, _stype, _rtype);
-          recvstr->pwq.reset();
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];
 

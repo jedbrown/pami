@@ -71,7 +71,6 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_N
       this->_postrcv [phase] = NULL;
       this->_sbufln  [phase] = 1;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)scantype, (TypeCode *)scantype);
-      this->_pwq[phase].reset();
       //printf("%d: ### in phase %d will send permission to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
 
@@ -82,7 +81,6 @@ PrefixSums (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset, T_N
       this->_postrcv [phase] = (left >= 0) ? cb_prefixsums : NULL;
       this->_sbufln  [phase] = 0;    /* data length not available */
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)scantype, (TypeCode *)scantype);
-      this->_pwq[phase].reset();
       //printf("%d: ### in phase %d will send data to  %d \n", XLPGAS_MYNODE, phase, _dest[phase].node);
       phase ++;
     }
@@ -224,7 +222,6 @@ void xlpgas::PrefixSums<T_NI>::reset (const void         * sbuf,
       tgt = this->ordinal() - (1<<i);
       this->_rbuf    [phase] = (tgt>=0) ? rbuf_phase : NULL;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], dt, dt);
-      this->_pwq[phase].reset();
       phase ++;
     }
   assert (phase == this->_numphases);

@@ -381,7 +381,6 @@ namespace CCMI
           size_t sleng = getSendLength(phase);
           size_t sdisp = getSendDisp(phase);
           _pwq.configure (_rbuf + sdisp, sleng, 0, _stype, _rtype);
-          _pwq.reset();
           _pwq.produceBytes(sleng);
           return &_pwq;
         }
@@ -391,7 +390,6 @@ namespace CCMI
           size_t rleng = getRecvLength(phase);
           size_t rdisp = getRecvDisp(phase);
           _rpwq.configure (_rbuf + rdisp, rleng, 0, _stype, _rtype);
-          _rpwq.reset();
           return &_rpwq;
         }
 

@@ -118,7 +118,7 @@ namespace CCMI
             TypeCode * rtype_obj = (TypeCode *)((pami_xfer_t *)cmd)->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
+            PAMI_assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
             Executor::MultiColorCompositeT<NUMCOLORS, CCMI::Executor::Composite, T_Exec, T_Sched, T_Conn, pwcfn>::
             initialize (((PAMI_GEOMETRY_CLASS *)g)->comm(),

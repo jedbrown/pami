@@ -75,7 +75,6 @@ namespace CCMI
                 _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, type_obj, type_obj);
               }
 
-            _pwq.reset();
 
             //_minfo.client             = 0;
             //_minfo.context            = 0; /// \todo ?

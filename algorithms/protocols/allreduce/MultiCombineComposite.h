@@ -96,25 +96,18 @@ namespace CCMI
             TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
+            PAMI_assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
+            PAMI_assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
 
-            unsigned        sizeOfType = stype_obj->GetDataSize();
+            unsigned        ssizeOfType = stype_obj->GetDataSize();
+            size_t sbytes = cmd->cmd.xfer_allreduce.stypecount * ssizeOfType;
+            unsigned        rsizeOfType = rtype_obj->GetDataSize();
+            size_t rbytes = cmd->cmd.xfer_allreduce.rtypecount * rsizeOfType;
+            TRACE_FORMAT( "srcPwq.configure %zu",sbytes);
+            _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, sbytes, sbytes, stype_obj, rtype_obj);
 
-            size_t bytes = cmd->cmd.xfer_allreduce.stypecount * sizeOfType;
-
-            TRACE_FORMAT( "srcPwq.configure %zu",bytes);
-            _srcPwq.configure(cmd->cmd.xfer_allreduce.sndbuf, bytes, bytes, stype_obj, rtype_obj);
-            _srcPwq.reset();
-
-            /// \todo Support non-contiguous
-            assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
-
-            sizeOfType = rtype_obj->GetDataSize();
-
-            bytes = cmd->cmd.xfer_allreduce.rtypecount * sizeOfType;
-            TRACE_FORMAT( "dstPwq.configure %zu",bytes);
-            _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, bytes, 0, stype_obj, rtype_obj);// SSS: Should the types be in this order???
-            _dstPwq.reset();
+            TRACE_FORMAT( "dstPwq.configure %zu",rbytes);
+            _dstPwq.configure(cmd->cmd.xfer_allreduce.rcvbuf, rbytes, 0, stype_obj, rtype_obj);// SSS: Should the types be in this order???
 
             DO_DEBUG(PAMI::Topology all);
             DO_DEBUG(all = *(PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
@@ -373,8 +366,6 @@ namespace CCMI
 
             _user_done.clientdata = cmd->cookie;
             _user_done.function   = cmd->cb_done;
-            _pwq_src.reset();
-            _pwq_dest.reset();
 
             // The "Only Local" case
             // This means the geometry only contains local tasks
@@ -387,7 +378,6 @@ namespace CCMI
                                       0,                               // amount initially in buffer
                                       stype,
                                       rtype);
-                _pwq_inter0.reset();
                 _mcombine_l.cb_done.clientdata   = this;
                 _mcombine_l.cb_done.function     = composite_done;
                 _mcombine_l.connection_id        = _geometry->comm();
@@ -458,7 +448,6 @@ namespace CCMI
                                   0,                               // amount initially in buffer
                                   stype,
                                   rtype);
-            _pwq_inter0.reset();
 
             if (!amMaster)
               {
@@ -516,7 +505,6 @@ namespace CCMI
                                   0,                               // amount initially in buffer
                                   stype,
                                   rtype);
-            _pwq_inter1.reset();
 
             _mcombine_l.cb_done.clientdata   = this;
             _mcombine_l.cb_done.function     = composite_done;
@@ -618,8 +606,6 @@ namespace CCMI
                                 rtype);
             _user_done.clientdata = cmd->cookie;
             _user_done.function   = cmd->cb_done;
-            _pwq_src.reset();
-            _pwq_dest.reset();
 
             // The "Only Local" case
             // This means the geometry only contains local tasks
@@ -728,8 +714,6 @@ namespace CCMI
                                       0,              // amount initially in buffer
                                       stype,
                                       rtype);
-                _pwq_inter0.reset();
-                _pwq_inter1.reset();
 
                 if(sameNodeAsRoot)
                 {
@@ -809,8 +793,6 @@ namespace CCMI
                                   0,              // amount initially in buffer
                                   stype,
                                   rtype);
-            _pwq_inter0.reset();
-            _pwq_inter1.reset();
 
             _mcombine_l.cb_done.clientdata   = this;
             _mcombine_l.cb_done.function     = composite_done;
@@ -846,7 +828,6 @@ namespace CCMI
                                     0,              // amount initially in buffer
                                     stype,
                                     rtype);
-              _pwq_inter2.reset();
               _mcast_l.cb_done.function        = composite_done;
               _mcast_l.cb_done.clientdata      = this;
               _mcast_l.connection_id           = _geometry->comm();
@@ -1113,7 +1094,7 @@ namespace CCMI
             TypeCode * rtype_obj = (TypeCode *)cmd->cmd.xfer_allreduce.rtype;
 
             /// \todo Support non-contiguous
-            assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
+            PAMI_assert(stype_obj->IsContiguous() &&  stype_obj->IsPrimitive());
 
             unsigned        sizeOfType   = stype_obj->GetDataSize();
 
@@ -1136,7 +1117,6 @@ namespace CCMI
                                _bytes,                          // amount initially in buffer
                                stype_obj,
                                rtype_obj);
-            _pwq_src.reset();
             TRACE_FORMAT( "<%p>send buffer %p, bytes available to consume:%zd, produce:%zd",
                          this, _pwq_src.bufferToConsume(),
                            _pwq_src.bytesAvailableToConsume(), _pwq_src.bytesAvailableToProduce());
@@ -1144,7 +1124,7 @@ namespace CCMI
 
 
             /// \todo Support non-contiguous
-            assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
+            PAMI_assert(rtype_obj->IsContiguous() &&  rtype_obj->IsPrimitive());
 
             sizeOfType = rtype_obj->GetDataSize();
 
@@ -1156,7 +1136,6 @@ namespace CCMI
                                0,                               // amount initially in buffer
                                stype_obj,
                                rtype_obj);
-            _pwq_dst.reset();
             TRACE_FORMAT( "<%p>receive buffer %p, bytes available to consume:%zd, produce:%zd",
                           this, _pwq_dst.bufferToProduce(),
                            _pwq_dst.bytesAvailableToConsume(), _pwq_dst.bytesAvailableToProduce());
@@ -1170,7 +1149,6 @@ namespace CCMI
                                 0,                               // amount initially in buffer
                                 stype_obj,
                                 rtype_obj);
-            _pwq_temp.reset();
 
             _amMaster       = _topology_lm.isEndpointMember(_native_l->endpoint());
             _mcomb_l.connection_id        = 0;

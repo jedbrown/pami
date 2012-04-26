@@ -87,7 +87,7 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
 
@@ -98,7 +98,6 @@ namespace CCMI
             pbytes = bytes;
 
           _pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, pbytes, type_obj, type_obj);
-          _pwq.reset();
 
           pami_multicast_t minfo;
           minfo.cb_done.function   = fn;     //_cb_done;
@@ -187,7 +186,7 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
@@ -219,9 +218,6 @@ namespace CCMI
             _src.configure((char*)NULL, 0, 0);
             _dst.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
-
-          _src.reset();
-          _dst.reset();
 
           // Initialize the mcast
           //_minfo.cb_done.function   = _cb_done;
@@ -438,9 +434,6 @@ namespace CCMI
                          initBytes,                       // amount initially in buffer
                          tc,
                          tc);
-
-          _pwq0.reset();
-          _pwq1.reset();
 
           _minfo_g.cb_done.function   = composite_done;
           minfo_l.cb_done.function   = composite_done;
@@ -815,10 +808,6 @@ namespace CCMI
                          tc,
                          tc);
 
-          _pwq0.reset();
-          _pwq1.reset();
-
-
           int cb_count = 0;
 
           if (amRoot && amMaster)
@@ -1003,7 +992,6 @@ namespace CCMI
                                &pwqBuf->_ue_pwq);
                 pwqBuf->_target_pwq           = &pwqBuf->_ue_pwq;
                 pwqBuf->_ue_pwq.configure(cmd->cmd.xfer_broadcast.buf, bytes, 0, tc, tc);
-                pwqBuf->_ue_pwq.reset();
                 _minfo_l.src                = (pami_pipeworkqueue_t*) & pwqBuf->_ue_pwq;
                 _activePwqBuf                 = pwqBuf;
 
@@ -1239,7 +1227,6 @@ namespace CCMI
             TRACE_STRING( "MultiCastComposite2DeviceFactoryT: cb_async_g, unexpected buffer");
             pbuf = f->allocatePbuf(sndlen);
             pbuf->_ue_pwq.configure((char *)NULL, 0, 0);
-            pbuf->_ue_pwq.reset();
             f->_ue.enqueue((PAMI::Queue::Element*)pbuf);
           }
 
@@ -1420,7 +1407,7 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
@@ -1445,9 +1432,6 @@ namespace CCMI
             _data.configure(cmd->cmd.xfer_broadcast.buf, _bytes, _bytes, type_obj, type_obj);
             _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
-
-          _data.reset();
-          _results.reset();
 
           //_minfo.cb_done.function   = _cb_done;
           //_minfo.cb_done.clientdata = _clientdata;
@@ -1484,7 +1468,7 @@ namespace CCMI
           PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)cmd->cmd.xfer_broadcast.type;
 
           /// \todo Support non-contiguous
-          assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+          PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
           unsigned        sizeOfType = type_obj->GetDataSize();
           _bytes = cmd->cmd.xfer_broadcast.typecount * sizeOfType;
@@ -1508,9 +1492,6 @@ namespace CCMI
             _data.configure(_buffer, _bytes, _bytes, type_obj, type_obj);
             _results.configure(cmd->cmd.xfer_broadcast.buf, _bytes, 0, type_obj, type_obj);
           }
-
-          _data.reset();
-          _results.reset();
 
           //_minfo.cb_done.function   = _cb_done;
           //_minfo.cb_done.clientdata = _clientdata;

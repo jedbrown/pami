@@ -41,7 +41,6 @@ void xlpgas::Permute<T_NI>::reset (int dest, const void * s, void * d,
   _sbuf           = (const char *)s;
   _len            = stype->GetDataSize() * stypecount;
   _pwq.configure((char *)this->_sbuf, this->_len, this->_len, stype, rtype);
-  _pwq.reset();
 }
 
 /* **************************************************************** */

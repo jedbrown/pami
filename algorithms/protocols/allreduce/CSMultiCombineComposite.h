@@ -68,7 +68,6 @@ namespace CCMI
 
             size_t bytes = cmd->cmd.xfer_reduce.stypecount * sizeOfType;
             _srcPwq.configure(cmd->cmd.xfer_reduce.sndbuf, bytes, bytes, stype_obj, rtype_obj);
-            _srcPwq.reset();
 
             if (cmd->cmd.xfer_reduce.root == __global.mapping.task())
             {
@@ -76,7 +75,6 @@ namespace CCMI
 
               bytes = cmd->cmd.xfer_reduce.rtypecount * sizeOfType;
               _dstPwq.configure(cmd->cmd.xfer_reduce.rcvbuf, bytes, 0, stype_obj, rtype_obj);// SSS: Should the types be in this order???
-              _dstPwq.reset();
             }
 
             DO_DEBUG(PAMI::Topology all);

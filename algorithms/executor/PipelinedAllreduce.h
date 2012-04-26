@@ -259,7 +259,6 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::sendMessage
     pwq = this->_acache.getDestPipeWorkQueue();
   
   pwq->configure((char *)buf, bytes, 0);
-  pwq->reset();
 
   //fprintf (stderr, "send pwq %p phase %d connid %d\n", pwq, sphase, this->_msend.connection_id);
 
@@ -396,7 +395,6 @@ inline void CCMI::Executor::PipelinedAllreduce<T_Conn>::postReceives()
       PAMI::PipeWorkQueue *pwq = this->_acache.getPhasePipeWorkQueues(p, 0);
       if (p > this->_lastReducePhase)
 	pwq->configure(this->_dstbuf, this->_acache.getBytes(), 0); 
-      pwq->reset();
 
       mrecv.dst = (pami_pipeworkqueue_t *) pwq;
       

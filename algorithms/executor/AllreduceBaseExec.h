@@ -522,7 +522,6 @@ namespace CCMI
 	    if (_scache.getNumSrcRanks(p) == 1) {
 	      PAMI::PipeWorkQueue *pwq = _acache.getPhasePipeWorkQueues(p,0);
 	      pwq->configure(_dstbuf, _acache.getBytes(), 0); 
-	      pwq->reset_nosync();
 	    }
 	  }
         }
@@ -846,7 +845,6 @@ inline void CCMI::Executor::AllreduceBaseExec<T_Conn, T_Single>::sendMessage
 
   PAMI::PipeWorkQueue *pwq = _acache.getDestPipeWorkQueue();
   pwq->configure(buf, bytes, bytes);  
-  pwq->reset_nosync();
 
   _msend.connection_id = _acache.getPhaseSendConnectionId (sphase);
   _msend.src              = (pami_pipeworkqueue_t *) pwq;

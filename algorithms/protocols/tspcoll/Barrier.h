@@ -88,7 +88,6 @@ inline xlpgas::Barrier<T_NI>::Barrier (int               ctxt,
       this->_sbuf[i]      = &this->_dummy;
       this->_sbufln[i]    = 1;
       this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)_type, (TypeCode *)_type);
-      this->_pwq[i].reset();
       this->_rbuf[i]      = &this->_dummy;
     }
 }

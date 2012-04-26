@@ -54,7 +54,6 @@ int main(int argc, char **argv) {
 
 	PAMI::PipeWorkQueue pwq1;
 	pwq1.configure((char *)array1, sizeof(array1), sizeof(array1), NULL, type1);
-	pwq1.reset();
 
 	size_t bytes;
 

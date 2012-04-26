@@ -70,7 +70,6 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbufln  [phase] = 0;       /* unknown */
       this->_bufctr  [phase] = 0;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
-      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -90,7 +89,6 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
-      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -110,7 +108,6 @@ Short (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI* ni)
       this->_sbufln  [phase] = 0;        /* unknown */
       this->_bufctr  [phase] = 0;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], (TypeCode *)allreducetype, (TypeCode *)allreducetype);
-      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -195,7 +192,6 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
       this->_sbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
-      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -208,7 +204,6 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
       this->_sbuf    [phase] = ((int)this->ordinal() < maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
-      this->_pwq[phase].reset();
       phase ++;
     }
 
@@ -223,7 +218,6 @@ void xlpgas::Allreduce::Short<T_NI>::reset (const void         * sbuf,
       this->_rbuf    [phase] = ((int)this->ordinal() >= maxBF) ? dbuf  : NULL;
       this->_sbufln  [phase] = nelems * datawidth;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], sdt, rdt);
-      this->_pwq[phase].reset();
       phase ++;
     }
   assert (phase == this->_numphases);

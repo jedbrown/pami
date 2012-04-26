@@ -293,7 +293,6 @@ namespace CCMI
             {
               _pwq.configure (_sbuf, buflen, 0, _stype, _rtype);
             }
-            _pwq.reset();
             _pwq.produceBytes(buflen);
           }
         }
@@ -360,7 +359,6 @@ namespace CCMI
               {
                 _pwq.configure (src, buflen, 0, _stype, _rtype);
               }
-              _pwq.reset();
               _pwq.produceBytes(buflen);
 
               _totallen = _srclens[0];
@@ -536,7 +534,6 @@ inline void  CCMI::Executor::GatherExec<T_ConnMgr, T_Schedule, T_Gather_type>::n
   unsigned ind      = (_nphases - cdata->_phase - 1) * _maxsrcs + i;
   *pwq = &_mrecvstr[ind].pwq;
   (*pwq)->configure (tmpbuf, buflen, 0, _stype, _rtype);
-  (*pwq)->reset();
   // (*pwq)->produceBytes(buflen);
   _mrecvstr[ind].subsize  = _srclens[i];
   _mrecvstr[ind].exec     = this;

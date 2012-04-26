@@ -302,12 +302,10 @@ namespace CCMI
             rc = __global.heap_mm->memalign((void **)&_tmpbuf, 0, buflen);
             PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _tmpbuf");
             _pwq.configure (_tmpbuf, buflen, 0, _stype, _rtype);
-            _pwq.reset();
           }
           else
             {
               _pwq.configure (dst, len, 0, _stype, _rtype);
-              _pwq.reset();
             }
         }
 
@@ -454,7 +452,6 @@ inline void  CCMI::Executor::ScatterExec<T_ConnMgr, T_Schedule, T_Scatter_type, 
 
       char    *tmpbuf   = _tmpbuf + offset;
       sendstr->pwq.configure (tmpbuf, buflen, 0, _stype, _rtype);
-      sendstr->pwq.reset();
       sendstr->pwq.produceBytes(buflen);
 
       msend->src_participants   = (pami_topology_t *) & _selftopology;

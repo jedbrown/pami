@@ -207,9 +207,9 @@ public:
                 for (size_t x = 0; x < tz; ++x) {
 			sprintf(mms, "%zd", x);
 #ifdef USE_FLAT_BUFFER
-                        _wq[x].configure(mm, mmkey, USE_FLAT_BUFFER, 0);
+                        _wq[x].configure_no_reset(mm, mmkey, USE_FLAT_BUFFER, 0);
 #else /* ! USE_FLAT_BUFFER */
-                        _wq[x].configure(mm, mmkey, 8192);
+                        _wq[x].configure_no_reset(mm, mmkey, 8192);
 #endif /* ! USE_FLAT_BUFFER */
                         _wq[x].barrier_reset(tz, _me == t0);
                 }

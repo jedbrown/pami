@@ -60,7 +60,6 @@ Broadcast (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
       this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)bcasttype, (TypeCode *)bcasttype);/*The root doesn't need to send to itself*/
-      this->_pwq[i].reset();
     }
   this->_numphases   *= 2;
   this->_phase        = this->_numphases;
@@ -109,7 +108,6 @@ void xlpgas::Broadcast<T_NI>::reset (int rootindex,
       this->_sbufln[phase]  = dosend ? nbytes : 0;
       this->_rbuf[phase]    = dorecv ? dbuf : NULL;
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], type, type);/*The root doesn't need to send to itself*/
-      this->_pwq[phase].reset();
     }
   xlpgas::CollExchange<T_NI>::reset();
   return;

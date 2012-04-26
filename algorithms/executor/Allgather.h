@@ -363,7 +363,6 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
               dist                = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
               RecvStruct *recvstr = &_mrecvstr[_curphase].recvstr[i];
               recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
-              recvstr->pwq.reset();
               recvstr->subsize = buflen;
               recvstr->rank    = _srcranks[i];
             }
@@ -384,7 +383,6 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::sendNext ()
           new (&_dsttopology[i]) PAMI::Topology(&_dstranks[i], 1, PAMI::tag_eplist());
           size_t buflen = _dstlens[i] * _buflen;
           _pwq[i].configure (_tmpbuf, buflen, 0, _stype, _rtype);
-          _pwq[i].reset();
           _pwq[i].produceBytes(buflen);
 
           _mdata[i]._phase             = _curphase;
@@ -438,7 +436,6 @@ inline void  CCMI::Executor::AllgatherExec<T_ConnMgr, T_Schedule>::notifyRecv
           unsigned dist       = (srcindex + _gtopology->size() - _myindex) % _gtopology->size();
           RecvStruct *recvstr = &_mrecvstr[cdata->_phase].recvstr[i];
           recvstr->pwq.configure (_tmpbuf + dist * _buflen, buflen, 0, _stype, _rtype);
-          recvstr->pwq.reset();
           recvstr->subsize = buflen;
           recvstr->rank    = _srcranks[i];
 

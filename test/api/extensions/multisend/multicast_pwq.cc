@@ -218,7 +218,6 @@ int main(int argc, char ** argv)
 
       PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       srcPwq->configure(_buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
-      srcPwq->reset();
 
       mcast.src = (pami_pipeworkqueue_t *) srcPwq;
       mcast.dst = (pami_pipeworkqueue_t *)NULL;
@@ -339,7 +338,6 @@ int main(int argc, char ** argv)
 
       PAMI::PipeWorkQueue * srcPwq =_buffer1.srcPwq();
       srcPwq->configure(_buffer1.buffer(), (TEST_BUF_SIZE/4)*4, 0);
-      srcPwq->reset();
 
 
       mcast.src = (pami_pipeworkqueue_t *)srcPwq;

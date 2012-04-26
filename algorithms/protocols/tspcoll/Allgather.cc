@@ -61,7 +61,6 @@ Allgather (int ctxt, Team * comm, CollectiveKind kind, int tag, int offset,T_NI*
       this->_rbuf[i] = &this->_dummy;
       this->_sbufln[i] = 1;
       this->_pwq[i].configure((char *)this->_sbuf[i], this->_sbufln[i], this->_sbufln[i], (TypeCode *)allgathertype, (TypeCode *)allgathertype);
-      this->_pwq[i].reset();
     }
   this->_numphases   *= 3;
   this->_phase        = this->_numphases;
@@ -121,8 +120,6 @@ void xlpgas::Allgather<T_NI>::reset (const void         * sbuf,
         }
       this->_pwq[phase].configure((char *)this->_sbuf[phase], this->_sbufln[phase], this->_sbufln[phase], stype, rtype);
       this->_pwq[phase+1].configure((char *)this->_sbuf[phase+1], this->_sbufln[phase+1], this->_sbufln[phase+1], stype, rtype);
-      this->_pwq[phase].reset();
-      this->_pwq[phase+1].reset();
     }
 
   xlpgas::CollExchange<T_NI>::reset();

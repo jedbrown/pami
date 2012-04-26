@@ -389,7 +389,6 @@ namespace CCMI
           size_t sleng = getSendLength(index);
           size_t sdisp = getSendDisp(index);
           _pwq.configure (_sbuf + sdisp, sleng, 0, _stype, _rtype);
-          _pwq.reset();
           _pwq.produceBytes(sleng);
           EXECUTOR_DEBUG((stderr, "send index = %u, disp = %zu, leng = %zu\n", index, sdisp, sleng);)
           return &_pwq;
@@ -400,7 +399,6 @@ namespace CCMI
           size_t rleng = getRecvLength(index);
           size_t rdisp = getRecvDisp(index);
           _rpwq[phase % MAX_PARALLEL].configure (_rbuf + rdisp, rleng, 0, _stype, _rtype);
-          _rpwq[phase % MAX_PARALLEL].reset();
           EXECUTOR_DEBUG((stderr, "receive index = %u, phase = %d, disp = %zu, leng = %zu\n", index, phase, rdisp, rleng);)
           return &_rpwq[phase % MAX_PARALLEL];
         }

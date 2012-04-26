@@ -101,7 +101,6 @@ void xlpgas::Alltoallv<T_NI,CntType>::kick_internal    () {
       events.local_fn       = this->cb_senddone;
       events.remote_fn      = NULL;
       this->_pwq.configure((char*) this->_sbuf + this->_sdispls[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_scnts[this->_current] * sdatawidth, this->_stype, this->_rtype);
-      this->_pwq.reset();
       this->_p2p_iface->sendPWQ(this->_pami_ctxt, this->_comm->index2Endpoint (this->_current), sizeof(this->_header),&this->_header,this->_scnts[this->_current] * sdatawidth, &this->_pwq, &events);
       //this->_p2p_iface->send(&p_send);
     }

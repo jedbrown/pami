@@ -98,7 +98,7 @@ namespace PAMI
       PAMI::Type::TypeCode * type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.stype;
 
       /// \todo Support non-contiguous
-      assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+      PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
       size_t dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.stypecount;
       result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));
@@ -106,7 +106,7 @@ namespace PAMI
       type_obj = (PAMI::Type::TypeCode *)in->cmd.xfer_allreduce.rtype;
 
       /// \todo Support non-contiguous
-      assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
+      PAMI_assert(type_obj->IsContiguous() &&  type_obj->IsPrimitive());
 
       dataSent = type_obj->GetAtomSize() * in->cmd.xfer_allreduce.rtypecount;
       result.check.range   |= !((dataSent <= T_Range_High) && (dataSent >= T_Range_Low));

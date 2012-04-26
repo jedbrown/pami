@@ -160,7 +160,6 @@ namespace CCMI
           if (_native->endpoint() == _mdata._root)
             bufinit = len;
           _pwq.configure (src, len, bufinit, stype, rtype);
-          _pwq.reset();
           TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
                          _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
         }
