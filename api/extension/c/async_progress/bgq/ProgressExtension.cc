@@ -5,6 +5,7 @@
 
 #include "api/extension/c/async_progress/ProgressExtension.h"
 #include "Global.h"
+#include "Context.h"
 #include "components/devices/bgq/commthread/CommThreadFactory.h"
 
 PAMI::ProgressExtension::ProgressExtension() {
@@ -30,6 +31,23 @@ pami_result_t PAMI::ProgressExtension::context_async_progress_enable(
 	if (options != PAMI_ASYNC_ALL) {
 		return PAMI_ERROR;
 	}
+
+        if (__global.mapping.tSize() == 64)
+        {
+          PAMI::Context *ctx = (PAMI::Context *) context;
+          pamix_async_function progress = NULL;
+          pamix_async_function suspend  = NULL;
+          pamix_async_function resume   = NULL;
+          void * cookie = NULL;
+
+          ctx->getAsyncRegs (&progress, &suspend, &resume, &cookie);
+
+          if (resume)  resume  (context, cookie);
+          if (suspend) suspend (context, cookie);
+
+          return PAMI_SUCCESS;
+        }
+
 	pami_result_t rc;
 	rc = __commThreads.addContext(context);
 	return rc;
