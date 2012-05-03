@@ -107,8 +107,8 @@ namespace PAMI
 								  classroute);
 	      }
 	      else {
-		unsigned src_pa;
-		unsigned dst_pa;
+		uint64_t src_pa;
+		uint64_t dst_pa;
 		
 		if (isroot) {
 		  Kernel_MemoryRegion_t memRegion;
