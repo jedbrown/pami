@@ -284,7 +284,10 @@ public:
       uintptr_t      dt,op;
       PAMI::Type::TypeFunc::GetEnums(cmd->stype,cmd->op,
                                      dt,op);
-      _spec.root     = cmd->root;
+      //SSS: FCA expects the root to be the index of the task (endpoint) in the topology.
+      //     W/o this conversion subgeometries can crash or produce erroneous results.
+      Topology *topo = (Topology *) (this->_g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+      _spec.root     = topo->endpoint2Index(cmd->root);
       _spec.sbuf     = cmd->sndbuf;
       _spec.rbuf     = cmd->rcvbuf;
       _spec.dtype    = p_dtype_to_fca_dtype((pami_dt)dt);
@@ -391,7 +394,10 @@ public:
   inline void setxfer(pami_xfer_t *xfer)
   {
     pami_broadcast_t *cmd = &(xfer->cmd.xfer_broadcast);
-    _spec.root            = cmd->root;
+    //SSS: FCA expects the root to be the index of the task (endpoint) in the topology.
+    //     W/o this conversion subgeometries can crash or produce erroneous results.
+    Topology        *topo = (Topology *) (this->_g->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
+    _spec.root            = topo->endpoint2Index(cmd->root);
     _spec.buf             = cmd->buf;
     _spec.size            = cmd->typecount * ((Type*)cmd->type)->GetExtent();
   }

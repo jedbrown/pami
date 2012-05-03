@@ -288,7 +288,11 @@ public:
               is.size                    = numtasks;
               is.proc_idx                = local_topo->endpoint2Index(_my_endpoint);
               is.num_procs               = num_local_tasks;
-  
+ 
+              if(num_local_tasks > 1)/* SSS: We need to update local_topo idx if ordering is descending */
+                if(topo->endpoint2Index(local_topo->index2Endpoint(0)) > topo->endpoint2Index(local_topo->index2Endpoint(1)))
+                  is.proc_idx = num_local_tasks - local_topo->endpoint2Index(_my_endpoint) - 1;
+ 
               rc = FCA_Comm_init(_fca_context,
                                  &is,
                                  &gi->_fca_comm);
