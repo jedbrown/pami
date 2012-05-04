@@ -1,11 +1,19 @@
 /* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2010                               */
-/* IBM CPL License                                                  */
-/* ---------------------------------------------------------------- */
+/* This is an automatically generated copyright prolog.             */
+/* After initializing,  DO NOT MODIFY OR MOVE                       */
+/*  --------------------------------------------------------------- */
+/* Licensed Materials - Property of IBM                             */
+/* Blue Gene/Q 5765-PER 5765-PRP                                    */
 /*                                                                  */
-/* end_generated_IBM_copyright_prolog
+/* (C) Copyright IBM Corp. 2011, 2012 All Rights Reserved           */
+/* US Government Users Restricted Rights -                          */
+/* Use, duplication, or disclosure restricted                       */
+/* by GSA ADP Schedule Contract with IBM Corp.                      */
+/*                                                                  */
+/*  --------------------------------------------------------------- */
+/*                                                                  */
+/* end_generated_IBM_copyright_prolog                               */
 
 /// \file test/native/bgq/smt_layout.cc
 /// \brief Simple, native compiled, test for commthread layout pattern

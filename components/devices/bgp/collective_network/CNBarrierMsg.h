@@ -1,16 +1,20 @@
-/* OCO Source Materials                                             */
+/* begin_generated_IBM_copyright_prolog                             */
 /*                                                                  */
-/* Product(s):                                                      */
-/*     5733-BG1                                                     */
+/* This is an automatically generated copyright prolog.             */
+/* After initializing,  DO NOT MODIFY OR MOVE                       */
+/*  --------------------------------------------------------------- */
+/* Licensed Materials - Property of IBM                             */
+/* Blue Gene/Q 5765-PER 5765-PRP                                    */
 /*                                                                  */
-/* (C)Copyright IBM Corp.  2009, 2010                               */
+/* (C) Copyright IBM Corp. 2011, 2012 All Rights Reserved           */
+/* US Government Users Restricted Rights -                          */
+/* Use, duplication, or disclosure restricted                       */
+/* by GSA ADP Schedule Contract with IBM Corp.                      */
 /*                                                                  */
-/* The Source code for this program is not published  or otherwise  */
-/* divested of its trade secrets,  irrespective of what has been    */
-/* deposited with the U.S. Copyright Office.                        */
 /*  --------------------------------------------------------------- */
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
+
 /**
  * \file components/devices/bgp/collective_network/CNBarrierMsg.h
  * \brief Currently, Collective Network Barrier is not used.
@@ -79,14 +83,6 @@ namespace PAMI
 
 #endif
 
-/* begin_generated_IBM_copyright_prolog                             */
-/*                                                                  */
-/* ---------------------------------------------------------------- */
-/* (C)Copyright IBM Corp.  2009, 2010                               */
-/* IBM CPL License                                                  */
-/* ---------------------------------------------------------------- */
-/*                                                                  */
-/* end_generated_IBM_copyright_prolog                               */
 ///
 /// \file components/devices/bgp/collective_network/CNBarrierMsg.h
 /// \brief Tree barrier implementation.
