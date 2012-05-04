@@ -26,142 +26,108 @@
 #include "arch/TimeInterface.h"
 #include <stdio.h>
 
-namespace PAMI
+namespace PAMI{
+
+class Time : public Interface::Time<Time>
 {
-  static inline uint64_t tb()
-  {
-    uint32_t lo, hi;
-    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
-    return (uint64_t)hi << 32 | lo;
-  }
+public:
+  inline Time () ;
 
-  static unsigned long timeGetTime( void )
-  {
-    struct timeval tv;
-    gettimeofday( &tv, 0 );
-    return tv.tv_sec * 1000000ULL + tv.tv_usec;
-  }
+  ///
+  /// \brief Initialize the time object.
+  ///
+  inline pami_result_t init_impl (size_t dummy);
 
-  class Time : public Interface::Time<Time>
-  {
-    public:
+  ///
+  /// \brief Calculate the clock frequency
+  ///
+  inline void calculateClockMhz ();
 
-      inline Time () :
-          Interface::Time<Time>(),
-          _clockMHz(0)
-      {
-      };
+  /// \brief The processor clock in MHz.
+  ///
+  /// \warning This returns \b mega hertz. Do not be confused.
+  ///
+  inline size_t clockMHz_impl ();
 
-      ///
-      /// \brief Initialize the time object.
-      ///
-      inline pami_result_t init_impl (size_t dummy)
-      {
-        _clockMHz      = clockMHz();
-        _sec_per_cycle = 1.0 / ((double)_clockMHz * 1000000.0);
+  ///
+  /// \brief Returns the number of "cycles" elapsed on the calling processor.
+  ///
+  inline unsigned long long timebase_impl ();
 
-        if (_clockMHz == -1ULL)
-          return PAMI_ERROR;
-        else
-          return PAMI_SUCCESS;
-      };
+  ///
+  /// \brief Computes the smallest clock resolution theoretically possible
+  ///
+  inline double tick_impl ();
+  ///
+  /// \brief Returns an elapsed time on the calling processor.
+  ///
+  inline double time_impl ();
 
-      ///
-      /// \brief The processor clock in MHz.
-      ///
-      /// \warning This returns \b mega hertz. Do not be confused.
-      ///
-      size_t clockMHz_impl ()
-      {
-        if (_clockMHz == 0.0)
-          {
-            uint64_t sampleTime = 100; //sample time in usec
-            uint64_t timeStart = 0, timeStop = 0;
-            uint64_t startBase = 0, endBase = 0;
-            uint64_t overhead = 0, tbf = 0, tbi = 0;
-            uint64_t ticks = 0;
-            int      iter = 0;
+private:
+  inline uint64_t rdtscp(void);
 
-            do
-              {
-                tbi = tb();
-                tbf = tb();
-                tbi = tb();
-                tbf = tb();
+protected:
+  uint64_t _clockMHz;
+  double   _sec_per_cycle;
+};
 
-                overhead = tbf - tbi;
-                timeStart = timeGetTime();
+inline Time::Time () :
+  Interface::Time<Time>(),
+  _clockMHz(0),
+  _sec_per_cycle(-1.0)
+{
+};
 
-                while (timeGetTime() == timeStart)
-                  timeStart = timeGetTime();
+inline void Time::calculateClockMhz ()
+{
+  unsigned long long t1, t2;
+  struct timeval     tv1, tv2;
+  double             td1, td2;
+  gettimeofday(&tv1, NULL);
+  t1=rdtscp();
+  usleep(250000);
+  gettimeofday(&tv2, NULL);
+  t2=rdtscp();
+  td1 = tv1.tv_sec + tv1.tv_usec / 1000000.0;
+  td2 = tv2.tv_sec + tv2.tv_usec / 1000000.0;
+  _sec_per_cycle = (td2 - td1) / (double)(t2 - t1);
+  _clockMHz      = (size_t)((1.0/_sec_per_cycle)/1000000.0);
+}
 
-                while (1)
-                  {
-                    timeStop = timeGetTime();
+inline pami_result_t Time::init_impl (size_t dummy)
+{
+  calculateClockMhz();
+  return PAMI_SUCCESS;
+};
 
-                    if ((timeStop - timeStart) > 1)
-                      {
-                        startBase = tb();
-                        break;
-                      }
-                  }
+inline size_t Time::clockMHz_impl ()
+{
+  if(_clockMHz == 0.0)
+    calculateClockMhz();
+  return _clockMHz;
+}
 
-                timeStart = timeStop;
+inline unsigned long long Time::timebase_impl ()
+{
+  return rdtscp();
+};
 
-                while (1)
-                  {
-                    timeStop = timeGetTime();
+inline double Time::tick_impl ()
+{
+  return _sec_per_cycle;
+};
 
-                    if ((timeStop - timeStart) > sampleTime)
-                      {
-                        endBase = tb();
-                        break;
-                      }
-                  }
+inline double Time::time_impl ()
+{
+  return ((double)rdtscp() * _sec_per_cycle);
+};
 
-                ticks = ((endBase - startBase) + (overhead));
-                iter++;
+inline uint64_t Time::rdtscp(void)
+{
+  uint32_t lo, hi;
+  asm volatile("rdtscp" : "=a"(lo), "=d"(hi) :: "ecx" );
+  return (uint64_t)hi << 32 | lo;
+}
 
-                if (iter == 10)
-                  {
-                    fprintf(stderr, "Warning: unable to initialize high resolution timer.\n");
-                    return -1;
-                  }
-              }
-            while (endBase <= startBase);
-
-            return ticks / sampleTime;
-          }
-        else
-          return _clockMHz;
-      }
-      ///
-      /// \brief Returns the number of "cycles" elapsed on the calling processor.
-      ///
-      unsigned long long timebase_impl ()
-      {
-        return tb();
-      };
-
-      ///
-      /// \brief Computes the smallest clock resolution theoretically possible
-      ///
-      double tick_impl ()
-      {
-        return _sec_per_cycle;
-      };
-
-      ///
-      /// \brief Returns an elapsed time on the calling processor.
-      ///
-      double time_impl ()
-      {
-        return ((double)tb() * _sec_per_cycle);
-      };
-
-    protected:
-      uint64_t _clockMHz;
-      double _sec_per_cycle;
-  };	// class Time
 };	// namespace PAMI
 #endif // __arch_i386_Time_h__
