@@ -447,12 +447,15 @@ namespace PAMI
                                         _context_id);
 
                 if(_ring_allreduce_factory)
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
-                                               _ring_allreduce_factory,
-                                               _context,
-                                               _context_id);
-
-                if(_ascs_binomial_allreduce_factory)
+		  {
+		    PAMI::Topology * topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+		    if(topo->isContextOffset(0))
+		      geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+						   _ring_allreduce_factory,
+						   _context,
+						   _context_id);
+		  }
+		if(_ascs_binomial_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
                                                _context,
@@ -487,11 +490,14 @@ namespace PAMI
                                         _context_id);
 
                 if(_ring_allreduce_factory)
-                  geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
-                                               _ring_allreduce_factory,
-                                               _context,
-                                               _context_id);
-
+		  {
+		    PAMI::Topology * topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
+		    if(topo->isContextOffset(0))
+		      geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
+						   _ring_allreduce_factory,
+						   _context,
+						   _context_id);
+		  }
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,

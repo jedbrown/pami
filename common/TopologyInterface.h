@@ -258,7 +258,13 @@ namespace PAMI
       ///
       inline bool isEndpointMember(pami_endpoint_t endpoint);
 
-      /// \brief is coordinate in topology
+      /// \brief is this topology a single offset (n)
+      ///
+      /// \param[in] slice Context offset
+      /// \return boolean indicating context is single context n topology
+      ///
+      inline bool isContextOffset(size_t slice);
+
       ///
       /// \param[in] c0 Coord to test
       /// \return boolean indicating coord is a member of topology
@@ -498,6 +504,12 @@ namespace PAMI
       bool Topology<T_Topology>::isEndpointMember(pami_endpoint_t endpoint)
     {
       return static_cast<T_Topology*>(this)->isEndpointMember_impl(endpoint);
+    }
+
+    template <class T_Topology>
+      bool Topology<T_Topology>::isContextOffset(size_t slice)
+    {
+      return static_cast<T_Topology*>(this)->isContextOffset_impl(slice);
     }
 
     template <class T_Topology>

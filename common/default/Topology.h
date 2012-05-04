@@ -1405,6 +1405,14 @@ namespace PAMI {
       return false;
     }
 
+    bool isContextOffset_impl(size_t slice)
+    {
+      /* PAMI_EPLIST_TOPLOGY's *could* be single slice but we're not
+         going to try to detect that here.  Only simple, single
+         slice contexts will return true. */
+      return (__offset == slice && __type != PAMI_EPLIST_TOPOLOGY);
+    }
+
     /// \brief is rank in topology
     ///
     /// \param[in] rank	Rank to test
