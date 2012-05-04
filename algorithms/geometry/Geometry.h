@@ -151,7 +151,8 @@ namespace PAMI
       _ranks(ranks),
       _geometry_map(geometry_map),
       _checkpointed(false),
-      _cb_result(PAMI_EAGAIN)
+      _cb_result(PAMI_EAGAIN),
+      _allcontexts(context_offset==PAMI_ALL_CONTEXTS)
       {
         TRACE_ERR((stderr, "<%p>Common(ranklist)\n", this));
         // this creates the topology including all subtopologies
@@ -175,8 +176,13 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:1;
-        size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+        size_t nctxt     = 1;
+        size_t start_off = context_offset;
+        if (_allcontexts) {
+            nctxt = ncontexts;
+            start_off = 0;
+        }
+
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
                                                       nctxt*sizeof(*_ue_barrier));
@@ -367,7 +373,8 @@ namespace PAMI
       _ranks(NULL),
       _geometry_map(geometry_map),
       _checkpointed(false),
-      _cb_result(PAMI_EAGAIN)
+      _cb_result(PAMI_EAGAIN),
+      _allcontexts(context_offset==PAMI_ALL_CONTEXTS)
       {
         TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
         pami_result_t rc;
@@ -437,8 +444,12 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:1;
-        size_t start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+        size_t nctxt     = 1;
+        size_t start_off = context_offset;
+        if (_allcontexts) {
+            nctxt = ncontexts;
+            start_off = 0;
+        }
         rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
                                                       nctxt*sizeof(*_ue_barrier));
@@ -587,16 +598,18 @@ namespace PAMI
         topologyIndex_t BASE_INDEX = DEFAULT_TOPOLOGY_INDEX; /* assume we use the input/default topology */
 
         _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];  // first copy it
-        if(_topos[COORDINATE_TOPOLOGY_INDEX].type() !=  PAMI_COORD_TOPOLOGY) // convert it?
-        {  
-          // Attempt to create a coordinate topo (result may be EMPTY)
-          _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
+        if (!_allcontexts) {
+            if(_topos[COORDINATE_TOPOLOGY_INDEX].type() !=  PAMI_COORD_TOPOLOGY) // convert it?
+            {  
+                // Attempt to create a coordinate topo (result may be EMPTY)
+                _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
 
-          // Was it successful?
-          if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
-          {  
-            BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; /* use this coordinate based topology */
-          }
+                // Was it successful?
+                if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
+                {  
+                    BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; 
+                }
+            }
         }
 
         /* Use whatever topology we picked above as the basis for Nth masters and local */
@@ -1137,6 +1150,7 @@ namespace PAMI
       bool                   _checkpointed;
       pami_callback_t        _cb_done;
       pami_result_t          _cb_result;
+      bool                   _allcontexts;
       GeomCompCtr            _comp;
       CleanupFunctions       _cleanupFcns;
       CleanupDatas           _cleanupDatas;

@@ -129,7 +129,8 @@ public:
                 
         _enabled=true;
         if (_Lapi_env.MP_infolevel >= 2) {
-          fprintf(stderr, "FCA OFFLOAD is enabled and ready.\n");  
+          fprintf(stderr, "FCA (Ver. %s) OFFLOAD is enabled and ready.\n", 
+                  FCA_Get_version_string());  
         }
 
         _my_endpoint = PAMI_ENDPOINT_INIT(_client_id,

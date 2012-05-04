@@ -102,11 +102,12 @@ pami_result_t PAMI::Device::Interface::FactoryInterface<T_Factory, T_Device, T_P
 };
 
 template <class T_Factory, class T_Device, class T_Progress>
-size_t PAMI::Device::Interface::FactoryInterface<T_Factory, T_Device, T_Progress>::advance (T_Device * devices,
-    size_t     contextid,
-    size_t     clientid)
+size_t PAMI::Device::Interface::FactoryInterface<T_Factory, T_Device, T_Progress>::advance (
+        T_Device * devices,
+        size_t     clientid,
+        size_t     contextid)
 {
-  return T_Factory::advance_impl (devices, contextid, clientid);
+  return T_Factory::advance_impl (devices, clientid, contextid);
 };
 
 template <class T_Factory, class T_Device, class T_Progress>
