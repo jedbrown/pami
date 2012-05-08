@@ -55,12 +55,16 @@ const char *FCA_cmd_list[] =
   "fca_translate_mpi_dtype",
   "fca_get_dtype_size",
   "fca_strerror",
-  "fca_default_config"
+  "fca_default_config",
+  "fca_parse_spec_file",
+  "fca_free_init_spec",
+  "fca_parse_general_params",
+  "fca_dump_init_spec"
 };
 
 enum
 {
-  I_Get_version,
+  I_Get_version = 0,
   I_Get_version_string,
   I_Init,
   I_Cleanup,
@@ -82,7 +86,11 @@ enum
   I_Translate_mpi_dtype,
   I_Get_dtype_size,
   I_Strerror,
-  I_Default_config
+  I_Default_config,
+  I_Parse_spec_file,
+  I_Free_init_spec,
+  I_Parse_general_params,
+  I_Dump_init_spec,
 };
 
 class FCAFunc
@@ -110,8 +118,12 @@ public:
   typedef       int   (fca_translate_mpi_dtype_handler_t)(char *mpi_dtype_str);
   typedef       int   (fca_get_dtype_size_handler_t)(enum fca_reduce_dtype_t dtype);
   typedef const char *(fca_strerror_handler_t)(int error);
-  typedef fca_config_t fca_config_t_value_t;
-
+  typedef       fca_config_t fca_config_t_value_t;
+  typedef       fca_init_spec_t *(fca_parse_spec_file_handler_t)(const char* spec_ini_file);
+  typedef       void  (fca_free_init_spec_handler_t)(fca_init_spec_t *fca_init_spec);
+  typedef       int   (fca_parse_general_params_handler_t)(fca_config_t *fca_config, struct _dictionary_ *ini);
+  typedef       void  (fca_dump_init_spec_handler_t)(fca_init_spec_t *init_spec, FILE *stream);
+  
   static FCAFunc *getInstance();
   int             Load();
   unsigned long   Get_version(void);
@@ -135,6 +147,11 @@ public:
   int             Translate_mpi_op(char *mpi_op_str);
   int             Translate_mpi_dtype(char *mpi_dtype_str);
   int             Get_dtype_size(enum fca_reduce_dtype_t dtype);
+  fca_init_spec_t *Parse_spec_file(const char* spec_ini_file);
+  void            Free_init_spec(fca_init_spec_t *fca_init_spec);
+  int             Parse_general_params(fca_config_t *fca_config, struct _dictionary_ *ini);
+  void            Dump_init_spec(fca_init_spec_t *init_spec, FILE *stream);
+
   const char     *Strerror(int error);
 private:
   FCAFunc();
@@ -165,6 +182,11 @@ private:
   fca_translate_mpi_dtype_handler_t *translate_mpi_dtype_handler;
   fca_get_dtype_size_handler_t      *get_dtype_size_handler;
   fca_strerror_handler_t            *strerror_handler;
+  fca_parse_spec_file_handler_t     *parse_spec_file_handler;
+  fca_free_init_spec_handler_t      *free_init_spec_handler;
+  fca_parse_general_params_handler_t *parse_general_params_handler;
+  fca_dump_init_spec_handler_t      *dump_init_spec_handler;
+
 public:
   fca_config_t_value_t              *config_t_value;
 };
@@ -193,6 +215,10 @@ inline FCAFunc::FCAFunc():
   translate_mpi_dtype_handler(NULL),
   get_dtype_size_handler(NULL),
   strerror_handler(NULL),
+  parse_spec_file_handler(NULL),
+  free_init_spec_handler(NULL),
+  parse_general_params_handler(NULL),
+  dump_init_spec_handler(NULL),
   config_t_value(NULL)
 {
 }
@@ -276,6 +302,10 @@ inline int FCAFunc::Load()
   get_dtype_size_handler      = (fca_get_dtype_size_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Get_dtype_size]);
   strerror_handler            = (fca_strerror_handler_t *)(uintptr_t)import(FCA_cmd_list[I_Strerror]);
   config_t_value              = (fca_config_t_value_t *)(uintptr_t)import(FCA_cmd_list[I_Default_config]);
+  parse_spec_file_handler     = (fca_parse_spec_file_handler_t *)import(FCA_cmd_list[I_Parse_spec_file]);
+  free_init_spec_handler      = (fca_free_init_spec_handler_t *)import(FCA_cmd_list[I_Free_init_spec]);
+  parse_general_params_handler= (fca_parse_general_params_handler_t *)import(FCA_cmd_list[I_Parse_general_params]);
+  dump_init_spec_handler      = (fca_dump_init_spec_handler_t *)import(FCA_cmd_list[I_Dump_init_spec]);
 
   
 #define FCA_CHECK_FN(x) if(x == NULL) return -1;
@@ -303,6 +333,11 @@ inline int FCAFunc::Load()
   FCA_CHECK_FN(strerror_handler);
   // It may be OK for this to be NULL
   FCA_CHECK_FN(config_t_value);
+
+  FCA_CHECK_FN(parse_spec_file_handler);
+  FCA_CHECK_FN(free_init_spec_handler);
+  FCA_CHECK_FN(parse_general_params_handler);
+  FCA_CHECK_FN(dump_init_spec_handler);
 #undef FCA_CHECK_FN
   return 0;
 }
@@ -396,6 +431,24 @@ inline const char * FCAFunc::Strerror(int error)
 {
   return(strerror_handler(error));
 }
+inline fca_init_spec_t * FCAFunc::Parse_spec_file(const char* spec_ini_file)
+{
+  return(parse_spec_file_handler(spec_ini_file));
+}
+inline void FCAFunc::Free_init_spec(fca_init_spec_t *fca_init_spec)
+{
+  return(free_init_spec_handler(fca_init_spec));
+}
+inline int FCAFunc::Parse_general_params(fca_config_t *fca_config, struct _dictionary_ *ini)
+{
+  return(parse_general_params_handler(fca_config,ini));
+}
+inline void FCAFunc::Dump_init_spec(fca_init_spec_t *init_spec, FILE *stream)
+{
+  dump_init_spec_handler(init_spec, stream);
+}
+
+
 
 #ifdef FCA_DLOPEN
 
@@ -424,7 +477,10 @@ inline const char * FCAFunc::Strerror(int error)
 #define FCA_Get_dtype_size      FCAFunc::getInstance()->Get_dtype_size
 #define FCA_Strerror            FCAFunc::getInstance()->Strerror
 #define FCA_Default_config      (*(FCAFunc::getInstance()->config_t_value))
-
+#define FCA_Parse_spec_file     FCAFunc::getInstance()->Parse_spec_file
+#define FCA_Free_init_spec      FCAFunc::getInstance()->Free_init_spec
+#define FCA_Parse_general_params FCAFunc::getInstance()->Parse_general_params
+#define FCA_Dump_init_spec      FCAFunc::getInstance()->Dump_init_spec
 #include "components/devices/fca/fcafunc.cc"
 
 #else
@@ -452,6 +508,10 @@ inline const char * FCAFunc::Strerror(int error)
 #define FCA_Get_dtype_size      fca_get_dtype_size
 #define FCA_Strerror            fca_strerror
 #define FCA_Default_config      fca_default_config
+#define FCA_Parse_spec_file     fca_parse_spec_file
+#define FCA_Free_init_spec      fca_free_init_spec
+#define FCA_Parse_general_params fca_parse_general_params
+#define FCA_Dump_init_spec      fca_dump_init_spec
 
 #endif //FCA_DLOPEN
 

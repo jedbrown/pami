@@ -97,15 +97,21 @@ public:
                 FCA_Get_version_string());
         // Fill in FCA Init Spec
         // use default config for now
-        _fca_init_spec.element_type  = FCA_ELEMENT_RANK;
-        _fca_init_spec.job_id        = _Lapi_env.MP_partition;
-        _fca_init_spec.rank_id       = _Lapi_env.MP_child;
-        _fca_init_spec.progress.func = func;
-        _fca_init_spec.progress.arg  = (void*)context;
-        _fca_init_spec.dev_selector  = NULL;
-        _fca_init_spec.config        = FCA_Default_config;
+        // provide service variable override
+        char *fca_spec_file = getenv("MP_S_FCA_SPEC_FILE");
+        _fca_init_spec = FCA_Parse_spec_file(fca_spec_file);
+        if(!_fca_init_spec)
+        {
+          ITRC(IT_FCA, "FCA_Parse_spec_file failed\n");
+          return;
+        }
+        _fca_init_spec->job_id        = _Lapi_env.MP_partition;
+        _fca_init_spec->rank_id       = _Lapi_env.MP_child;
+        _fca_init_spec->progress.func = func;
+        _fca_init_spec->progress.arg  = (void*)context;
 
-        int ret = FCA_Init(&_fca_init_spec, &_fca_context);
+
+        int ret = FCA_Init(_fca_init_spec, &_fca_context);
         if (ret < 0)
           {
             ITRC(IT_FCA, "FCA_Init failed with rc %d [%s]\n",
@@ -374,7 +380,7 @@ private:
   pami_endpoint_t      _my_endpoint;
   bool                 _enabled;
   GIAllocator          _geom_allocator;
-  fca_init_spec        _fca_init_spec;
+  fca_init_spec       *_fca_init_spec;
   fca_t               *_fca_context;
   void                *_fca_rank_info;
   int                  _fca_rank_info_sz;
