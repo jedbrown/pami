@@ -1563,13 +1563,15 @@ namespace PAMI
 
         // Find the master context index
         uint64_t       *to_reduce[num_local_ep];
-        uint to_reduce_count = 3 + 3*master_topology->size();
+        uint           to_reduce_count=0;
         for(size_t n=0; n<(size_t)num_local_ep;n++)
         {
           size_t idx = index_array[n];
+          to_reduce_count = 3 + 3*master_topology->size() + _contexts[idx]->_fca_collreg->analyze_count(idx,new_geometry);
           rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
                                           to_reduce_count * sizeof(uint64_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc to_reduce");
+
           int nc   = 0;
           int ncur = 0;
           _contexts[idx]->_pgas_collreg->register_local(idx,new_geometry,&to_reduce[n][0], ncur);
@@ -1581,7 +1583,7 @@ namespace PAMI
           _contexts[idx]->_cau_collreg->analyze(idx,new_geometry,&to_reduce[n][2], &ncur, 0);
           nc+=ncur;
           ncur=0;
-          _contexts[idx]->_fca_collreg->analyze(idx,new_geometry,&to_reduce[n][2], &ncur, 0);
+          _contexts[idx]->_fca_collreg->analyze(idx,new_geometry,&to_reduce[n][3+3*master_topology->size()], &ncur, 0);
         }
         *geometry=(PEGeometry*) new_geometry;
 
