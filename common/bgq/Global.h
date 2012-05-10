@@ -1293,6 +1293,16 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
   pami_task_t max_rank = 0, min_rank = (pami_task_t) - 1;
   pami_coord_t _ll, _ur;
 
+  /* Initialize for rget pacing analysis as the mapcache is being constructed below.
+   * The number of nodes in the block (first parameter) is used to determine whether
+   * or not to pace.
+   */
+  bool   doRgetPacing;
+  size_t rgetPacingHops;
+  size_t rgetPacingDims;
+  initializeRgetPacing( aSize * bSize * cSize * dSize * eSize,
+                        doRgetPacing, rgetPacingHops, rgetPacingDims, _rgetPacingSize );
+
   // If we are the master (participant 0), then initialize the caches.
   // Then, set the cache pointers into the shared memory area for the other
   // ranks on this node to see, and wait for them to see it.
@@ -1346,16 +1356,6 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
       // If the syscall works, obtain info from the returned _mapcache.
       if (rc == 0)
         {
-	  /* Initialize for rget pacing analysis as the mapcache is being constructed below.
-           * The number of nodes in the block (first parameter) is used to determine whether
-           * or not to pace.
-           */
-	  bool   doRgetPacing;
-	  size_t rgetPacingHops;
-	  size_t rgetPacingDims;
-	  initializeRgetPacing( aSize * bSize * cSize * dSize * eSize,
-                                doRgetPacing, rgetPacingHops, rgetPacingDims, _rgetPacingSize );
-	  
           /* Obtain the following information from the _mapcache:
            * 1. Number of active ranks in the partition.
            * 2. Number of active compute nodes in the partition.
