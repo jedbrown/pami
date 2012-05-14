@@ -30,6 +30,14 @@ namespace PAMI{
 
 class Time : public Interface::Time<Time>
 {
+private:
+    struct cpuid_t
+    {
+      uint32_t eax;
+      uint32_t ebx;
+      uint32_t ecx;
+      uint32_t edx;
+    } __attribute__((packed));
 public:
   inline Time () ;
 
@@ -37,6 +45,11 @@ public:
   /// \brief Initialize the time object.
   ///
   inline pami_result_t init_impl (size_t dummy);
+
+  ///
+  /// \brief determine if high res timers can be used
+  ///
+  inline void cpuid(cpuid_t *r, uint32_t eax);
 
   ///
   /// \brief Calculate the clock frequency
@@ -69,6 +82,8 @@ private:
 protected:
   uint64_t _clockMHz;
   double   _sec_per_cycle;
+  cpuid_t  _cpuid;
+  bool     _high_res;
 };
 
 inline Time::Time () :
@@ -96,20 +111,47 @@ inline void Time::calculateClockMhz ()
 
 inline pami_result_t Time::init_impl (size_t dummy)
 {
-  calculateClockMhz();
+#define __BIT(b) (1ULL << (b))
+
+  _high_res = true;
+  // check for invariant clock
+  cpuid(&_cpuid, 0x80000007);
+  if((_cpuid.edx & __BIT(8)) == 0) _high_res = false;
+
+  // check for availablilty of rdtscp
+  cpuid(&_cpuid, 0x80000001);
+  if((_cpuid.edx & __BIT(27)) == 0) _high_res = false;
+  if(_high_res) calculateClockMhz();
+  else
+  {
+    int rc;
+    struct timespec ts;
+    rc = clock_getres( CLOCK_REALTIME, &ts );
+    if (!rc)
+      _sec_per_cycle = ts.tv_sec + 1.0e-9 * ts.tv_nsec;
+    else
+      _sec_per_cycle = 1.0e-9;
+  }
   return PAMI_SUCCESS;
 };
 
 inline size_t Time::clockMHz_impl ()
 {
   if(_clockMHz == 0.0)
-    calculateClockMhz();
+    init(0x0UL);
   return _clockMHz;
 }
 
 inline unsigned long long Time::timebase_impl ()
 {
-  return rdtscp();
+  if(_high_res)
+    return rdtscp();
+  else
+  {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return ts.tv_sec*1e9 + ts.tv_nsec;
+  }
 };
 
 inline double Time::tick_impl ()
@@ -119,7 +161,14 @@ inline double Time::tick_impl ()
 
 inline double Time::time_impl ()
 {
-  return ((double)rdtscp() * _sec_per_cycle);
+  if(_high_res)
+    return ((double)rdtscp() * _sec_per_cycle);
+  else
+  {
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (double)ts.tv_sec + 1.0e-9*(double)ts.tv_nsec;
+  }
 };
 
 inline uint64_t Time::rdtscp(void)
@@ -128,6 +177,19 @@ inline uint64_t Time::rdtscp(void)
   asm volatile("rdtscp" : "=a"(lo), "=d"(hi) :: "ecx" );
   return (uint64_t)hi << 32 | lo;
 }
+
+inline void Time::cpuid(cpuid_t *r, uint32_t in)
+{
+  asm volatile("cpuid"
+               : "=a" (r->eax),
+                 "=S" (r->ebx),
+                 "=c" (r->ecx),
+                 "=d" (r->edx)
+               : "a"  (in)
+               : "memory");
+  return;
+}
+
 
 };	// namespace PAMI
 #endif // __arch_i386_Time_h__
