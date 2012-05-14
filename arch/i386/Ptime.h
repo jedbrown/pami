@@ -89,8 +89,30 @@ protected:
 inline Time::Time () :
   Interface::Time<Time>(),
   _clockMHz(0),
-  _sec_per_cycle(-1.0)
+  _sec_per_cycle(-1.0),
+  _high_res(true)
 {
+#define __BIT(b) (1ULL << (b))
+  // check for invariant clock
+  cpuid(&_cpuid, 0x80000007);
+  if((_cpuid.edx & __BIT(8)) == 0) _high_res = false;
+
+  // check for availablilty of rdtscp
+  cpuid(&_cpuid, 0x80000001);
+  if((_cpuid.edx & __BIT(27)) == 0) _high_res = false;
+
+  if(_high_res) calculateClockMhz();
+  else
+  {
+    int rc;
+    struct timespec ts;
+    rc = clock_getres( CLOCK_REALTIME, &ts );
+    if (!rc)
+      _sec_per_cycle = ts.tv_sec + 1.0e-9 * ts.tv_nsec;
+    else
+      _sec_per_cycle = 1.0e-9;
+    _clockMHz      = (size_t)((1.0/_sec_per_cycle)/1000000.0);
+  }
 };
 
 inline void Time::calculateClockMhz ()
@@ -111,34 +133,11 @@ inline void Time::calculateClockMhz ()
 
 inline pami_result_t Time::init_impl (size_t dummy)
 {
-#define __BIT(b) (1ULL << (b))
-
-  _high_res = true;
-  // check for invariant clock
-  cpuid(&_cpuid, 0x80000007);
-  if((_cpuid.edx & __BIT(8)) == 0) _high_res = false;
-
-  // check for availablilty of rdtscp
-  cpuid(&_cpuid, 0x80000001);
-  if((_cpuid.edx & __BIT(27)) == 0) _high_res = false;
-  if(_high_res) calculateClockMhz();
-  else
-  {
-    int rc;
-    struct timespec ts;
-    rc = clock_getres( CLOCK_REALTIME, &ts );
-    if (!rc)
-      _sec_per_cycle = ts.tv_sec + 1.0e-9 * ts.tv_nsec;
-    else
-      _sec_per_cycle = 1.0e-9;
-  }
   return PAMI_SUCCESS;
 };
 
 inline size_t Time::clockMHz_impl ()
 {
-  if(_clockMHz == 0.0)
-    init(0x0UL);
   return _clockMHz;
 }
 
