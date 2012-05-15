@@ -152,7 +152,9 @@ namespace PAMI
           _binomial_allreduce_factory(NULL),
           _binomial4_allreduce_factory(NULL),
           _binomial8_allreduce_factory(NULL),
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           _ring_allreduce_factory(NULL),
+#endif
           _ascs_binomial_allreduce_factory(NULL),
           _ascs_binomial_reduce_factory(NULL),
           _active_binomial_amreduce_factory(NULL),
@@ -446,6 +448,7 @@ namespace PAMI
                                                _context,
                                         _context_id);
 
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
                 if(_ring_allreduce_factory)
 		  {
 		    PAMI::Topology * topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -455,6 +458,7 @@ namespace PAMI
 						   _context,
 						   _context_id);
 		  }
+#endif
 		if(_ascs_binomial_allreduce_factory)
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -489,6 +493,7 @@ namespace PAMI
                                           _context,
                                         _context_id);
 
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
                 if(_ring_allreduce_factory)
 		  {
 		    PAMI::Topology * topo = (PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
@@ -498,6 +503,7 @@ namespace PAMI
 						   _context,
 						   _context_id);
 		  }
+#endif
                 if(_ascs_binomial_allreduce_factory)
                   geometry->addCollective(PAMI_XFER_ALLREDUCE,
                                         _ascs_binomial_allreduce_factory,
@@ -1184,8 +1190,10 @@ namespace PAMI
 	    }
 	      
             // ----------------------------------------------------
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Ring::Factory>(ni, _ring_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ALLSIDED, 1);
             if (rc == PAMI_SUCCESS) new ((void*)_ring_allreduce_factory) CCMI::Adaptor::P2PAllreduce::Ring::Factory(_context,_context_id,mapidtogeometry,&_sconnmgr, ni, NULL, &_sconnmgr1);
+#endif
             // ----------------------------------------------------
             // Setup and Construct an asynchronous, comm_id/seq_num binomial  allreduce factory from active message ni and p2p protocol
             rc = setupFactory<CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory>(ni, _ascs_binomial_allreduce_factory, CCMI::Interfaces::NativeInterfaceFactory::MULTICAST, CCMI::Interfaces::NativeInterfaceFactory::ACTIVE_MESSAGE);
@@ -1427,7 +1435,9 @@ namespace PAMI
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory4                 *_binomial4_allreduce_factory;
           CCMI::Adaptor::P2PAllreduce::Binomial::Factory8                 *_binomial8_allreduce_factory;
 
+#ifdef ENABLE_X0_PROTOCOLS // Experimental (X0:) protocols
           CCMI::Adaptor::P2PAllreduce::Ring::Factory                      *_ring_allreduce_factory;
+#endif
 
           // CCMI Async [All]Reduce
           CCMI::Adaptor::P2PAllreduce::Binomial::AsyncCSBinomAllreduceFactory  *_ascs_binomial_allreduce_factory;
