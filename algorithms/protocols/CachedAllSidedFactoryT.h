@@ -71,17 +71,21 @@ public:
         if (!composite)
         {
             composite = (T_Composite *) AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::generate(geometry, cmd);
+            pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+            composite->setDoneCallback(xfer->cb_done, xfer->cookie);
             TRACE_FORMAT( "<%p>composite %p",this,composite);
             g->setKey((size_t)0, /// \todo does NOT support multicontext
                       T_Key,
                       (void*)composite);
         }
         else
+        {
+            pami_xfer_t *xfer = (pami_xfer_t *) cmd;
+            composite->setDoneCallback(xfer->cb_done, xfer->cookie);
             //Reset composite with new collective inputs
             composite->reset (geometry, cmd);
+        }
 
-        pami_xfer_t *xfer = (pami_xfer_t *)cmd;
-        composite->setDoneCallback(xfer->cb_done, xfer->cookie);
         TRACE_FN_EXIT();
         return composite;
     }
