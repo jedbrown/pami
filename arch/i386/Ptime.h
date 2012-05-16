@@ -179,14 +179,16 @@ inline uint64_t Time::rdtscp(void)
 
 inline void Time::cpuid(cpuid_t *r, uint32_t in)
 {
-  asm volatile("cpuid"
-               : "=a" (r->eax),
-                 "=S" (r->ebx),
-                 "=c" (r->ecx),
-                 "=d" (r->edx)
-               : "a"  (in)
-               : "memory");
-  return;
+    r->eax = in;
+    asm volatile("mov %%ebx,%%edi;"
+                 "cpuid;"
+                 "mov %%ebx,%%esi;"
+                 "mov %%edi,%%ebx;"
+                 :"+a" (r->eax),
+                  "=S" (r->ebx),
+                  "=c" (r->ecx),
+                  "=d" (r->edx)
+                 : :"edi");
 }
 
 
