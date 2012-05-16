@@ -359,7 +359,7 @@ namespace CCMI
           nrpes = (phase < _nphs - 1) ? _nports : _partners.size() - (phase - _rstartph) * _nports;
           TRACE_FORMAT("phase %u, nrpes %u, _nphs %u, _nports %u, _partners.size %zu , _rstartph %u",phase, nrpes, _nphs, _nports, _partners.size(), _rstartph);
 
-          for (unsigned i = 0; i < _nports; ++i)
+          for (unsigned i = 0; i < _nports && i < nrpes; ++i)
           {
             rpes[i] = toporank(_partners[(phase - _rstartph)*_nports + i]);
             TRACE_FORMAT("rpes[%u] %u = toporank(_partners[(phase %u - _rstartph %u)*_nports %u+ i %u] = %u);",i,rpes[i],phase,_rstartph,_nports ,i,_partners[(phase - _rstartph)*_nports + i]);
@@ -1390,18 +1390,18 @@ namespace CCMI
         {
           ndst = (phase < _nphs - 1) ? _nports : _partners.size() - (phase - _rstartph) * _nports;
 
-          for (unsigned i = 0; i < _nports; ++i)
+          for (unsigned i = 0; i < _nports && ((i<(int)nsrc) || (i<(int)ndst)); ++i)
           {
             unsigned  ind = _partners[(phase - _rstartph)*_nports + i];
-            dstpes[i] = toporank(ind);
-            srcpes[i] = toporank((2 * _myrank + _nranks - ind) % _nranks);
+            if(i<(int)ndst) dstpes[i] = toporank(ind);
+            if(i<(int)nsrc) srcpes[i] = toporank((2 * _myrank + _nranks - ind) % _nranks);
 
-            if (dstlens)
+            if (dstlens && (i<(int)ndst) )
             {
               dsrlens[i] = _subsizes[(phase - _rstartph)*_nports + i];
             }
 
-            if (srclens)
+            if (srclens && (i<(int)nsrc) )
             {
               srclens[i] = _subsizes[(phase - _rstartph)*_nports + i];
             }

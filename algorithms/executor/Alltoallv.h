@@ -35,7 +35,7 @@
 #define SHFT_BITS      (SHFT_BITS_PHASE+SHFT_BITS_SRC)
 #endif
 
-#define MAX_CONCURRENT 32
+//#define MAX_CONCURRENT 32
 #define MAX_PARALLEL 20
 
 #undef  EXECUTOR_DEBUG

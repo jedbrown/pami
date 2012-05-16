@@ -28,7 +28,7 @@
 #include "algorithms/interfaces/NativeInterface.h"
 
 #define MAX_CONCURRENT 32
-#define MAX_PARALLEL 20
+//#define MAX_PARALLEL 20
 
 #define EXECUTOR_DEBUG(x) // fprintf x
 

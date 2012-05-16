@@ -27,8 +27,8 @@
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
 
-#define MAX_CONCURRENT 32
-#define MAX_PARALLEL 20
+//#define MAX_CONCURRENT 32
+//#define MAX_PARALLEL 20
 
 // #define CONNECTION_ID_SHFT
 #ifdef CONNECTION_ID_SHFT

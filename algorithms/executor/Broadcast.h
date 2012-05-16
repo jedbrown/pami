@@ -27,7 +27,7 @@
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
 
-#define MAX_PARALLEL 20
+#define BCAST_MAX_PARALLEL 64
 
 //#define TRACE_ADAPTOR(x) fprintf x
 //#define TRACE_MSG(x) fprintf x
@@ -53,7 +53,7 @@ namespace CCMI
         pami_multicast_t                 _msend;
         PAMI::PipeWorkQueue              _pwq;
 
-        pami_endpoint_t         _dst_eps [MAX_PARALLEL];
+        pami_endpoint_t         _dst_eps [BCAST_MAX_PARALLEL];
         pami_endpoint_t         _src_eps;
         pami_endpoint_t         _self_ep;
         pami_endpoint_t         _root_ep;
@@ -121,17 +121,13 @@ namespace CCMI
           _comm_schedule->init (_mdata._root, BROADCAST_OP, phase, nph);
           CCMI_assert(_comm_schedule != NULL);
           _comm_schedule->getDstUnionTopology (&_dsttopology, _dst_eps);
-
+          CCMI_assert(_dsttopology.size() <= BCAST_MAX_PARALLEL);
           if (_connmgr)
             _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
 
 #if 1
-	  pami_endpoint_t srcranks[MAX_PARALLEL];
+	  pami_endpoint_t srcranks[BCAST_MAX_PARALLEL];
           _comm_schedule->getSrcUnionTopology (&_srctopology, srcranks);   
-	  //fprintf(stderr, "Src rank %d, topo size %d\n", 
-	  //  (int)_srctopology.index2Rank(0), 
-	  //  (int)_srctopology.size());
-
 	  CCMI_assert (_srctopology.size() <= 1);
           _comm_schedule->getSrcUnionTopology (&_srctopology, &_src_eps); 
 #endif

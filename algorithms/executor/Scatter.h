@@ -29,7 +29,7 @@
 #include "common/default/Topology.h"
 
 #define MAX_CONCURRENT 32
-#define MAX_PARALLEL 20
+//#define MAX_PARALLEL 20
 
 namespace CCMI
 {

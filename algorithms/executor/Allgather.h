@@ -29,7 +29,7 @@
 #include "common/default/Topology.h"
 
 #define MAX_CONCURRENT 32
-#define MAX_PARALLEL 20
+//#define MAX_PARALLEL 20
 
 #if defined EXECUTOR_DEBUG
 #undef EXECUTOR_DEBUG
@@ -171,7 +171,7 @@ namespace CCMI
           CCMI_assert(_startphase == 0);
           CCMI_assert(_maxsrcs != 0);
           CCMI_assert(_maxsrcs <= MAX_CONCURRENT);
-          CCMI_assert(_nphases <= MAX_PARALLEL);
+//          CCMI_assert(_nphases <= MAX_PARALLEL);
 
 	  pami_result_t rc;
 	  rc = __global.heap_mm->memalign((void **)&_mrecvstr, 0,
