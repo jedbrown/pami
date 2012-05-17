@@ -292,7 +292,8 @@ xlpgas::ShmHybridPipelinedBcast<T_NI,T_Device>::ShmHybridPipelinedBcast (int ctx
   xlpgas::Collective<T_NI> (ctxt, comm, kind, tag, NULL, NULL, ni) {
   typedef xlpgas::cau_device_info<T_NI> device_info_type;
   this->_device_info = device_info;
-  this->_buf_size = ((device_info_type*)device_info)->shm_buffers()._bcast_buf_sz;
+  //below is divided by two because we use double buffer
+  this->_buf_size = ((device_info_type*)device_info)->shm_buffers()._bcast_buf_sz/2;
   _flag = true;
 }
 

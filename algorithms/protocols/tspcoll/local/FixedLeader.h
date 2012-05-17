@@ -44,10 +44,9 @@
 /* T is a type with a size of <= 8 bytes */
 /* Op is a class with an operator() that performs the reduction */
 
-//#define SHM_BUF_SIZE 131072
-//#define SHM_BUF_SIZE 262144
 #define SHM_BUF_SIZE 524288
-
+#define BWC_REDUCE   500
+#define BWC_LG_BCAST 100000
 
 namespace xlpgas
 {
@@ -78,7 +77,7 @@ namespace xlpgas
       State*     _state;
       int        _N, _me, _nchildren;
       int        _children[128], _parent, _leader;
-      static const int BusyWaitCycles=500;
+      int        BusyWaitCycles;
       bool _done;
       //handle cb
       xlpgas_LCompHandler_t     _cb_complete;
@@ -130,6 +129,7 @@ FixedLeader (int N, int me, int leader, void * sh_mem, int nchildren):
 _N(N), _me(me), _nchildren(nchildren)
 {
   assert (nchildren <= 32);
+  this->BusyWaitCycles = BWC_REDUCE;
   int k = (me-leader+N) %N;  // my distance from leader, modulo N
 
   for (int c=0; c<this->_nchildren; c++)
@@ -326,6 +326,7 @@ template <class Wait>
 inline xlpgas::local::FixedLeaderLB<Wait>::
  FixedLeaderLB (int N, int me, int leader, pgas_shm_buffers& bufs, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
   assert (nchildren <= 128);
+  this->BusyWaitCycles = BWC_LG_BCAST;
   int k = (me-leader+N) % N;  // my distance from leader, modulo N
   for (int c=0; c<this->_nchildren; c++)
     if (this->_nchildren*k+c+1<N) this->_children[c] = (this->_nchildren*k+c+1+leader)%N;
@@ -399,6 +400,7 @@ template <class Wait>
 inline xlpgas::local::FixedLeader2LB<Wait>::
  FixedLeader2LB (int N, int me, int leader, pgas_shm_buffers& bufs, int nchildren) : xlpgas::local::FixedLeader<Wait>(N,me,leader,nchildren){
   assert (nchildren <= 128);
+  this->BusyWaitCycles = BWC_LG_BCAST;
   int k = (me-leader+N) % N;  // my distance from leader, modulo N
   for (int c=0; c<this->_nchildren; c++)
     if (this->_nchildren*k+c+1<N) this->_children[c] = (this->_nchildren*k+c+1+leader)%N;
