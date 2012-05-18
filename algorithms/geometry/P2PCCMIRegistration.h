@@ -182,6 +182,7 @@ namespace PAMI
           _alltoallv_factory_int(NULL)
         {
           TRACE_FN_ENTER();
+          TRACE_FORMAT( "<%p>client_id %zu, context_id %zu", this, client_id, context_id);
           TRACE_FORMAT( "<%p>NI Factory %p, local_size %zu, global_size %zu", this, nifactory, local_size, global_size);
           if(T_Support_One_Task) setupOneTaskFactories();
     
@@ -212,6 +213,8 @@ namespace PAMI
                            context_id,
                            geometry);
             if (phase != 0) {TRACE_FN_EXIT(); return PAMI_SUCCESS;}
+
+            PAMI_assert_debugf(context_id == _context_id,"%zu == %zu\n",context_id,_context_id);
 
             if(geometry->size() == 1)//if onetask geometry
             {

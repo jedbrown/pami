@@ -814,6 +814,7 @@ namespace PAMI
           fprintf(stderr,"num algorithms %zu\n",_algoTable[colltype].size());
         }
 #endif
+        PAMI_assert_debug(_algoTable[colltype][hash].count(0) > 0); // There must be a context 0 entry.
         return PAMI_SUCCESS;
       }
 
@@ -881,6 +882,7 @@ namespace PAMI
           fprintf(stderr,"num algorithms %zu\n",_algoTableCheck[colltype].size());
         }
 #endif
+        PAMI_assert_debug(_algoTableCheck[colltype][hash].count(0) > 0);  // There must be a context 0 entry.
         return PAMI_SUCCESS;
       }
 

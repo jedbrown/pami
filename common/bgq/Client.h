@@ -165,7 +165,7 @@ namespace PAMI
                                              pami_context_t       * context,
                                              size_t                ncontexts)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::createContext_impl\n", Kernel_ProcessorID(),this, _clientid));
+      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::createContext_impl, ncontexts %zu\n", Kernel_ProcessorID(),this, _clientid, ncontexts));
       size_t n = ncontexts;
 
       if (_ncontexts != 0)
