@@ -735,7 +735,7 @@ namespace PAMI
         char *mms;
         mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
-        TRACE_FORMAT( "<%p>, dispatch.id %u", this, _dispatch.id);
+        TRACE_FORMAT( "<%p>, clientid %zu, contextid %zu, dispatch.id %u", this,_clientid,_contextid, _dispatch.id);
         // ----------------------------------------------------------------
         // Compile-time assertions
         // ----------------------------------------------------------------
@@ -1091,7 +1091,7 @@ namespace PAMI
             new (ni_factory) CompositeNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _mid_protocol);
             new (ni_factory_amc) CompositeNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _mid_protocol);
             _ccmi_registration =  new((CCMIRegistration*)_ccmi_registration_storage) 	
-            CCMIRegistration(_client, _context, _contextid, _clientid, 
+            CCMIRegistration(_client, _context,  _clientid, _contextid,
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
@@ -1107,11 +1107,11 @@ namespace PAMI
             TRACE_FORMAT("Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu",sizeof(MUNIFactory),ProtocolAllocator::objsize);
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
             CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu_amc = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-            TRACE_FORMAT("MU CCMI NI %p, %p, registration %p", ni_factory_mu, ni_factory_mu_amc, _ccmi_registration_mu_storage);
+            TRACE_FORMAT("MU CCMI NI %p, %p, registration %p, _clientid %zu, _contextid %zu", ni_factory_mu, ni_factory_mu_amc, _ccmi_registration_mu_storage,_clientid, _contextid);
             new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
             new (ni_factory_mu_amc) MUNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
             _ccmi_registration_mu =  new((CCMIRegistration*)_ccmi_registration_mu_storage) 	
-            CCMIRegistration(_client, _context, _contextid, _clientid, 
+            CCMIRegistration(_client, _context, _clientid, _contextid, 
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
@@ -1131,7 +1131,7 @@ namespace PAMI
             new (ni_factory_shmem) ShmemNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _mid_protocol);
             new (ni_factory_shmem_amc) ShmemNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _mid_protocol);
             _ccmi_registration_shmem =  new((CCMIRegistration*)_ccmi_registration_shmem_storage) 	
-            CCMIRegistration(_client, _context, _contextid, _clientid, 
+            CCMIRegistration(_client, _context, _clientid, _contextid,
                              _protocol,
                              __global.topology_global.size(), 
                              __global.topology_local.size(), 
@@ -1149,7 +1149,7 @@ namespace PAMI
             new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           
             _ccmi_registration_muam =  new((CCMIRegistrationKey2*)_ccmi_registration_muam_storage) 	
-            CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+            CCMIRegistrationKey2(_client, _context, _clientid, _contextid,
                                  _protocol,
                                  __global.topology_global.size(), 
                                  __global.topology_local.size(), 
@@ -1167,7 +1167,7 @@ namespace PAMI
 		new (ni_factory_mudp) MUDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
 	      
 		_ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage) 	
-		  CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+		  CCMIRegistrationKey2(_client, _context,  _clientid, _contextid,
 				       _protocol,
 				       __global.topology_global.size(), 
 				       __global.topology_local.size(), 
@@ -1182,7 +1182,7 @@ namespace PAMI
 		new (ni_factory_mudp) MUShmemDputNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _devices->_shmem[_contextid], _big_protocol);
 		
 		_ccmi_registration_mudput =  new((CCMIRegistrationKey2*)_ccmi_registration_mudput_storage)
-		  CCMIRegistrationKey2(_client, _context, _contextid, _clientid, 
+		  CCMIRegistrationKey2(_client, _context,  _clientid,_contextid, 
 				       _protocol,
 				       __global.topology_global.size(), 
 				       __global.topology_local.size(), 
