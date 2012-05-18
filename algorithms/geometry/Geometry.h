@@ -483,7 +483,7 @@ namespace PAMI
         for(size_t n=start_off; n<nctxt; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
-          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_ue[n]) MatchQueue();
           new(&_post[n]) MatchQueue();
           new(&_dispatch[n]) DispatchMap();
