@@ -318,7 +318,7 @@ extern "C"
     } check;                          /**< Metadata 'reason' information       */
   } metadata_result_t;
 
-  /* Forward declaration of pami_xfer_t */
+  /** Forward declaration of pami_xfer_t */
   typedef struct pami_xfer_t *xfer_p;
 
   /**

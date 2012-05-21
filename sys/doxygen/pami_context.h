@@ -24,7 +24,7 @@
 
 
 /**
- * \addtogroup contexts_and_endpoints Contexts and Endpoints
+ * \addtogroup contexts_and_endpoints
  *
  * Contexts are parallel "threading points" that an application may use to
  * optimize concurrent communications.
