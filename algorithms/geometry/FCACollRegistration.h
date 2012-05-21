@@ -212,11 +212,14 @@ public:
       {
           case 0:
           {
+            ITRC(IT_FCA, "FCACollReg Analyze 0 <<<<<-----\n");
             // Allocate Per Geometry Information
             GeometryInfo *gi = (GeometryInfo *)_geom_allocator.allocateObject();
             new(gi) GeometryInfo(this);
             geometry->setKey(_context_id, G::CKEY_FCAGEOMETRYINFO, gi);
             geometry->setCleanupCallback(cleanupCallback, gi);
+            ITRC(IT_FCA, "setCleanupCallback with func at %p and data %p\n",
+                    cleanupCallback, gi);
             // Set up the first phase reduction buffer
             uint64_t *uptr      = (uint64_t*)inout_val;
             uint64_t  count     = analyze_count_impl(context_id, geometry);
@@ -246,11 +249,14 @@ public:
               fca_comm_new_spec_t cs;
               cs.rank_info     = (void*)(&(inout_val[1]));
               cs.rank_count    = num_master_tasks;
-              cs.is_comm_world = 0;
+              // set is_comm_world to 1 for world geometry
+              cs.is_comm_world = (geometry->comm() == 0)?1:0;
               fca_comm_desc_t *comm_desc = (fca_comm_desc_t*) ptr;
-              ITRC(IT_FCA, "PHASE 1 root: before FCA_Comm_new rank info %p "
+              ITRC(IT_FCA, "PHASE 1 root: (%d:%s) before FCA_Comm_new rank info %p "
                    "count %d fca context %p "
                    "new spec at %p comm desc at %p\n",
+                   geometry->comm(),
+                   ((geometry->comm())? "SUB-GEO":"WORLD"),
                    cs.rank_info,
                    cs.rank_count, _fca_context,
                    &cs, comm_desc);
@@ -347,6 +353,7 @@ public:
     if (gi->_fca_comm != NULL)
     {
       FCA_Comm_destroy(gi->_fca_comm);
+      ITRC(IT_FCA, "FCA_Comm_destroy is invoked.\n");
       if(gi->_amRoot == true)
       {
         FCARegistration *f = (FCARegistration *)gi->_registration;
@@ -372,6 +379,8 @@ public:
   {
     GeometryInfo    *gi = (GeometryInfo*) data;
     FCARegistration *f  = (FCARegistration *)gi->_registration;
+    ITRC(IT_FCA, "FCACollRegistration cleanupCallback invoked with gi %p f %p\n", 
+            gi, f);
     f->freeGeomInfo(gi);
   }
 private:
