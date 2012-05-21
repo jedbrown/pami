@@ -582,32 +582,22 @@ namespace PAMI
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_rc_t rc = (cp->*(cp->pTryLock))();
-          if (ERR_EAGAIN == rc) {
-            result = PAMI_EAGAIN;
-            return 0;
+          if (cp->IsMultiThreaded() && (ERR_EAGAIN == (cp->*(cp->pTryLock))())) {
+              result = PAMI_EAGAIN;
+              return 0;
           }
 
           while (maximum --)
            {
              size_t events = _devices->advance(_clientid, _contextid);
-             rc = (cp->*(cp->pAdvance))(1);
-             if (rc == 0 || events > 0) {
+             if (0 == (cp->*(cp->pAdvance))() || events > 0) {
                result = PAMI_SUCCESS;
-               (cp->*(cp->pUnlock))();
+               if (cp->IsMultiThreaded()) (cp->*(cp->pUnlock))();
                return 1;
              }
            }
           result = PAMI_EAGAIN;
-          (cp->*(cp->pUnlock))();
-          return 0;
-        }
-
-      inline size_t advance_only_lapi (size_t maximum, pami_result_t & result)
-        {
-          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_rc_t rc = (cp->*(cp->pAdvance))(maximum);
-          result = PAMI_RC(rc);
+          if (cp->IsMultiThreaded()) (cp->*(cp->pUnlock))();
           return 0;
         }
 
