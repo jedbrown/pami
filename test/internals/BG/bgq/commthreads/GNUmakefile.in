@@ -18,7 +18,9 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         =
 NOTBUILT        =
-APPS            = multi-context.${EXTENSION} preempt-pthreads.${EXTENSION} multi-proc.${EXTENSION}
+APPS            = multi-context.${EXTENSION} multi-proc.${EXTENSION} \
+			preempt-pthreads.${EXTENSION} sleep-pthreads.${EXTENSION} 
+
 include @abs_top_builddir@/Build.rules
 
 ifeq (@BUILDENV@,ade)

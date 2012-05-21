@@ -31,11 +31,22 @@
 #include "common/bgq/Context.h"
 #include <pthread.h>
 #include <signal.h>
+#include <time.h>
 
 #include "hwi/include/bqc/A2_inlines.h"
 #include "spi/include/kernel/thread.h"
 
 #undef DEBUG_COMMTHREADS // Enable debug messages here
+
+// limit/default for PAMI_COMMTHREAD_SLEEP
+#define COMMTHREAD_SLEEP_MIN	2000	// absolute minimum
+#define COMMTHREAD_SLEEP_REC	100000	// recommended
+
+// Defaults for "sleeping commthreads" mode.
+// #undef these to keep "standard" defaults.
+#define DEFAULT_SLEEP_MAXTHRDS	1
+#define DEFAULT_SLEEP_MINLOOPS	1
+#define DEFAULT_SLEEP_MAXLOOPS	100
 
 #include "spi/include/wu/wait.h"
 
@@ -51,15 +62,24 @@
 #ifdef DEBUG_COMMTHREADS
 #define DEBUG_INIT()						\
 		char __dbgbuf[64];				\
-		sprintf(__dbgbuf, "xx %ld %d\n", pthread_self(), Kernel_ProcessorID());	\
-		int __dbgbufl = strlen(__dbgbuf);
+		int __dbgbufl = sprintf(__dbgbuf, "xx %ld %d", pthread_self(), Kernel_ProcessorID());	\
+		int __dbgbufi = 0;
 
 #define DEBUG_WRITE(a,b)				\
 		__dbgbuf[0] = a; __dbgbuf[1] = b;	\
-		write(2, __dbgbuf, __dbgbufl);
+		__dbgbuf[__dbgbufl] = '\n';		\
+		__dbgbufi = 1;				\
+		write(2, __dbgbuf, __dbgbufl + __dbgbufi);
+
+#define DEBUG_WRITE_T(a,b,t)				\
+		__dbgbuf[0] = a; __dbgbuf[1] = b;	\
+		__dbgbufi = sprintf(__dbgbuf + __dbgbufl, " %ld\n", t); \
+		write(2, __dbgbuf, __dbgbufl + __dbgbufi);
+
 #else // ! DEBUG_COMMTHREADS
 #define DEBUG_INIT()
 #define DEBUG_WRITE(a,b)
+#define DEBUG_WRITE_T(a,b,t)
 #endif // ! DEBUG_COMMTHREADS
 
 extern PAMI::Device::CommThread::Factory __commThreads;
@@ -69,6 +89,15 @@ extern PAMI::Device::CommThread::Factory __commThreads;
 /// \envs{pami,commthread,Commthread}
 /// This is some general documentation about the commthread
 /// environment variables.
+///
+/// \env{commthread,PAMI_COMMTHREAD_SLEEP}
+/// Use sleeping-preemtion for over-subscribed commthreads.
+/// Value is the interval (nanoseconds) at which a commthread wakes up
+/// and advances, when having been preempted by a user thread.
+/// Use suffix of 'u' for microseconds, 'm' for milliseconds,
+/// or 's' for seconds. Absolute minimum 2000ns, recommended minimum
+/// 100000ns. Set to "d(efault)" for recommended value.
+/// \default (0) Standard preemption - until user threads sleeps or exits
 ///
 /// \env{commthread,PAMI_MAX_COMMTHREADS}
 /// Maximum number of commthreads to create.
@@ -199,6 +228,13 @@ public:
 	static void *commThread(void *cookie) {
 		BgqCommThread *thus = (BgqCommThread *)cookie;
 		pami_result_t r = thus->__commThread();
+		r = r; // avoid warning until we decide how to use result
+		return NULL;
+	}
+
+	static void *sleepingCommThread(void *cookie) {
+		BgqCommThread *thus = (BgqCommThread *)cookie;
+		pami_result_t r = thus->__sleepingCommThread();
 		r = r; // avoid warning until we decide how to use result
 		return NULL;
 	}
@@ -337,7 +373,7 @@ public:
 
 		thus->_shutdown = false;
 		Memory::sync();
-		status = pthread_create(&thus->_thread, &attr, commThread, thus);
+		status = pthread_create(&thus->_thread, &attr, _func, thus);
 		pthread_attr_destroy(&attr);
 		if (status) {
 			--_numActive;
@@ -515,6 +551,127 @@ DEBUG_WRITE('t','t');
 		return PAMI_SUCCESS;
 	}
 
+	inline pami_result_t __sleepingCommThread() {
+		// should/can this use the internal (C++) interface?
+		uint64_t new_ctx, old_ctx, lkd_ctx;
+		size_t n, events, ev_since_wu;
+		size_t max_loop = BgqCommThread::_maxloops;
+		size_t min_loop = BgqCommThread::_minloops;
+		size_t id; // our current commthread id, among active ones.
+		pthread_t self = pthread_self();
+		uint64_t wu_start, wu_mask;
+		int max_pri = sched_get_priority_max(COMMTHREAD_SCHED);
+DEBUG_INIT();
+		sigset_t sigset_usr1;
+		sigemptyset(&sigset_usr1);
+		sigaddset(&sigset_usr1, SIGUSR1);
+
+		pthread_setschedprio(self, max_pri);
+		struct sigaction sigact;
+		sigact.sa_handler = commThreadSig;
+		sigemptyset(&sigact.sa_mask);
+		sigact.sa_flags = 0;
+		sigaction(SIGUSR1, &sigact, NULL);
+		_ctxset->joinContextSet(id, _initCtxs);
+DEBUG_WRITE('c','t');
+		new_ctx = old_ctx = lkd_ctx = 0;
+		ev_since_wu = 0;
+		while (!_shutdown) {
+			//
+new_context_assignment:	// These are the same now, assuming the re-locking is
+more_work:		// lightweight enough.
+			//
+
+			__armMU_WU();
+
+			// doing this without 'new_ctx' depends on it being ignored...
+			_wakeup_region->getWURange(0, &wu_start, &wu_mask);
+
+			n = 0;
+			events = 0;
+			do {
+				WU_ArmWithAddress(wu_start, wu_mask);
+				new_ctx = _ctxset->getContextSet(id);
+
+				// this only locks/unlocks what changed...
+				events += __lockContextSet(lkd_ctx, new_ctx);
+				_lockCtxs = lkd_ctx;
+				if (old_ctx != new_ctx) ev_since_wu += 1;
+				old_ctx = new_ctx;
+				Memory::sync();
+				events += __advanceContextSet(lkd_ctx);
+				ev_since_wu += events;
+				++n;
+			} while (!_shutdown && lkd_ctx &&
+				(events != 0 || n < min_loop) && n < max_loop);
+			if (_shutdown) break;
+
+			// Snoop the scheduler to see if other threads are competing.
+			// This should also include total number of threads on
+			// the core, and some heuristic by which we decide to
+			// back-off more. This gets complicated if we consider
+			// whether those other sw threads are truly active, or even
+			// running in some syncopated "tag team" mode.
+			// TBD
+//re_evaluate:
+			n = Kernel_SnoopRunnable();
+
+			if (n <= 1) {
+				// we are alone
+				if (events == 0) {
+					// The wait can only detect new work.
+					// Only do the wait if we know the
+					// contexts have no work. otherwise
+					// we could wait forever for new work
+					// while existing work waits for us to
+					// advance it.
+					if (ev_since_wu == 0 && lkd_ctx) ++_falseWU;
+DEBUG_WRITE('g','i');
+					ppc_waitimpl();
+DEBUG_WRITE('w','u');
+					ev_since_wu = 0;
+					if (_shutdown) break;
+				}
+				// need to re-evaluate things here?
+				// goto re_evaluate;
+				// ... or just go back and do work?
+				goto more_work;
+			} else {
+				struct timespec rem;
+				__disarmMU_WU();
+
+				// Should we release the contexts here?
+				// We could wake-up faster if we keep
+				// them locked but if there is ever a
+				// chance we don't wake-up it could be
+				// disasterous.
+
+				// we don't care if we wake-up early, just
+				// do our thing and go back to sleep.
+//DEBUG_WRITE('s','a');
+//uint64_t t0 = Kernel_GetTimeBase();
+				nanosleep(&_sleep, &rem);
+//t0 = Kernel_GetTimeBase() - t0;
+//DEBUG_WRITE_T('s','b', t0);
+
+				if (_shutdown) break;
+				// always assume context set changed... just simpler.
+				goto new_context_assignment;
+			}
+		}
+
+		if (lkd_ctx) {
+			(void)__lockContextSet(lkd_ctx, 0);
+			_lockCtxs = lkd_ctx;
+			Memory::sync();
+		}
+		if (id != (size_t)-1) {
+			_ctxset->leaveContextSet(id); // id invalid now
+		}
+DEBUG_WRITE('t','t');
+		return PAMI_SUCCESS;
+	}
+
 	friend class PAMI::Device::CommThread::Factory;
 	BgqWakeupRegion *_wakeup_region;	///< WAC memory for contexts (common)
 	PAMI::Device::CommThread::BgqContextPool *_ctxset; ///< context set (common)
@@ -524,6 +681,8 @@ DEBUG_WRITE('t','t');
 	volatile size_t _falseWU;	///< perf counter for false wakeups
 	volatile bool _shutdown;	///< request commthread to exit
 	static BgqCommThread *_comm_xlat[NUM_CORES][NUM_SMT];
+	static struct timespec _sleep;
+	static void *(*_func)(void *cookie);
 	static size_t _numActive;
 	static size_t _maxActive;
         static size_t _maxloops;
@@ -533,6 +692,8 @@ DEBUG_WRITE('t','t');
 #endif // !COMMTHREAD_LAYOUT_TESTING
 }; // class BgqCommThread
 
+void *(*PAMI::Device::CommThread::BgqCommThread::_func)(void *cookie) = BgqCommThread::commThread;
+struct timespec PAMI::Device::CommThread::BgqCommThread::_sleep = { 0, 0 };
 size_t PAMI::Device::CommThread::BgqCommThread::_maxActive = 0;
 size_t PAMI::Device::CommThread::BgqCommThread::_maxloops = 100;
 size_t PAMI::Device::CommThread::BgqCommThread::_minloops = 10;
@@ -574,7 +735,36 @@ _commThreads(NULL)
 
 	// config param may also affect this?
 
-	char *env = getenv("PAMI_MAX_COMMTHREADS");
+	char *env = getenv("PAMI_COMMTHREAD_SLEEP");
+	if (env) {
+		char *e = NULL;
+		x = strtoul(env, &e, 0);
+		if (x > 0 || *e) {
+			if (*e == 'd' || *e == 'D') x = COMMTHREAD_SLEEP_REC;
+			else if (*e == 'u' || *e == 'U') x *= 1000;
+			else if (*e == 'm' || *e == 'M') x *= 1000 * 1000;
+			else if (*e == 's' || *e == 'S') x *= 1000 * 1000 * 1000;
+			if (x < COMMTHREAD_SLEEP_MIN) x = COMMTHREAD_SLEEP_MIN;
+			if (x < COMMTHREAD_SLEEP_REC) {
+				// print warning if < recommended?
+			}
+			BgqCommThread::_sleep.tv_sec = x / (1000 * 1000 * 1000);
+			BgqCommThread::_sleep.tv_nsec = x % (1000 * 1000 * 1000);
+			BgqCommThread::_func = BgqCommThread::sleepingCommThread;
+			// Setup other defaults...
+#ifdef DEFAULT_SLEEP_MAXTHRDS
+			BgqCommThread::_maxActive = DEFAULT_SLEEP_MAXTHRDS;
+#endif
+#ifdef DEFAULT_SLEEP_MINLOOPS
+			BgqCommThread::_minloops = DEFAULT_SLEEP_MINLOOPS;
+#endif
+#ifdef DEFAULT_SLEEP_MAXLOOPS
+			BgqCommThread::_maxloops = DEFAULT_SLEEP_MAXLOOPS;
+#endif
+		}
+	}
+
+	env = getenv("PAMI_MAX_COMMTHREADS");
 	if (env) {
 		x = strtoul(env, NULL, 0);
 		if (x < BgqCommThread::_maxActive) BgqCommThread::_maxActive = x;

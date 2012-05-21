@@ -37,6 +37,8 @@ typedef struct post_info {
 	unsigned ctx;
 	unsigned seq;
 	pami_send_t send; // not used by do_work()
+	unsigned long long t0;
+	pami_client_t client;
 } post_info_t;
 
 #ifndef NUM_CONTEXTS
@@ -93,8 +95,10 @@ void do_sleep(pami_client_t client, char *buf, int bufl, char *end, size_t numbe
 pami_result_t do_work(pami_context_t context, void *cookie) {
 	post_info_t *info = (post_info_t *)cookie;
 	char buf[128];
-	sprintf(buf, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
-				info->seq, pthread_self(), info->ctx, cookie, info->value, info->value - 1);
+	sprintf(buf, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d (%lld cy)\n",
+			info->seq, pthread_self(), info->ctx, cookie,
+			info->value, info->value - 1,
+			PAMI_Wtimebase(info->client) - info->t0);
 	write(2, buf, strlen(buf));
 	// [f]printf() is susceptible to context switches...
 	//fprintf(stderr, "do_work(%d) by %ld on context %d: cookie = %p, %d -> %d\n",
@@ -149,6 +153,8 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 	for (x = 0; x < nctx; ++x) {
 		_info[x].value = 1;
 		_info[x].ctx = x;
+		_info[x].client = client;
+		_info[x].t0 = PAMI_Wtimebase(client);
 
 		/* Post some work to the contexts */
 		result = PAMI_Context_post(ctx[x], &_info[x].state, do_work, (void *)&_info[x]);
@@ -161,7 +167,7 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 
 	const unsigned long long timeout = 500000; // abort after 10x of these, cycles
 	unsigned long long t0, t1, t2;
-	t0 = t1 = PAMI_Wtimebase(client);
+	t0 = t1 = t2 = PAMI_Wtimebase(client);
 	int busy;
 	int stuck = 0;
 	do {
@@ -183,6 +189,10 @@ pami_result_t run_test(pami_client_t client, pami_context_t *ctx, size_t nctx) {
 			t1 = t2;
 		}
 	} while (busy);
+	if (stuck > 0) {
+		t2 = PAMI_Wtimebase(client);
+		fprintf(stderr, "Unstuck after %lld cycles.\n", t2 - t0);
+	}
 	return PAMI_SUCCESS;
 }
 
