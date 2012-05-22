@@ -161,6 +161,7 @@ namespace CCMI
                       Interfaces::NativeInterface          *native1,
                       T_Connmgr                            *cmgr,
                       pami_geometry_t                       geometry,
+                      pami_endpoint_t                       me_ep,
                       pami_xfer_t                          *cmd,
                       pami_event_function                   fn,
                       void                                 *cookie,
@@ -168,7 +169,7 @@ namespace CCMI
                   _factory(factory),
                   _user_done_fn(cmd->cb_done),
                   _user_cookie(cmd->cookie),
-                  _obj(native0, native1, cmgr, geometry, cmd, fn, cookie)
+                  _obj(native0, native1, cmgr, geometry, me_ep, cmd, fn, cookie)
               {
               }
               void done_fn( pami_context_t   context,
@@ -189,11 +190,13 @@ namespace CCMI
                                                 pami_mapidtogeometry_fn      cb_geometry,
                                                 T_Connmgr                   *cmgr,
                                                 Interfaces::NativeInterface *native_l,
-                                                Interfaces::NativeInterface *native_g):
+                                                Interfaces::NativeInterface *native_g,
+                                                pami_endpoint_t              me_ep):
             CollectiveProtocolFactory(ctxt,ctxt_id,cb_geometry),
               _cmgr(cmgr),
               _native_l(native_l),
-              _native_g(native_g)
+              _native_g(native_g),
+              _me_ep(me_ep)
           {
           }
 
@@ -232,6 +235,7 @@ namespace CCMI
                               _native_g,          // Native Interface global
                               _cmgr,              // Connection Manager
                               geometry,           // Geometry Object
+                              _me_ep,             // My endpoint  
                               (pami_xfer_t*)cmd,  // Parameters
                               done_fn,            // Intercept function
                               cobj,               // Intercept cookie
@@ -256,6 +260,7 @@ namespace CCMI
           T_Connmgr                                       *_cmgr;
           Interfaces::NativeInterface                     *_native_l;
           Interfaces::NativeInterface                     *_native_g;
+          pami_endpoint_t                                  _me_ep;
           PAMI::MemoryAllocator < sizeof(collObj), 16 >    _alloc;
           std::map<size_t,Interfaces::NativeInterface *>   _ni_local_map;
           std::map<size_t,Interfaces::NativeInterface *>   _ni_global_map;
@@ -307,7 +312,7 @@ namespace CCMI
             PAMI::Topology  *t_master    = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
             PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
             PAMI::Topology  *t_my_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
-            bool             amMaster    = t_my_master->isEndpointMember(native_l->endpoint());
+            bool             amMaster    = t_my_master->isEndpointMember(_me_ep);
             _deviceInfo                  = _geometry->getKey(0,PAMI::Geometry::CKEY_MCOMB_CLASSROUTEID);
             // todo:  shared mem may need its own devinfo
             unsigned        typesize;
@@ -331,7 +336,7 @@ namespace CCMI
             if(root != 0xFFFFFFFF)
             {
               _root_ep    = root;
-              amRoot      = (native_l->endpoint() == root);
+              amRoot      = (_me_ep == root);
               new(&_t_root) PAMI::Topology(&_root_ep, 1, PAMI::tag_eplist());
               PAMI_assert(rc == PAMI_SUCCESS);
             }
@@ -860,6 +865,7 @@ namespace CCMI
                                         Interfaces::NativeInterface      *native_g,
                                         ConnectionManager::SimpleConnMgr *cmgr,
                                         pami_geometry_t                   g,
+                                        pami_endpoint_t                   me_ep,
                                         pami_xfer_t                      *cmd,
                                         pami_event_function               fn,
                                         void                             *cookie) :
@@ -867,6 +873,7 @@ namespace CCMI
               _native_l(native_l),
               _native_g(native_g),
               _geometry((PAMI_GEOMETRY_CLASS*)g),
+              _me_ep(me_ep),
               _temp_results(NULL),
               _throwaway_results(NULL),
               _fn(fn),

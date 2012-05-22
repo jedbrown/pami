@@ -1108,6 +1108,7 @@ namespace PAMI
 
 //          if ((__global.useMU()) && (__global.useshmem()))
         {
+          pami_endpoint_t me_ep = PAMI_ENDPOINT_INIT(client_id, __global.mapping.task(),_context_id);
           _ni_array[0] = _shmem_ni;
           _ni_array[1] = _mu_ni_msync2d;
           _ni_array[2] = _shmem_ni;
@@ -1122,7 +1123,7 @@ namespace PAMI
           _ni_array[7] = _axial_mu_dput_ni;
           _msync2d_rectangle_composite_factory = new (_msync2d_rectangle_composite_factory_storage) MultiSync2DeviceRectangleFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, &_ni_array[6]);
 
-          _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni, _mu_global_dput_ni);
+          _mcomb2d_dput_composite_factory = new (_mcomb2d_dput_composite_factory_storage) MultiCombine2DeviceDputFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni, _mu_global_dput_ni, me_ep);
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
           _mcomb2dNP_dput_composite_factory = new (_mcomb2dNP_dput_composite_factory_storage) MultiCombine2DeviceDputFactoryNP(&_sconnmgr,  &_ni_array[4]);
 #endif
@@ -1133,7 +1134,7 @@ namespace PAMI
           _mcast2d_dput_composite_factory = new (_mcast2d_dput_composite_factory_storage) MultiCast2DeviceDputFactory(_context,_context_id,mapidtogeometry,&_sconnmgr, _shmem_ni, false, _mu_global_dput_ni,  false);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
-          _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d);
+          _mcomb2d_composite_factory = new (_mcomb2d_composite_factory_storage) MultiCombine2DeviceFactory(&_sconnmgr, _shmem_ni, _mu_ni_mcomb2d, me_ep);
 #endif
 #ifdef PAMI_ENABLE_X0_PROTOCOLS
           _mcomb2dNP_composite_factory = new (_mcomb2dNP_composite_factory_storage) MultiCombine2DeviceFactoryNP(&_sconnmgr,  &_ni_array[2]);

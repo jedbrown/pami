@@ -369,9 +369,9 @@ namespace PAMI
           _barrier_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_barrier_ni),
           _barrierbsr_reg(context,context_id,mapidtogeometry,&_sconnmgr,&_l_barrierbsr_ni, &_g_barrier_ni),
           _broadcast_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
-          _broadcast_reg2(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),          
-          _allreduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_allreduce_ni),
-          _reduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_reduce_ni),
+          _broadcast_reg2(context,context_id,mapidtogeometry,&_sconnmgr,NULL, false,&_g_broadcast_ni,false),
+          _allreduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_allreduce_ni, PAMI_ENDPOINT_INIT(client_id, mapping.task(),context_id)),
+          _reduce_reg(context,context_id,mapidtogeometry,&_sconnmgr,NULL, &_g_reduce_ni, PAMI_ENDPOINT_INIT(client_id, mapping.task(),context_id)),
           _csmm(mm),
           _valid_context(true)
           {
