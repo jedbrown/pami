@@ -700,10 +700,10 @@ int gather_check_rcvbuf_dt (size_t num_tasks, void *buf, int counts, int dt)
         f = f + 1.0;
       }
     }
-    else
+    else if (dt_array[dt] == PAMI_TYPE_SIGNED_CHAR || dt_array[dt] == PAMI_TYPE_UNSIGNED_CHAR)
     {
-      unsigned char *cbuf = (unsigned char *)  buf + j *counts;
-      unsigned char c = 0x00 + j;
+      char *cbuf = (char *)  buf + j *counts;
+      char c = 0x00 + j;
       int i = counts;
       for (; i; i--)
       {
@@ -1117,10 +1117,10 @@ int bcast_check_rcvbuf_dt (void *rbuf, int count, int root, int dt)
       f = f + 1.0;
     }
   }
-  else
+  else if (dt_array[dt] == PAMI_TYPE_SIGNED_CHAR || dt_array[dt] == PAMI_TYPE_UNSIGNED_CHAR)
   {
-    unsigned char c = root;
-    unsigned char *cbuf = (unsigned char *)  rbuf;
+    char c = root;
+    char *cbuf = (char *)  rbuf;
 
     for (; i; i--)
     {
@@ -1249,7 +1249,7 @@ int scatter_check_rcvbuf_dt (void *rbuf, int counts, pami_task_t task, int dt)
       }
     }
   }
-  else
+  else if (dt_array[dt] == PAMI_TYPE_UNSIGNED_CHAR || dt_array[dt] == PAMI_TYPE_SIGNED_CHAR)
   {
     unsigned char *cbuf = (unsigned char *)  rbuf;
     unsigned char c = 0xFF & task;
