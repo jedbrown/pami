@@ -1024,10 +1024,11 @@ namespace PAMI
         // Construct shmem native interface
         ///////////////////////////////////////////////////////////////
 
+        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
-        if (_contextid == 0)
+         && (_contextid == 0)
 #endif
+           )
         {
           // Can't construct these models on single process nodes (no shmem)
           if ((__global.useshmem()) && (__global.topology_local.size() > 1))
@@ -1061,10 +1062,11 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
 
+        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
-        if (_contextid == 0)
+         && (_contextid == 0)
 #endif
+           )
         {
           // Register one PGAS (mu+shmem, mu, or shmem)
           if ((__global.useMU()) && (__global.useshmem()))
@@ -1097,10 +1099,11 @@ namespace PAMI
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
 
         // The multi registration will use shmem/mu if they are ctor'd above.
+        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
-        if (_contextid == 0)
+         && (_contextid == 0)
 #endif
+           )
         {
           _multi_registration       =  new ((BGQRegistration*) _multi_registration_storage)
           BGQRegistration(_shmem_native_interface,
@@ -1120,10 +1123,11 @@ namespace PAMI
 
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
 
+        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
-        if (_contextid == 0)
+         && (_contextid == 0)
 #endif
+           )
         {
           if ((__global.useMU()) && (__global.useshmem()))
           {
@@ -1731,10 +1735,11 @@ namespace PAMI
       inline pami_result_t registerWithOptimizer (Geometry::GeometryOptimizer<BGQGeometry>  *go)
       {
         TRACE_FN_ENTER();
+        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
-        if (_contextid == 0)
+         && (_contextid == 0)
 #endif
+           )
         {
           TRACE_FORMAT("id %zu, geometry %p", _contextid, go->geometry());
           uint64_t  reduce_result[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
