@@ -105,8 +105,6 @@ namespace PAMI
 	  __MUGlobal.getMuRM().geomOptimize(_world_geometry, _clientid, 0, NULL, NULL, NULL);
 	  // Now, subsequent 'analyze' done on this geom will know that MU Coll is avail.
 	  
-	  _geomopt = NULL;
-
 	  result = PAMI_SUCCESS;
 	}
       else
@@ -116,7 +114,6 @@ namespace PAMI
     inline ~Client ()
     {
       if (_contexts) (void)destroyContext_impl(NULL, _ncontexts);
-      if (_geomopt) __global.heap_mm->free(_geomopt);
     }
 
     static pami_result_t generate_impl (const char * name, pami_client_t * client,
@@ -394,7 +391,9 @@ namespace PAMI
         return;
       }
 
-      BGQGeometry *gp = (BGQGeometry *)cookie;
+      Geometry::GeometryOptimizer<BGQGeometry> *go = (Geometry::GeometryOptimizer<BGQGeometry> *) cookie;
+      BGQGeometry *gp = go->geometry();
+
       PAMI::Context *ctxt = (PAMI::Context *)context;
       Client *thus = (Client *)ctxt->getClient();
       pami_result_t rc = __MUGlobal.getMuRM().geomOptimize(gp, thus->_clientid,
@@ -435,16 +434,17 @@ namespace PAMI
     static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
     {
       TRACE_ERR((stderr, "(%8.8u)BGQ::Client::_geom_newopt_finish cookie %p, context %p, error %u\n", Kernel_ProcessorID(),cookie, context, err));
-      BGQGeometry *gp = (BGQGeometry *)cookie;
-      //PAMI::Context *ctxt = (PAMI::Context *)context;
+      Geometry::GeometryOptimizer<BGQGeometry> *go = (Geometry::GeometryOptimizer<BGQGeometry> *) cookie;
+      BGQGeometry *gp = go->geometry();
 
       if (err == PAMI_SUCCESS)
       {
         gp->addCompletion();
-        _geom_opt_finish(context, cookie, err);
+        _geom_opt_finish(context, gp, err);
         gp->rmCompletion(context, err); // completion happens here instead of
         // inside _geom_opt_finish().
         // trivial diff, right now.
+        __global.heap_mm->free(go);
         return;
       }
 
@@ -455,6 +455,7 @@ namespace PAMI
       // what else do we need to cleanup? What might the analyze phases
       // have done? Right now, nothing does proper cleanup...
       // gp->~BGQGeometry(); ???
+      __global.heap_mm->free(go);
     }
 
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
@@ -892,7 +893,6 @@ namespace PAMI
     Memory::GenMemoryManager _mm;
     Memory::GenMemoryManager _xmm; // used to fill context mm, from single OS alloc.
     //  Unexpected Barrier allocator
-    Geometry::GeometryOptimizer<BGQGeometry>                             * _geomopt;
 
     ////////////////////////////////////////////////////////////////////////////
     /// \env{pami,PAMI_CLIENT_SHMEMSIZE}
@@ -966,21 +966,16 @@ namespace PAMI
       if (optimize == PAMI_GEOMETRY_OPTIMIZE)
         done_fn = _geom_newopt_start;
 
-
-      Geometry::GeometryOptimizer<BGQGeometry> *go = _geomopt;
+      Geometry::GeometryOptimizer<BGQGeometry> *go = NULL;
       int rc  = 0;
-      if (go == NULL)
-      {
-        rc = __global.heap_mm->memalign((void **)&go, 0, sizeof(*go));
-        PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*go));
-        _geomopt = go;  
-      }
+      rc = __global.heap_mm->memalign((void **)&go, 0, sizeof(*go));
+      PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for GlobalAnalyzer<BGQGeometry> %zd", sizeof(*go));
 
       new (go) Geometry::GeometryOptimizer<BGQGeometry>(context,
                                                         new_geometry,
                                                         ar_algo,
                                                         done_fn,
-                                                        (void*)new_geometry); 
+                                                        (void*)go); 
 
       for (size_t i = 0; i < _ncontexts; ++i)
       {

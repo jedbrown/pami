@@ -86,12 +86,14 @@ namespace PAMI
       _cookie(cookie)
       {
         TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>", this);       
         TRACE_FN_EXIT();
       }
 
       ~GeometryOptimizer<T_Geometry> ()
       {
         TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> __input %p, _result %p", this,_input, _result);       
         if (_input)
           __global.heap_mm->free (_input);
         if (_result)
@@ -133,6 +135,7 @@ namespace PAMI
                                     pami_result_t       result) 
       {
         TRACE_FN_ENTER();
+        TRACE_FORMAT("context %p, cookie %p, result %u",context, cookie,result);
         GeometryOptimizer<T_Geometry> *go = (GeometryOptimizer<T_Geometry> *)cookie;
         go->start();
         TRACE_FN_EXIT();
@@ -141,7 +144,6 @@ namespace PAMI
       void start()
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p>", this);       
 
         if (_vector_elem.size() > 0)
         {
@@ -151,16 +153,19 @@ namespace PAMI
           memset(_result, 0, _total_nelem * sizeof(uint64_t));
           rc = __global.heap_mm->memalign((void **)&_input, 16, _total_nelem *sizeof(uint64_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _input %zd", _total_nelem*sizeof(*_result));
+          TRACE_FORMAT("<%p> _result %p, _input %p", this,_result,_input);       
 
           if (this->geometry()->size() == 1)
           {
             for (size_t i = 0; i < _vector_elem.size(); ++i)
               _result[i] = _vector_elem[i];
+            TRACE_FORMAT("<%p> notify", this);       
 
             optimizer_notify(_context, (void *)this, PAMI_SUCCESS);
           }
           else
           {
+            TRACE_FORMAT("<%p> generate", this);       
             for (size_t i = 0; i < _vector_elem.size(); ++i)
               _input[i] = _vector_elem[i];
 
@@ -180,7 +185,10 @@ namespace PAMI
           }
         }
         else if (_cb_done)
+        {  
+          TRACE_FORMAT("<%p> cb_done", this);       
           _cb_done (_context, _cookie, PAMI_SUCCESS);
+        }
         TRACE_FN_EXIT();
       }
 
@@ -195,6 +203,23 @@ namespace PAMI
         size_t i  = 0;
         for (i = 0; i < optimizer->_vector_reduce.size(); i++)
         {
+          TRACE_FORMAT("notify i %zu, optimizer %p",i,optimizer);
+          TRACE_FORMAT("notify i %zu, optimizer->_vector_reduce %p, size %zu",i,&optimizer->_vector_reduce,optimizer->_vector_reduce.size());
+          TRACE_FORMAT("notify i %zu, optimizer->result %p",i,optimizer->_result);
+          TRACE_FORMAT("notify i %zu, "
+                       "optimizer->_vector_reduce[i].context_id %zu,"
+                       "optimizer->_vector_reduce[i].cookie %p,     "
+                       "optimizer->_result[nelem] %zu,              "
+                       "optimizer->_vector_reduce[i].nelem %zu,     "
+                       "optimizer->_geometry %p,                    "
+                       "result %u                                   ",
+                       i,
+                       optimizer->_vector_reduce[i].context_id, 
+                       optimizer->_vector_reduce[i].cookie,     
+                       optimizer->_result[nelem],              
+                       optimizer->_vector_reduce[i].nelem,      
+                       optimizer->_geometry,                    
+                       result);                                 
           if (optimizer->_vector_reduce[i].results_fn)
             optimizer->_vector_reduce[i].results_fn (optimizer->_vector_reduce[i].context_id,
                                                      optimizer->_vector_reduce[i].cookie,
