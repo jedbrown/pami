@@ -1247,7 +1247,7 @@ namespace PAMI
               }
             }
           }
-
+	}
           // Can only use shmem pgas if the geometry is all local tasks, so check the topology
           if (_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
 
@@ -1295,7 +1295,6 @@ namespace PAMI
             // We know that _world_geometry is always "optimized" at create time.
             _multi_registration->analyze(_contextid, _world_geometry, 1);
           }
-        }
 
         TRACE_FN_EXIT();
       }
