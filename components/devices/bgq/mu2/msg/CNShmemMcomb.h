@@ -476,6 +476,34 @@ namespace PAMI
             return flag;
           }
 
+          bool advance_large_32procs()
+          {
+            bool flag;
+
+            flag = false;
+            //uint64_t  bytes_available =0;
+            //register  uint64_t  count = 0;
+
+            //while ((flag == false) && (++count < 1e5)){
+            while (flag == false){
+              if (__global.mapping.t() == 0)
+              {
+                advanceMULarge();
+                flag = advanceShmemMcastLarge() ;
+              }
+              else if (__global.mapping.t()%2 == 0)
+              {
+                flag =  advanceShmemMcombLarge(_length);
+                flag = flag && advanceShmemMcastLarge();
+              }
+              else
+              {   
+                flag = advanceShmemMcastLarge();
+              }
+            }
+            return flag;
+          }
+
 
         protected:
 

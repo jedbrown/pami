@@ -506,6 +506,33 @@ inline unsigned bgq_math_4way(char* dst, char* src0, char *src1, char* src2, cha
     return count;
   }
 }
+
+inline unsigned bgq_math_2way(char* dst, char* src0, char *src1, unsigned bytes, pami_op opcode, pami_dt dt)
+{
+
+  if (dt == PAMI_DOUBLE)
+  {
+   return  quad_double_math_2way((double*) dst, (double*) src0, (double*)src1, bytes/sizeof(double), opcode);
+  }
+  else if (dt == PAMI_SIGNED_INT)
+  {
+    return int_math_2way((int*) dst, (int*) src0, (int*)src1, bytes/sizeof(int), opcode);
+  }
+  else if (dt == PAMI_UNSIGNED_INT)
+  {
+    return uint_math_2way((unsigned*) dst, (unsigned*) src0, (unsigned*)src1, bytes/sizeof(unsigned), opcode);
+  }
+  else // un-optimized dt/op math
+  {
+    char* srcs[2] = {src0,src1}; 
+    coremath func = MATH_OP_FUNCS(dt, opcode, 2);
+    PAMI_assertf(func!=NULL,"Unsupported dt %X, op %X\n", dt, opcode);
+    unsigned count = convertToCount(bytes,dt);
+    func(dst, (void**)srcs,  2, count);
+    return count;
+  }
+}
+
 inline unsigned convertToCount(unsigned bytes,pami_dt dt)
 {
   unsigned count;

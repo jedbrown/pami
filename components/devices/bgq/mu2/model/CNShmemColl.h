@@ -142,13 +142,27 @@ namespace PAMI
             }
             else
             {
-              flag = msg->advance_large_64procs();
-
-              if (!flag)
+              if (__global.mapping.tSize() == 32)
               {
-                PAMI::Device::Generic::GenericThread *work = 
+                flag = msg->advance_large_32procs();
+
+                if (!flag)
+                {
+                  PAMI::Device::Generic::GenericThread *work = 
+                    new (&_work) PAMI::Device::Generic::GenericThread(advance_large_32procs, msg);
+                  _mucontext.getProgressDevice()->postThread(work);
+                }
+              }
+              else
+              {
+                flag = msg->advance_large_64procs();
+
+                if (!flag)
+                {
+                  PAMI::Device::Generic::GenericThread *work = 
                     new (&_work) PAMI::Device::Generic::GenericThread(advance_large_64procs, msg);
-                _mucontext.getProgressDevice()->postThread(work);
+                  _mucontext.getProgressDevice()->postThread(work);
+                }
               }
             }
 
@@ -203,6 +217,17 @@ namespace PAMI
             return PAMI_EAGAIN;
           }
 
+          static pami_result_t advance_large_32procs (pami_context_t     context,
+                                        void             * cookie)
+          {
+            CNShmemMcomb *msg = (CNShmemMcomb *) cookie;
+            bool done = msg->advance_large_32procs();
+
+            if (done)
+              return PAMI_SUCCESS;
+
+            return PAMI_EAGAIN;
+          }
 
           pami_result_t postMulticombine_impl(uint8_t (&state)[cn_shmem_state_bytes],
                                               size_t               client,

@@ -1545,9 +1545,11 @@ namespace PAMI
 
             // Add 2 device composite protocols
 #ifdef PAMI_ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
-            if ((__global.topology_local.size() ==  4) ||  
+            if ((__global.topology_local.size() ==  2) ||  
+                (__global.topology_local.size() ==  4) ||  
                 (__global.topology_local.size() ==  8) ||
                 (__global.topology_local.size() == 16) || 
+                (__global.topology_local.size() == 32) || 
                 (__global.topology_local.size() == 64))
 #endif
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
