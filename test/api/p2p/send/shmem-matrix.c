@@ -660,7 +660,7 @@ int main (int argc, char ** argv)
   } /* end context loop */
 
   /* PAMI_Dispatch_set for functional tests (valid for all tasks) */
-  pami_dispatch_hint_t options;
+  pami_dispatch_hint_t options = (pami_dispatch_hint_t) {0};
 
   for (i = 0; i < num_contexts; i++) { /* context loop */
     options.use_shmem = PAMI_HINT_DEFAULT;
