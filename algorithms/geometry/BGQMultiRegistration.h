@@ -1578,7 +1578,8 @@ namespace PAMI
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2dNP_composite_factory, _context, _context_id);
 #endif
                 //  2 device protocols
-                if ((_mcomb2d_dput_composite_factory) && (__global.topology_local.size() != 64))
+                if ((_mcomb2d_dput_composite_factory) && (__global.topology_local.size() != 64)
+                    && (__global.topology_local.size() != 2) && (__global.topology_local.size() != 32))
                   geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, _mcomb2d_dput_composite_factory, _context, _context_id);
 
 #ifdef PAMI_ENABLE_X0_PROTOCOLS

@@ -69,6 +69,15 @@
       dst[l-1]  = res4;
       res1 = res2 = res3  = res4  = 0;
     }
+      res1 = OP(r0, r4);
+      res2 = OP(r1, r5);
+      res3 = OP(r2, r6);
+      res4 = OP(r3, r7);
+
+      dst[i-1]  = res1;
+      dst[j-1]  = res2;
+      dst[k-1]  = res3;
+      dst[l-1]  = res4;
   }
 
   //remainder of the ints
