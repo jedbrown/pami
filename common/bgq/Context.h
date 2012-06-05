@@ -1062,11 +1062,9 @@ namespace PAMI
         ///////////////////////////////////////////////////////////////
         TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
 
-        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-         && (_contextid == 0)
+	if (_contextid == 0)
 #endif
-           )
         {
           // Register one PGAS (mu+shmem, mu, or shmem)
           if ((__global.useMU()) && (__global.useshmem()))
@@ -1123,11 +1121,9 @@ namespace PAMI
 
         TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
 
-        if ((_clientid == 0)
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-         && (_contextid == 0)
+	if (_contextid == 0)
 #endif
-           )
         {
           if ((__global.useMU()) && (__global.useshmem()))
           {
@@ -1190,7 +1186,13 @@ namespace PAMI
                              ni_factory_shmem,
                              ni_factory_shmem_amc);
           }
-
+	}
+        if ((_clientid == 0)
+#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+         && (_contextid == 0)
+#endif
+           )
+	  {
           if (__global.useMU())
           {
             COMPILE_TIME_ASSERT(sizeof(MUAMMulticastFactory) <= ProtocolAllocator::objsize);
