@@ -35,62 +35,92 @@
 
 namespace CCMI
 {
-namespace Adaptor
-{
+  namespace Adaptor
+  {
 ///
 /// Cached All Sided Factory that caches the collective in the
 /// geometry and later retrieves the object. The reset method upates
 /// composite with new parameters
 ///
-template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key, pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT >
-class CachedAllSidedFactoryT : public AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >
-{
-protected:
-public:
-  CachedAllSidedFactoryT(pami_context_t ctxt,
-                         size_t         ctxt_id,
-                         pami_mapidtogeometry_fn cb_geometry,
-                         T_Conn                      *cmgr,
-                           Interfaces::NativeInterface *native):
-    AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >(ctxt,ctxt_id,cb_geometry,cmgr, native)
+    template < class T_Composite, MetaDataFn get_metadata, class T_Conn, PAMI::Geometry::ckeys_t T_Key, pami_xfer_type_t T_XFER_TYPE=PAMI_XFER_COUNT >
+    class CachedAllSidedFactoryT : public CollectiveProtocolFactory 
     {
+    protected:
+    public:
+      CachedAllSidedFactoryT(pami_context_t ctxt,
+                             size_t         ctxt_id,
+                             pami_mapidtogeometry_fn cb_geometry,
+                             T_Conn                      *cmgr,
+                             Interfaces::NativeInterface *native):
+      CollectiveProtocolFactory(ctxt, ctxt_id, cb_geometry),
+      _cmgr(cmgr),
+      _native(native)
+      {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "%p",this);
+        TRACE_FORMAT("<%p> native %p",this, native);
+        DO_DEBUG((templateName<MetaDataFn>()));
         TRACE_FN_EXIT();
-    }
+      }
 
-    virtual Executor::Composite * generate(pami_geometry_t              geometry,
-                                           void                       * cmd)
-    {
+      virtual ~CachedAllSidedFactoryT()
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        TRACE_FN_EXIT();
+      }
+
+      /// NOTE: This is required to make "C" programs link successfully with virtual destructors
+      void operator delete(void * p)
+      {
+        CCMI_abort();
+      }
+
+
+      virtual Executor::Composite * generate(pami_geometry_t              geometry,
+                                             void                       * cmd)
+      {
         TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
         /// \todo does NOT support multicontext
-        T_Composite *composite = (T_Composite *) g->getKey((size_t)0, T_Key);
+        T_Composite *composite = (T_Composite *) g->getKey(this->_context_id, T_Key);
         TRACE_FORMAT( "<%p>composite %p",this,composite);
 
-        if (!composite)
+        if(!composite)
         {
-            composite = (T_Composite *) AllSidedCollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::generate(geometry, cmd);
-            pami_xfer_t *xfer = (pami_xfer_t *)cmd;
-            composite->setDoneCallback(xfer->cb_done, xfer->cookie);
-            TRACE_FORMAT( "<%p>composite %p",this,composite);
-            g->setKey((size_t)0, /// \todo does NOT support multicontext
-                      T_Key,
-                      (void*)composite);
+          pami_xfer_t *xfer = (pami_xfer_t *)cmd;
+          composite = (T_Composite*)  _alloc.allocateObject();
+          TRACE_FORMAT("<%p> composite %p",this, composite);
+          new (composite) T_Composite(this->_context,this->_context_id, _native, _cmgr, geometry, xfer, xfer->cb_done, xfer->cookie);
+          g->setKey(this->_context_id,
+                    T_Key,
+                    (void*)composite);
         }
         else
         {
-            pami_xfer_t *xfer = (pami_xfer_t *) cmd;
-            composite->setDoneCallback(xfer->cb_done, xfer->cookie);
-            //Reset composite with new collective inputs
-            composite->reset (geometry, cmd);
+          pami_xfer_t *xfer = (pami_xfer_t *) cmd;
+          composite->setDoneCallback(xfer->cb_done, xfer->cookie);
+          //Reset composite with new collective inputs
+          composite->reset (geometry, cmd);
         }
 
         TRACE_FN_EXIT();
         return composite;
-    }
-};
-};
+      }
+      virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
+      {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>",this);
+        DO_DEBUG((templateName<MetaDataFn>()));
+        get_metadata(mdata);
+        _native->metadata(mdata,T_XFER_TYPE);
+        TRACE_FN_EXIT();
+      }
+    private:
+      T_Conn                                        * _cmgr;
+      Interfaces::NativeInterface                   * _native;
+      PAMI::MemoryAllocator<sizeof(T_Composite), 16>  _alloc;
+    };
+  };
 };
 
 #undef  DO_TRACE_ENTEREXIT
