@@ -47,7 +47,6 @@ namespace PAMI
     namespace MU
     {
       static const size_t  msync_bytes     = 1;
-      static const size_t  NumClassRoutes  = 16;
       static const size_t  cw_classroute   = 0; 
       class MUMultisyncModel : public Interface::MultisyncModel<MUMultisyncModel, MU::Context, msync_bytes>
       {
@@ -80,9 +79,8 @@ namespace PAMI
         {
           TRACE_FN_ENTER();
           //Initialize comm world
-          memset (_inited, 0, sizeof(_inited));
           int rc = 0;
-          __MUGlobal.getMuRM().setGITable(_inited);
+          __MUGlobal.getMuRM().getGITable(&_inited);
           rc = MUSPI_GIBarrierInit ( &_giBarrier[cw_classroute], cw_classroute );
           PAMI_assert (rc == 0);
           _inited[cw_classroute] = 1;
@@ -103,7 +101,7 @@ namespace PAMI
           PAMI_assert(devinfo);
           classroute = (size_t)devinfo - 1;
 
-	  //          if (!_inited[classroute])
+	        if (!_inited[classroute])
           {
             TRACE_FORMAT( "<%p> %p connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
             int rc = 0;
@@ -177,7 +175,7 @@ namespace PAMI
         pami_context_t             _context;
         MU::Context              & _mucontext;
         Generic::Device          & _gdev;
-        uint8_t                    _inited [NumClassRoutes];
+        uint8_t                   *_inited; // [NumClassRoutes]; Resource Manger allocates in shared memory
         MUSPI_GIBarrier_t          _giBarrier[NumClassRoutes];  
         pami_work_t                _work;
         CompletionMsg              _completionmsg;

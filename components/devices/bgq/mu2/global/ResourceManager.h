@@ -115,6 +115,8 @@ namespace PAMI
   {
     namespace MU
     {
+			static const size_t NumClassRoutes  = 16;
+
       static const size_t numTorusDirections           = BGQ_TDIMS<<1; // 10 directions
       static const size_t numFifoPinIndices            = 16;
       static const size_t optimalNumInjFifosPerContext = numTorusDirections;
@@ -985,7 +987,7 @@ fprintf(stderr, "%s\n", buf);
 #endif // TRACE_CLASSROUTES
 	      int last = MUSPI_ReleaseClassrouteId(id, PAMI_MU_CR_SPI_VC,
 	                                                        NULL, &_gicrdata);
-	      if(_inited) _inited[id] = 0;
+	      _inited[id] = 0;
 	      if (last)
 	      {
 	        // see Coll case above...
@@ -1006,9 +1008,9 @@ fprintf(stderr, "%s\n", buf);
 	  geom->setKey(0,PAMI::Geometry::CKEY_MSYNC_CLASSROUTEID, NULL);
 	  return PAMI_SUCCESS;
 	}
-	void setGITable(uint8_t* tbl)
+	void getGITable(uint8_t** tbl)
 	{
-		_inited = tbl;
+		*tbl = _inited;
 	}
       private:
 	static void start_over(pami_context_t ctx, void *cookie, pami_result_t result)
@@ -1814,7 +1816,7 @@ fprintf(stderr, "%s\n", buf);
 	void *_cncrdata; // used by MUSPI routines to keep track of
 	               // classroute assignments - persistent!
 	void *_gicrdata; // (ditto)
-  uint8_t             *_inited;
+  uint8_t             *_inited; // shared GIBarrier inited flag table
 	// _pinInfo is an array of entries.  Each entry has info for when there
 	// are a specific number of inj fifos in the context.
 	// There are 10 entries, for 1 fifo, 2 fifos, ..., 10 fifos.
@@ -3795,6 +3797,11 @@ void PAMI::Device::MU::ResourceManager::allocateGlobalResources()
 	}
       TRACE((stderr,"MU ResourceManager: allocateGlobalResources:  RecFifoThreshold is set to %lu\n",threshold));
     }
+
+	allocateMemory( "GIBarrier_inited_table" /*useSharedMemory*/, (void **)(&_inited), 8, sizeof(uint8_t)*NumClassRoutes );
+  PAMI_assertf( _inited != NULL, "Shared memory is full.\n" );
+	//memset (_inited, 0, sizeof(uint8_t)*NumClassRoutes);
+
 } // End: allocateGlobalResources()
 
 
