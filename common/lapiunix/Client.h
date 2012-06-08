@@ -236,7 +236,7 @@ namespace PAMI
     {
       PAMI::Context *ctxt = (PAMI::Context *)arg;
       PAMI::Client  *clnt = (PAMI::Client *)ctxt->getClient();
-      
+
       if ( (arg != NULL) && ((LapiImpl::Context *)arg)->initialized ) {
         // work around the problem caused by Mellanox FCA invoking progress
         // function after FCA context is destroyed
@@ -379,7 +379,8 @@ namespace PAMI
       _client ((pami_client_t) this),
       _world_list(NULL),
       _mm (),
-      _disable_shm(true)
+      _disable_shm(true),
+      _advance_is_safe(true)
       {
         static size_t   next_client_id   = 0;
         _clientid                        = next_client_id++;
