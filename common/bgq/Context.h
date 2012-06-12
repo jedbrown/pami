@@ -68,7 +68,7 @@
 #undef DO_TRACE_DEBUG
 #define DO_TRACE_ENTEREXIT 0
 #define DO_TRACE_DEBUG     0
-
+#define TRACE_FORMAT_DETAILED(...) //TRACE_FORMAT(__VA_ARGS__)
 #include "algorithms/geometry/GeometryOptimizer.h"
 
 namespace PAMI
@@ -109,7 +109,7 @@ namespace PAMI
     niName("SHMEM:-")
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     }
     ///
@@ -118,7 +118,7 @@ namespace PAMI
     void metadata(pami_metadata_t *m, pami_xfer_type_t t)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p> %s type %u", this, m->name, t);
+      TRACE_FORMAT_DETAILED("<%p> %s type %u",this, m->name, t);
       // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" !
       // We'll replace DEVICE:DEVICE with our override string or leave
       // it alone if our assumption is obviously wrong (strstr() fails)
@@ -144,7 +144,7 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT("<%p> %s", this, m->name);
+      TRACE_FORMAT_DETAILED("<%p> %s",this, m->name);
       TRACE_FN_EXIT();
     };
   };
@@ -169,7 +169,7 @@ namespace PAMI
                                                                                                                                                         allocator)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     };
 
@@ -184,7 +184,7 @@ namespace PAMI
 
       if(local.size() == global->size()) result = PAMI_SUCCESS; // all local/shmem - ok
 
-      TRACE_FORMAT("<%p> result %u/%u", this, result, *flag);
+      TRACE_FORMAT_DETAILED("<%p> result %u/%u",this, result, *flag);
       TRACE_FN_EXIT();
       return result;
     };
@@ -212,7 +212,7 @@ namespace PAMI
       }
       else niName = "-:MU";
 
-      TRACE_FORMAT("<%p>%s,%d", this, niName, T_Range_Hi);
+      TRACE_FORMAT_DETAILED("<%p>%s,%d",this, niName, T_Range_Hi);
       TRACE_FN_EXIT();
     }
 
@@ -227,7 +227,7 @@ namespace PAMI
       }
       else niName = "-:MU";
 
-      TRACE_FORMAT("<%p>%s,%d", this, niName, T_Range_Hi);
+      TRACE_FORMAT_DETAILED("<%p>%s,%d",this, niName, T_Range_Hi);
       TRACE_FN_EXIT();
     }
     ///
@@ -236,7 +236,7 @@ namespace PAMI
     void metadata(pami_metadata_t *m, pami_xfer_type_t t)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p> %s type %u", this, m->name, t);
+      TRACE_FORMAT_DETAILED("<%p> %s type %u",this, m->name, t);
       // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" !
       // We'll replace DEVICE:DEVICE with our override string or leave
       // it alone if our assumption is obviously wrong (strstr() fails)
@@ -262,7 +262,7 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT("<%p> %s", this, m->name);
+      TRACE_FORMAT_DETAILED("<%p> %s",this, m->name);
 
       if(T_Range_Hi)
       {
@@ -301,7 +301,7 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT("<%p> %s, rangeminmax %u, range_hi %zu", this, m->name,
+      TRACE_FORMAT_DETAILED("<%p> %s, rangeminmax %u, range_hi %zu",this, m->name,
                    m->check_correct.values.rangeminmax, m->range_hi);
       TRACE_FN_EXIT();
     };
@@ -320,7 +320,7 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       niName = "SHMEM:MU";
-      TRACE_FORMAT("<%p>%s", this, niName);
+      TRACE_FORMAT_DETAILED("<%p>%s",this, niName);
       TRACE_FN_EXIT();
     }
 
@@ -329,7 +329,7 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       niName = "SHMEM:MU";
-      TRACE_FORMAT("<%p>%s", this, niName);
+      TRACE_FORMAT_DETAILED("<%p>%s",this, niName);
       TRACE_FN_EXIT();
     }
 
@@ -355,7 +355,7 @@ namespace PAMI
       }
 
       m->name = name;
-      TRACE_FORMAT("<%p> %s", this, m->name);
+      TRACE_FORMAT_DETAILED("<%p> %s",this, m->name);
 
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
@@ -388,14 +388,14 @@ namespace PAMI
       allocator)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     };
     pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
     {
       TRACE_FN_ENTER();
       *flag = 0;
-      TRACE_FORMAT("<%p> result %u/%u", this, PAMI_OTHER, *flag);
+      TRACE_FORMAT_DETAILED("<%p> result %u/%u",this, PAMI_OTHER, *flag);
       TRACE_FN_EXIT();
       return PAMI_OTHER;// query required (short metadata)
     };
@@ -473,14 +473,14 @@ namespace PAMI
       allocator)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     };
     pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
     {
       TRACE_FN_ENTER();
       *flag = 0;
-      TRACE_FORMAT("<%p> result %u/%u", this, PAMI_OTHER, *flag);
+      TRACE_FORMAT_DETAILED("<%p> result %u/%u",this, PAMI_OTHER, *flag);
       TRACE_FN_EXIT();
       return PAMI_OTHER;// query required (non-contig)
     };
@@ -519,14 +519,14 @@ namespace PAMI
       allocator)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     };
     pami_result_t  analyze(size_t context_id, pami_topology_t *topology, int phase, int* flag)
     {
       TRACE_FN_ENTER();
       *flag = 0;
-      TRACE_FORMAT("<%p> result %u/%u", this, PAMI_OTHER, *flag);
+      TRACE_FORMAT_DETAILED("<%p> result %u/%u",this, PAMI_OTHER, *flag);
       TRACE_FN_EXIT();
       return PAMI_OTHER;// query required (non-contig)
     };
@@ -545,7 +545,7 @@ namespace PAMI
     niName("SHMEM:MU")
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT_DETAILED("<%p>",this);
       TRACE_FN_EXIT();
     }
     ///
@@ -554,7 +554,7 @@ namespace PAMI
     void metadata(pami_metadata_t *m, pami_xfer_type_t t)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p> %s type %u", this, m->name, t);
+      TRACE_FORMAT_DETAILED("<%p> %s type %u",this, m->name, t);
       // Following assumes that the string is "XXX:NAME:DEVICE:DEVICE" !
       // We'll replace DEVICE:DEVICE with our override string or leave
       // it alone if our assumption is obviously wrong (strstr() fails)
@@ -580,7 +580,7 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT("<%p> %s", this, m->name);
+      TRACE_FORMAT_DETAILED("<%p> %s",this, m->name);
       TRACE_FN_EXIT();
     };
   };
@@ -678,7 +678,7 @@ namespace PAMI
       // these calls create (allocate and construct) each element.
       // We don't know how these relate to contexts, they are semi-opaque.
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>", this);
+      TRACE_FORMAT("<%p>",this);
       TRACE_STRING("device init: generic");
       _generics = PAMI::Device::Generic::Device::Factory::generate(clientid, num_ctx, mm, NULL);
 
@@ -810,11 +810,16 @@ namespace PAMI
   class Context : public Interface::Context<PAMI::Context>
   {
   public:
+    typedef struct 
+    { 
+      int  skip_to_id;
+    } shared_data_t;
     inline Context (pami_client_t client, size_t clientid, size_t id, size_t num,
                     PlatformDeviceList *devices,
                     PAMI::Memory::MemoryManager * pmm, size_t bytes,
                     BGQGeometry *world_geometry,
-                    std::map<unsigned, pami_geometry_t> *geometry_map) :
+                    std::map<unsigned, pami_geometry_t> *geometry_map,
+                    shared_data_t *shared_data) :
     Interface::Context<PAMI::Context> (client, id),
     _client (client),
     _context ((pami_context_t)this),
@@ -852,7 +857,7 @@ namespace PAMI
       char *mms;
       mms = mmkey + sprintf(mmkey, "/pami-clt%zd-ctx%zd", clientid, id);
 
-      TRACE_FORMAT( "<%p>, clientid %zu, contextid %zu, dispatch.id %u", this, _clientid, _contextid, _dispatch.id);
+      TRACE_FORMAT("<%p>, clientid %zu, contextid %zu, dispatch.id %u",this, _clientid, _contextid, _dispatch.id);
       // ----------------------------------------------------------------
       // Compile-time assertions
       // ----------------------------------------------------------------
@@ -924,7 +929,7 @@ namespace PAMI
         rmw_mu = Protocol::Rmw::RmwOverSend<Device::MU::PacketModel>::generate(_devices->_mu[_contextid], __global.heap_mm);
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
 #if 0
       // ----------------------------------------------------------------
       // Initialize the memory region get protocol(s)
@@ -1030,7 +1035,7 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
 
       // Complete rget and rput protocol initialization
       if(((rget_mu != NULL) && (rget_shmem != NULL)) &&
@@ -1103,21 +1108,19 @@ namespace PAMI
         _rmw = rmw_shmem;
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
       ///////////////////////////////////////////////////////////////
       // Construct shmem native interface
       ///////////////////////////////////////////////////////////////
 
-      if((_clientid == 0)
-#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-         && (_contextid == 0)
-#endif
-        )
+      if ((_clientid == 0)
+          && (_contextid == 0)
+         )
       {
         // Can't construct these models on single process nodes (no shmem)
         if((__global.useshmem()) && (__global.topology_local.size() > 1))
         {
-          TRACE_FORMAT( "<%p> construct shmem native interface and models", this);
+          TRACE_FORMAT("<%p> construct shmem native interface and models",this);
           _shmemMcastModel         = (ShmemMcstModel*)_shmemMcastModel_storage;
           _shmemMcombModel         = (ShmemMcombModel*)_shmemMcombModel_storage;
           _shmemMsyncModel         = (ShmemMsyncModel*)_shmemMsyncModel_storage;
@@ -1139,15 +1142,14 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
 
       ///////////////////////////////////////////////////////////////
       // Register collectives
       ///////////////////////////////////////////////////////////////
-      TRACE_FORMAT( "<%p> Register collectives(%p,%p,%zu,%zu", this, client, this, id, clientid);
+      TRACE_FORMAT("<%p> Register collectives(%p,%p,%zu,%zu",this, client, this, id, clientid);
 
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
       if(_contextid == 0)
 #endif
       {
@@ -1179,14 +1181,13 @@ namespace PAMI
         }
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
 
       // The multi registration will use shmem/mu if they are ctor'd above.
-      if((_clientid == 0)
-#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-         && (_contextid == 0)
-#endif
-        )
+      // Even if we use PAMI_ENABLE_COLLECTIVE_MULTICONTEXT, these are context 0 only so no ifndef here.
+      if ((_clientid == 0)
+          && (_contextid == 0)
+          )
       {
         _multi_registration       =  new ((BGQRegistration*) _multi_registration_storage)
                                      BGQRegistration(_shmem_native_interface,
@@ -1202,12 +1203,20 @@ namespace PAMI
                                                      _big_protocol);
         uint64_t inval = (uint64_t) - 1;
         _multi_registration->receive_global (_contextid, _world_geometry, &inval, 1);
+        // Because we only register these on context 0, dispatch id's can get out of sync across contexts.
+        // So record our dispatch id after registering MU optimized collectives so that other contexts
+        //  can skip to that id without doing the registration.
+        shared_data->skip_to_id = _dispatch.id; 
+      }
+      else // skip to the same dispatch id as context 0 used after registering MU optimized collectives
+      {  
+        if(_contextid == 0) shared_data->skip_to_id = _dispatch.id; // !clientid == 0 must still set the skip id.
+        else _dispatch.id = shared_data->skip_to_id;
       }
 
-      TRACE_FORMAT( "<%p:%u>, dispatch.id %u", this, __LINE__, _dispatch.id);
+      TRACE_FORMAT("<%p>, dispatch.id %u",this,  _dispatch.id);
 
 #ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-
       if(_contextid == 0)
 #endif
       {
@@ -1215,10 +1224,10 @@ namespace PAMI
         {
           COMPILE_TIME_ASSERT(sizeof(CompositeNIFactory) <= ProtocolAllocator::objsize);
           COMPILE_TIME_ASSERT(sizeof(CompositeNIFactory_AMC) <= ProtocolAllocator::objsize);
-          TRACE_FORMAT("Allocator:  sizeof(CompositeNIFactory) %zu, ProtocolAllocator::objsize %zu", sizeof(CompositeNIFactory), ProtocolAllocator::objsize);
+          TRACE_FORMAT("<%p>Allocator:  sizeof(CompositeNIFactory) %zu, ProtocolAllocator::objsize %zu",this, sizeof(CompositeNIFactory), ProtocolAllocator::objsize);
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_amc = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-          TRACE_FORMAT("Composite CCMI NI %p, %p, registration %p", ni_factory, ni_factory_amc, _ccmi_registration_storage);
+          TRACE_FORMAT("<%p>Composite CCMI NI %p, %p, registration %p",this, ni_factory, ni_factory_amc, _ccmi_registration_storage);
           new (ni_factory) CompositeNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _mid_protocol);
           new (ni_factory_amc) CompositeNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _devices->_mu[_contextid], _mid_protocol);
           _ccmi_registration =  new((CCMIRegistration*)_ccmi_registration_storage)
@@ -1235,10 +1244,10 @@ namespace PAMI
         {
           COMPILE_TIME_ASSERT(sizeof(MUNIFactory) <= ProtocolAllocator::objsize);
           COMPILE_TIME_ASSERT(sizeof(MUNIFactory_AMC) <= ProtocolAllocator::objsize);
-          TRACE_FORMAT("Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu", sizeof(MUNIFactory), ProtocolAllocator::objsize);
+          TRACE_FORMAT("<%p>Allocator:  sizeof(MUNIFactory) %zu, ProtocolAllocator::objsize %zu",this, sizeof(MUNIFactory), ProtocolAllocator::objsize);
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_mu_amc = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-          TRACE_FORMAT("MU CCMI NI %p, %p, registration %p, _clientid %zu, _contextid %zu", ni_factory_mu, ni_factory_mu_amc, _ccmi_registration_mu_storage, _clientid, _contextid);
+          TRACE_FORMAT("<%p>MU CCMI NI %p, %p, registration %p, _clientid %zu, _contextid %zu",this, ni_factory_mu, ni_factory_mu_amc, _ccmi_registration_mu_storage, _clientid, _contextid);
           new (ni_factory_mu) MUNIFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           new (ni_factory_mu_amc) MUNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
           _ccmi_registration_mu =  new((CCMIRegistration*)_ccmi_registration_mu_storage)
@@ -1256,10 +1265,10 @@ namespace PAMI
           //use shmem
           COMPILE_TIME_ASSERT(sizeof(ShmemNIFactory) <= ProtocolAllocator::objsize);
           COMPILE_TIME_ASSERT(sizeof(ShmemNIFactory_AMC) <= ProtocolAllocator::objsize);
-          TRACE_FORMAT("Allocator:  sizeof(ShmemNIFactory) %zu, ProtocolAllocator::objsize %zu", sizeof(ShmemNIFactory), ProtocolAllocator::objsize);
+          TRACE_FORMAT("<%p>Allocator:  sizeof(ShmemNIFactory) %zu, ProtocolAllocator::objsize %zu",this, sizeof(ShmemNIFactory), ProtocolAllocator::objsize);
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_shmem = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_shmem_amc = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-          TRACE_FORMAT("Shmem CCMI NI %p, %p, registration %p", ni_factory_shmem, ni_factory_shmem_amc, _ccmi_registration_shmem_storage);
+          TRACE_FORMAT("<%p>Shmem CCMI NI %p, %p, registration %p",this, ni_factory_shmem, ni_factory_shmem_amc, _ccmi_registration_shmem_storage);
           new (ni_factory_shmem) ShmemNIFactory (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _mid_protocol);
           new (ni_factory_shmem_amc) ShmemNIFactory_AMC (_client, _context, _clientid, _contextid, _devices->_shmem[_contextid], _mid_protocol);
           _ccmi_registration_shmem =  new((CCMIRegistration*)_ccmi_registration_shmem_storage)
@@ -1273,19 +1282,16 @@ namespace PAMI
                                                        ni_factory_shmem_amc);
         }
       }
-
-      if((_clientid == 0)
-#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
-         && (_contextid == 0)
-#endif
-        )
+      if ((_clientid == 0)
+          && (_contextid == 0)
+         )
       {
         if(__global.useMU())
         {
           COMPILE_TIME_ASSERT(sizeof(MUAMMulticastFactory) <= ProtocolAllocator::objsize);
-          TRACE_FORMAT("Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu", sizeof(MUAMMulticastFactory), ProtocolAllocator::objsize);
+          TRACE_FORMAT("<%p>Allocator:  sizeof(MUAMMulticastFactory) %zu, ProtocolAllocator::objsize %zu",this, sizeof(MUAMMulticastFactory), ProtocolAllocator::objsize);
           CCMI::Interfaces::NativeInterfaceFactory *ni_factory_muam = (CCMI::Interfaces::NativeInterfaceFactory *) _protocol.allocateObject();
-          TRACE_FORMAT("MU AM CCMI NI %p, registration %p", ni_factory_muam,  _ccmi_registration_muam_storage);
+          TRACE_FORMAT("<%p>MU AM CCMI NI %p, registration %p",this, ni_factory_muam,  _ccmi_registration_muam_storage);
           new (ni_factory_muam) MUAMMulticastFactory (_client, _context, _clientid, _contextid, _devices->_mu[_contextid], _big_protocol);
 
           _ccmi_registration_muam =  new((CCMIRegistrationKey2*)_ccmi_registration_muam_storage)
@@ -1338,52 +1344,56 @@ namespace PAMI
         }
       }
 
-      // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-      if(_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
-
-      // Can always use MU if it's available
-      if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
-
-      // Can always use composite if it's available
-      if(_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
-
-      if(_ccmi_registration_shmem)
+      if (_contextid == 0)
       {
-        _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
-        _ccmi_registration_shmem->analyze(_contextid, _world_geometry, 0);
-      }
-
-      if(_ccmi_registration_mu)
-      {
-        _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
-        _ccmi_registration_mu->analyze(_contextid, _world_geometry, 0);
-      }
-
-      if(_ccmi_registration)
-      {
-        _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
-        _ccmi_registration->analyze(_contextid, _world_geometry, 0);
-      }
-
-      if(_ccmi_registration_muam)
-      {
-        _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
-        _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
-      }
-
-      if(_ccmi_registration_mudput)
-      {
-        //printf("Analyze mu dput on comm world\n");
-        _ccmi_registration_mudput->analyze(_contextid, _world_geometry, 0);
-      }
-
-      if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
-      {
-        _multi_registration->analyze(_contextid, _world_geometry, 0);
-
-        // for now, this is the only registration that has a phase 1...
-        // We know that _world_geometry is always "optimized" at create time.
-        _multi_registration->analyze(_contextid, _world_geometry, 1);
+  
+        // Can only use shmem pgas if the geometry is all local tasks, so check the topology
+        if(_pgas_shmem_registration && ((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()) _pgas_shmem_registration->analyze(_contextid, _world_geometry, 0);
+  
+        // Can always use MU if it's available
+        if(_pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, _world_geometry, 0);
+  
+        // Can always use composite if it's available
+        if(_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
+  
+        if(_ccmi_registration_shmem)
+        {
+          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+          _ccmi_registration_shmem->analyze(_contextid, _world_geometry, 0);
+        }
+  
+        if(_ccmi_registration_mu)
+        {
+          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+          _ccmi_registration_mu->analyze(_contextid, _world_geometry, 0);
+        }
+  
+        if(_ccmi_registration)
+        {
+          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+          _ccmi_registration->analyze(_contextid, _world_geometry, 0);
+        }
+  
+        if(_ccmi_registration_muam)
+        {
+          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+          _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
+        }
+  
+        if(_ccmi_registration_mudput)
+        {
+          //printf("Analyze mu dput on comm world\n");
+          _ccmi_registration_mudput->analyze(_contextid, _world_geometry, 0);
+        }
+  
+        if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+        {
+          _multi_registration->analyze(_contextid, _world_geometry, 0);
+  
+          // for now, this is the only registration that has a phase 1...
+          // We know that _world_geometry is always "optimized" at create time.
+          _multi_registration->analyze(_contextid, _world_geometry, 1);
+        }
       }
 
       TRACE_FN_EXIT();
@@ -1415,7 +1425,7 @@ namespace PAMI
           rc = Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).destroy();
         }
 
-        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FORMAT("<%p>rc = %d",this, rc);
         TRACE_FN_EXIT();
         return rc;
     }
@@ -1474,7 +1484,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.send (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this,rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1485,7 +1495,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.send (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this,rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1496,7 +1506,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.send (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1507,7 +1517,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.put (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this,rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1518,7 +1528,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.put (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1529,7 +1539,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.get (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1540,7 +1550,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.get (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1573,7 +1583,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.rput (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1584,7 +1594,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.rput (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1595,7 +1605,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.rget (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1606,7 +1616,7 @@ namespace PAMI
 
       pami_result_t rc = _dispatch.rget (parameters);
 
-      TRACE_FORMAT("rc = %d", rc);
+      TRACE_FORMAT("<%p>rc = %d",this, rc);
       TRACE_FN_EXIT();
       return rc;
     }
@@ -1652,7 +1662,7 @@ namespace PAMI
       TRACE_FN_ENTER();
       std::map<size_t, Geometry::Algorithm<BGQGeometry> > *algo =
       (std::map<size_t, Geometry::Algorithm<BGQGeometry> > *)parameters->algorithm;
-      TRACE_FORMAT("algorithm %p, context %p", algo, this);
+      TRACE_FORMAT("<%p>algorithm %p, context %p/%zu",this, algo, this, _contextid);
       TRACE_FN_EXIT();
       return(*algo)[_contextid].generate(parameters);
     }
@@ -1666,7 +1676,7 @@ namespace PAMI
       TRACE_FN_ENTER();
       std::map<size_t, Geometry::Algorithm<BGQGeometry> > *algo =
       (std::map<size_t, Geometry::Algorithm<BGQGeometry> > *)algorithm;
-      TRACE_FORMAT("algorithm %p, context %p, dispatch %zu, cookie %p, options %#X", algo, this, dispatch, cookie, *(unsigned*)&options);
+      TRACE_FORMAT("<%p>algorithm %p, context %p/%zu, dispatch %zu, cookie %p, options %#X",this, algo, this, _contextid, dispatch, cookie, *(unsigned*)&options);
       TRACE_FN_EXIT();
       return(*algo)[0].dispatch_set(_contextid, dispatch, fn, cookie, options);
     }
@@ -1725,7 +1735,7 @@ namespace PAMI
         _dispatch.set (id, send);
       }
 
-      TRACE_FORMAT("result = %d", result);
+      TRACE_FORMAT("<%p>result = %d",this, result);
       TRACE_FN_EXIT();
       return result;
     }
@@ -1792,7 +1802,7 @@ namespace PAMI
       TRACE_FN_ENTER();
 #if 1
       bool affinity = (coreAffinity() == Kernel_ProcessorCoreID());
-      TRACE_FORMAT("acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu", acquire, affinity, coreAffinity(), Kernel_ProcessorCoreID(), _contextid);
+      TRACE_FORMAT("<%p>acquire=%d, affinity=%d, coreAffinity=%u, Kernel_ProcessorCoreID=%u, ContextID=%zu",this, acquire, affinity, coreAffinity(), Kernel_ProcessorCoreID(), _contextid);
 #else
       bool affinity = !__global.useMU(); // if no MU, affinity anywhere
 #endif
@@ -1830,18 +1840,20 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
 
+      PAMI_assertf(_contextid == 0, "No support for context %zu optimized collectives",_contextid);
+
+      // Even if we use PAMI_ENABLE_COLLECTIVE_MULTICONTEXT, these are context 0 only so no ifndef here.
       if((_clientid == 0)
-#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
          && (_contextid == 0)
-#endif
         )
       {
-        TRACE_FORMAT("id %zu, geometry %p", _contextid, go->geometry());
+        TRACE_FORMAT("<%p>id %zu, geometry %p",this,_contextid, go->geometry());
         uint64_t  reduce_result[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         int n_multi = 0;
+        TRACE_FORMAT("<%p>id %zu, geometry %p, register %p, %d",this, _contextid, go->geometry(),reduce_result,n_multi);
         _multi_registration->register_local (_contextid, go->geometry(), reduce_result, n_multi);
+        TRACE_FORMAT("<%p>id %zu, geometry %p, register %p, %d",this,_contextid, go->geometry(),reduce_result,n_multi);
         go->registerWithOptimizer (_contextid, reduce_result, n_multi, receive_global, this );
-
       }
 
       TRACE_FN_EXIT();
@@ -1857,19 +1869,18 @@ namespace PAMI
                                 pami_result_t    result )
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("context id %zu, geometry %p", context_id, geometry);
       Context *context = (Context *) cookie;
+      TRACE_FORMAT("<%p>context id %zu, geometry %p",context, context_id, geometry);
       context->_multi_registration->receive_global(context_id, geometry, reduce_result, n);
       TRACE_FN_EXIT();
     }
 
-    inline pami_result_t analyze(size_t         dummy, /** \todo remove unnecessary context_id,*/
+    inline pami_result_t analyze(size_t         context_id, /* may be PAMI_ALL_CONTEXTS */
                                  BGQGeometry    *geometry,
                                  int phase = 0)
     {
-      PAMI_assert_debug(_contextid == dummy); /// \todo this is dumb
       TRACE_FN_ENTER();
-      TRACE_FORMAT("id %zu, registration %p, phase %d", _contextid, geometry, phase);
+      TRACE_FORMAT("<%p>id %zu, registration %p, phase %d",this, _contextid, geometry, phase);
 
       // Can only use shmem pgas if the geometry is all local tasks, so check the topology
       if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
@@ -1901,7 +1912,8 @@ namespace PAMI
 
       if(_ccmi_registration_muam)
       {
-        geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+        if (context_id != PAMI_ALL_CONTEXTS)
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_muam->analyze(_contextid, geometry, phase);
       }
 
@@ -1910,7 +1922,7 @@ namespace PAMI
         _ccmi_registration_mudput->analyze(_contextid, geometry, phase);
       }
 
-      if(_multi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+      if(_multi_registration && (context_id != PAMI_ALL_CONTEXTS))// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
         _multi_registration->analyze(_contextid, geometry, phase);
 
       TRACE_FN_EXIT();
@@ -2050,13 +2062,13 @@ namespace PAMI
     Composite_PGASCollreg       *_pgas_composite_registration;
     uint8_t                      _pgas_composite_registration_storage[sizeof(Composite_PGASCollreg)];
 
-    bool _dummy_disable;
-    bool _dummy_disabled;
+    bool                         _dummy_disable;
+    bool                         _dummy_disabled;
     PAMI::Device::Generic::GenericThread _dummy_work;
 
     Protocol::Rmw::Error        _no_rmw;
-    Dispatch<256> _dispatch;
-  public:
+    Dispatch<256>               _dispatch;
+    public:
     MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
     MatchQueue<>                                                           _ueb_queue;
   }; // end PAMI::Context

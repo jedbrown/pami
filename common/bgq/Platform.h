@@ -29,8 +29,8 @@
 /// \brief Constant used to specify alignment in declarations of lwarx/stwcx atomics.
 #define PAMI_NATIVE_ATOMIC_ALIGN	L1D_CACHE_LINE_SIZE
 
-// Enable multi-context CCMI/Optimized collective registration.  Default is only PGAS on multi-contexts.
-// #define PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+// Enable multi-context/endpoint PGAS/CCMI collective registration.  BGQ Optimized collectives are context 0 only.
+ #define PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
 
 // Enable BGQ shmem stack on sub-node geometries
 //#define PAMI_ENABLE_SHMEM_SUBNODE

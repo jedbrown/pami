@@ -45,6 +45,117 @@ extern PAMI::ResourceManager __pamiRM;
 
 namespace PAMI
 {
+  class MultiepCookie
+  {
+  public:
+    MultiepCookie(BGQGeometry*   geometry,
+                  pami_context_t master_context,
+                  pami_context_t cb_context,
+                  pami_event_function cb_done,
+                  void*          cookie):
+    _geometry(geometry),
+    _master_context(master_context),
+    _cb_context(cb_context),
+    _cb_done(cb_done),
+    _cookie(cookie)
+    {
+    }
+
+    static pami_result_t user_done(pami_context_t context, void *cookie)
+    {
+      TRACE_FN_ENTER();
+//      PAMI::Context *myContext;
+      MultiepCookie                *myCookie    = (MultiepCookie*) cookie;
+      pami_event_function      u_done = myCookie->getUserDone();
+      void                    *u_cookie  = myCookie->getUserCookie();
+      PAMI_assert_debug(u_done);
+      TRACE_FORMAT("<%p>MultiepCookie context %p, cookie %p, u_done %p, u_cookie %p",cookie, context, cookie, u_done, u_cookie);
+      if(u_done)
+        u_done(context, u_cookie, PAMI_SUCCESS);
+      __global.heap_mm->free((void *)myCookie);              //free cookie
+      TRACE_FN_EXIT();
+      return PAMI_SUCCESS;
+    }
+    static void barrier_done(pami_context_t context, void *cookie, pami_result_t result)
+    {
+      TRACE_FN_ENTER();
+      PAMI::Context *myContext   = (PAMI::Context *)context;
+      MultiepCookie *myCookie    = (MultiepCookie*) cookie;
+      PAMI::Context *masterContext = (PAMI::Context *) myCookie->getMasterContext();
+      TRACE_FORMAT("<%p>MultiepCookie Context %p/%zu, Master context %p/%zu, cookie %p",cookie, myContext, myContext->getId(), masterContext, masterContext->getId(),cookie);
+      if(myContext == masterContext)
+      {
+        PAMI::Context *userContext = (PAMI::Context *)myCookie->getUserContext();
+        TRACE_FORMAT("<%p>MultiepCookie User context %p/%zu",cookie,userContext,userContext->getId());
+        if(myContext == userContext)
+        {
+          TRACE_FN_EXIT();
+          user_done(context,cookie);
+          return;
+        }
+        else // post to user's context to call user_done
+          userContext->post(&myCookie->_work,
+                            user_done,
+                            cookie);
+      }
+      else
+        __global.heap_mm->free((void*)cookie);              //free cookie
+      TRACE_FN_EXIT();
+      return;
+    }
+    static pami_result_t barrier(pami_context_t context, void *cookie)
+    {
+      TRACE_FN_ENTER();
+      Context                      *myContext      = (Context*) context;
+      MultiepCookie                *myCookie    = (MultiepCookie*) cookie;
+      BGQGeometry                  *geometry =  myCookie->getGeometry();
+      TRACE_FORMAT("<%p>MultiepCookie Context %p/%zu, cookie %p, geometry %p",cookie, myContext, myContext->getId(),cookie,geometry);
+
+      geometry->processUnexpBarrier(&myContext->_ueb_queue,
+                                    &myContext->_ueb_allocator);
+      geometry->ue_barrier(barrier_done,
+                           cookie,
+                           myContext->getId(),
+                           context);
+
+      TRACE_FN_EXIT();
+      return PAMI_SUCCESS;
+    }
+    BGQGeometry*          getGeometry()
+    {
+      return _geometry;
+    }
+    pami_context_t        getMasterContext()
+    {
+      return _master_context;
+    }
+    pami_context_t        getUserContext()
+    {
+      return _cb_context;
+    }
+    void*                 getUserCookie()
+    {
+      return _cookie;
+    }
+    pami_event_function   getUserDone()
+    {
+      return _cb_done;
+    }
+    pami_work_t*          getWork()
+    {
+      return &_work;
+    }
+
+  protected:
+    pami_work_t              _work;           // work area for post
+    BGQGeometry             *_geometry;       // new geometry
+    pami_context_t           _master_context; // master context
+
+    pami_context_t           _cb_context;     // user's context 
+    pami_event_function      _cb_done;        // user's callback
+    void                    *_cookie;         // user's cookie
+  };
+
   class Client : public Interface::Client<PAMI::Client>
   {
   public:
@@ -70,7 +181,7 @@ namespace PAMI
       rc = __pamiRM.allocateClient( _name,
                                     &_clientid );
 
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> %s, allocate rc=%d", Kernel_ProcessorID(),this, _clientid, _name, rc);
+      TRACE_FORMAT("<%p:%zu> %s, allocate rc=%d", this, _clientid, _name, rc);
 
       if( rc == PAMI_SUCCESS )
       {
@@ -118,7 +229,7 @@ namespace PAMI
                                         size_t                 num_configs)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p>",Kernel_ProcessorID(), client);
+      TRACE_FORMAT("<%p>", client);
       pami_result_t result;
 
       // If a client with this name is not already initialized...
@@ -136,7 +247,7 @@ namespace PAMI
     static void destroy_impl (pami_client_t client)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p>", Kernel_ProcessorID(),client);
+      TRACE_FORMAT("<%p>", client);
       PAMI::Client *clt = (PAMI::Client *)client;
 
       // Deallocate this client
@@ -176,7 +287,7 @@ namespace PAMI
                                              size_t                ncontexts)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> ncontexts %zu", Kernel_ProcessorID(),this, _clientid, ncontexts);
+      TRACE_FORMAT("<%p:%zu> ncontexts %zu", this, _clientid, ncontexts);
       size_t n = ncontexts;
 
       if(_ncontexts != 0)
@@ -187,7 +298,7 @@ namespace PAMI
 
       if(ncontexts > maxContexts_impl())
       {
-        TRACE_FORMAT( " error, ncontexts (%zu) is greater than max_contexts (%zu)", ncontexts, maxContexts_impl());
+        TRACE_FORMAT(" error, ncontexts (%zu) is greater than max_contexts (%zu)", ncontexts, maxContexts_impl());
         TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
@@ -195,7 +306,7 @@ namespace PAMI
       pami_result_t rc;
       rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
       PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zu], errno=%d\n", n, errno);
-      TRACE_FORMAT( "(%8.8u) mm available %zu", Kernel_ProcessorID(),_mm.available());
+      TRACE_FORMAT(" mm available %zu", _mm.available());
 
       _platdevs.generate(_clientid, n, _mm); // _mm is the client-scoped shared memory manager
 
@@ -214,14 +325,14 @@ namespace PAMI
         if(*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
         else if(*s == 'k' || *s == 'K') bytes *= 1024;
       }
-
-      TRACE_FORMAT( "(%8.8u) mm bytes %zu", Kernel_ProcessorID(),bytes);
+      TRACE_FORMAT(" mm bytes %zu", bytes);
       char key[PAMI::Memory::MMKEYSIZE];
       sprintf(key, "/pami-clt%zd-ctx-mm", _clientid);
       rc = _xmm.init(__global.shared_mm, bytes * n, 0, 0, 0, key);
       PAMI_assertf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
                    key, bytes * n);
 
+      Context::shared_data_t data = {-1};
       for(size_t x = 0; x < n; ++x)
       {
         context[x] = (pami_context_t) & _contexts[x];
@@ -234,11 +345,11 @@ namespace PAMI
         __commThreads.initContext(x, context[x]);
 #endif // USE_COMMTHREADS
         new (&_contexts[x]) PAMI::Context(this->getClient(), _clientid, x, n,
-                                          &_platdevs, &_xmm, bytes, _world_geometry, &_geometry_map);
+                                          &_platdevs, &_xmm, bytes, x==0? _world_geometry:NULL, &_geometry_map, &data);
       }
 
       _ncontexts = (size_t)n;
-      TRACE_FORMAT( "(%8.8u) ncontexts %zu exit", Kernel_ProcessorID(), _ncontexts);
+      TRACE_FORMAT(" ncontexts %zu exit",  _ncontexts);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -252,7 +363,7 @@ namespace PAMI
     inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> ncontexts %zu", Kernel_ProcessorID(),this, _clientid, ncontexts);
+      TRACE_FORMAT("<%p:%zu> ncontexts %zu", this, _clientid, ncontexts);
       PAMI_assertf(ncontexts == _ncontexts, "destroyContext(%p,%zu) called without all contexts (expected %zu contexts)", context, ncontexts, _ncontexts);
       // for (i = 0.._ncontexts) PAMI_assertf(context[i] == &_contexts[i], "...");
 #ifdef USE_COMMTHREADS
@@ -391,7 +502,7 @@ namespace PAMI
     static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
+      TRACE_FORMAT(" cookie %p, context %p, error %u", cookie, context, err);
       PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 
       if(err != PAMI_SUCCESS)
@@ -412,6 +523,8 @@ namespace PAMI
       if(rc != PAMI_SUCCESS)
       {
         _geom_newopt_finish(context, cookie, rc);
+        TRACE_FN_EXIT();
+        return;
       }
       TRACE_FN_EXIT();
     }
@@ -419,7 +532,7 @@ namespace PAMI
     static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
+      TRACE_FORMAT(" cookie %p, context %p, error %u", cookie, context, err);
       BGQGeometry *gp = (BGQGeometry *)cookie;
 
       if(context)   // HACK! until no one calls completion with NULL context!
@@ -446,7 +559,7 @@ namespace PAMI
     static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
+      TRACE_FORMAT(" cookie %p, context %p, error %u", cookie, context, err);
       Geometry::GeometryOptimizer<BGQGeometry> *go = (Geometry::GeometryOptimizer<BGQGeometry> *) cookie;
       BGQGeometry *gp = go->geometry();
 
@@ -486,13 +599,14 @@ namespace PAMI
                                                         void                 * cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
-
-      /// \todo EP geometry support:
       size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset) ? _ncontexts : 1;
       size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset) ? 0 : context_offset;
-      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset, "No support for PAMI_ALL_CONTEXTS");
-
+      size_t         ctxt_arr_sz = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:context_offset+1;
+#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+      PAMI_assertf(start_off == 0, "No support for context %d collectives",start_off);
+#endif
+      TRACE_FORMAT("<%p:%zu> geometry %p/%p, context_offset %zu, nctxt %zu, start_off %zu, ctxt_arr_sz %zu", this, _clientid, geometry, *geometry,context_offset,nctxt,start_off,ctxt_arr_sz);
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
@@ -518,39 +632,76 @@ namespace PAMI
                                        slice_count,
                                        rank_slices,
                                        &_geometry_map,
-                                       start_off,
+                                       context_offset, /* use parameter which may be PAMI_ALL_CONTEXTS */
                                        nctxt);
 
-        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p",Kernel_ProcessorID(), start_off, nctxt,_ncontexts, new_geometry);
-
-        for(size_t n = start_off; n < nctxt; n++)
+        TRACE_FORMAT(" analyze %zu - %zu/%zu geometry %p", start_off, nctxt,_ncontexts, new_geometry);
+        for(size_t n = start_off; n < ctxt_arr_sz; n++)
         {
-          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(),&_contexts[n], new_geometry);
-          _contexts[n].analyze(n, new_geometry, 0);
+          TRACE_FORMAT(" analyze %p geometry %p", &_contexts[n], new_geometry);
+          _contexts[n].analyze(context_offset, /* use parameter which may be PAMI_ALL_CONTEXTS */
+                               new_geometry, 0);
         }
-
-        *geometry = (pami_geometry_t) new_geometry;
-
-        /// \todo  deliver completion to the appropriate context
-        new_geometry->setCompletion(fn, cookie);
-        new_geometry->addCompletion(); // ensure completion doesn't happen until
-        // all have been analyzed (_geom_opt_finish).
-
-        // Start the barrier (and then the global analyze and (maybe) the optimize ...
-        start_barrier(bargeom, new_geometry,
-                      ctxt->getId(), context,
-                      num_configs ? PAMI_GEOMETRY_OPTIMIZE : (pami_attribute_name_t) - 1);
-        // todo, fix barrier for proper context
-        new_geometry->processUnexpBarrier(&ctxt->_ueb_queue,
-                                          &ctxt->_ueb_allocator);
       }
-      else
+
+      if(start_off == 0 && nctxt == 1)
+      { // Only context 0, single context geometry uses optimized protocols 
+        if(geometry != NULL)
+        {
+          *geometry = (pami_geometry_t) new_geometry;
+
+          /// \todo  deliver completion to the appropriate context
+          new_geometry->setCompletion(fn, cookie);
+          new_geometry->addCompletion(); // ensure completion doesn't happen until
+                                         // all have been analyzed (_geom_opt_finish).
+
+          // Start the barrier (and then the global analyze and (maybe) the optimize ...
+          start_barrier(bargeom, new_geometry,
+                        ctxt->getId(), context,
+                        num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+          new_geometry->processUnexpBarrier(&ctxt->_ueb_queue,
+                                            &ctxt->_ueb_allocator);
+        }
+        else if(bargeom)
+        {
+          // non-participant members of parent won't know if new geom exists...
+          bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        }
+      }
+#ifdef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+      else // multicontext (endpoint) or non-0 context geometry are not optimized so just barrier on [n] contexts
       {
-        // non-participant members of parent won't know if new geom exists...
-        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        if(geometry != NULL)
+        {
+          *geometry = (pami_geometry_t) new_geometry;
+          for(ssize_t n=(ssize_t)ctxt_arr_sz-1; n>=(ssize_t)start_off; n--)
+          {
+            MultiepCookie *mcookie;
+            pami_result_t rc; 
+            rc = __global.heap_mm->memalign((void **)&mcookie,0,sizeof(MultiepCookie));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc multiep cookie");
+            new(mcookie) MultiepCookie(new_geometry,
+                                       (pami_context_t)&_contexts[start_off], 
+                                       (pami_context_t)&_contexts[n], 
+                                       fn,
+                                       cookie);
+            pami_work_t* work = mcookie->getWork();
+            TRACE_FORMAT(" post context work on context %zu(%zu,%zu), cookie %p",  n,ctxt_arr_sz,start_off, mcookie);
+            _contexts[n].post(work,
+                              MultiepCookie::barrier,
+                              mcookie);
+            //_contexts[n].advance_impl(10,rc);
+          }
+        }
+        else if(bargeom)
+        {
+          // non-participant members of parent won't know if new geom exists...
+          bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        }
       }
+#endif
 
-      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(), geometry, *geometry);
+      TRACE_FORMAT(" exit geometry %p/%p",  geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -567,14 +718,11 @@ namespace PAMI
                                                        void                  *cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
-
-      /// \todo EP geometry support:
-      //size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
-      size_t         nctxt     = _ncontexts; /// \todo How many contexts in the topology?  This is an extension create fn.
-      //size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+      PAMI::Context *ctxt = (PAMI::Context *)context;
+      size_t         nctxt     = 0;
       size_t         start_off = 0;
-      //PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+      BGQGeometry *new_geometry;
+      BGQGeometry *bargeom = (BGQGeometry *)parent;
 
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
@@ -583,56 +731,80 @@ namespace PAMI
         return PAMI_INVAL;
       }
 
-      BGQGeometry *new_geometry;
-      BGQGeometry *bargeom = (BGQGeometry *)parent;
-      PAMI::Context *ctxt = (PAMI::Context *)context;
-
       if(geometry != NULL)
       {
         pami_result_t rc;
         rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
                                         sizeof(*new_geometry)); /// \todo use allocator
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
-        TRACE_FORMAT("<%p> geometry %p ", this, new_geometry);
+        TRACE_FORMAT("<%p> geometry %p, sizeof geometry %zu ", this, new_geometry, sizeof(*new_geometry));
         new (new_geometry) BGQGeometry(_client,
                                        (PAMI::Geometry::Common *)parent,
                                        &__global.mapping,
                                        id,
                                        (PAMI::Topology *)topology,
                                        &_geometry_map,
-                                       start_off,
+                                       PAMI_ALL_CONTEXTS,
                                        nctxt);
 
-        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p", Kernel_ProcessorID(), start_off, nctxt,_ncontexts, new_geometry);
-
-        for(size_t n = start_off; n < nctxt; n++)
+        PAMI::Topology *local_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+        // Find endpoints that are in my task to calculate the total number of contexts participating
+        // as well as the indexes of those contexts
+        int index_array[MAX_CONTEXTS];
+        int num_local_ep       = 0;
+        int master_context_idx = -1;
+        for(size_t n=0; n<local_topology->size(); n++)
         {
-          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(), &_contexts[n], new_geometry);
-          _contexts[n].analyze(n, new_geometry, 0);
+          pami_endpoint_t ep    = local_topology->index2Endpoint(n);
+          pami_task_t     task;
+          size_t          offset;
+          PAMI_ENDPOINT_INFO(ep, task, offset);
+          if(task == __global.mapping.task())
+          {
+            if(ctxt->getId() == offset)
+              master_context_idx = num_local_ep;
+            index_array[num_local_ep++] = offset;
+          }
         }
+        PAMI_assertf(master_context_idx != -1, "Fatal:  Geometry create posted context is not represented in the endpoint list");
+        TRACE_FORMAT("<%p:%zu> geometry %p/%p, nctxt %zu, start_off %zu", this, _clientid, geometry, *geometry,nctxt,start_off);
 
+        TRACE_FORMAT(" analyze %zu - %zu/%zu geometry %p", start_off, nctxt,_ncontexts, new_geometry);
+
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
+        {
+          size_t idx = index_array[n];
+          TRACE_FORMAT("%s analyze %p geometry %p", __PRETTY_FUNCTION__, &_contexts[idx], new_geometry);
+          _contexts[idx].analyze(idx, new_geometry, 0);
+        }
         *geometry = (pami_geometry_t) new_geometry;
-
-        /// \todo  deliver completion to the appropriate context
-        new_geometry->setCompletion(fn, cookie);
-        new_geometry->addCompletion(); // ensure completion doesn't happen until
-        // all have been analyzed (_geom_opt_finish).
-
-        // Start the barrier (and then the global analyze and (maybe) the optimize ...
-        start_barrier(bargeom, new_geometry,
-                      ctxt->getId(), context,
-                      num_configs ? PAMI_GEOMETRY_OPTIMIZE : (pami_attribute_name_t) - 1);
-        // todo, fix barrier for proper context
-        new_geometry->processUnexpBarrier(&ctxt->_ueb_queue,
-                                          &ctxt->_ueb_allocator);
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
+        {
+          size_t idx = index_array[n];
+          MultiepCookie *mcookie;
+          pami_result_t rc; 
+          rc = __global.heap_mm->memalign((void **)&mcookie,0,sizeof(MultiepCookie));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc multiep cookie");
+          new(mcookie) MultiepCookie(new_geometry,
+                                     (pami_context_t)&_contexts[index_array[0]], 
+                                     (pami_context_t)&_contexts[idx], 
+                                     fn,
+                                     cookie);
+          pami_work_t* work = mcookie->getWork();
+          TRACE_FORMAT(" post context work on context %zu, cookie %p",  idx, mcookie);
+          _contexts[n].post(work,
+                            MultiepCookie::barrier,
+                            mcookie);
+          //_contexts[n].advance_impl(10,rc);
+        }
       }
-      else
+      else if(bargeom)
       {
         // non-participant members of parent won't know if new geom exists...
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
       }
 
-      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(),geometry, *geometry);
+      TRACE_FORMAT(" exit geometry %p/%p",  geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -651,13 +823,14 @@ namespace PAMI
                                                        void                 * cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
-
-      /// \todo EP geometry support:
       size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset) ? _ncontexts : 1;
       size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset) ? 0 : context_offset;
-      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset, "No support for PAMI_ALL_CONTEXTS");
-
+      size_t         ctxt_arr_sz = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:context_offset+1;
+#ifndef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+      PAMI_assertf(PAMI_ALL_CONTEXTS != context_offset,"No support for PAMI_ALL_CONTEXTS");
+      PAMI_assertf(start_off == 0, "No support for context %d collectives",start_off);
+#endif
+      TRACE_FORMAT("<%p:%zu> geometry %p/%p, context_offset %zu, nctxt %zu, start_off %zu, ctxt_arr_sz %zu", this, _clientid, geometry, *geometry,context_offset,nctxt,start_off,ctxt_arr_sz);
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
@@ -675,7 +848,7 @@ namespace PAMI
         rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
                                         sizeof(*new_geometry)); /// \todo use allocator
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
-        TRACE_FORMAT("<%p> geometry %p ", this, new_geometry);
+        TRACE_FORMAT("<%p> geometry %p, sizeof geometry %zu ", this, new_geometry, sizeof(*new_geometry));
         new (new_geometry) BGQGeometry(_client,
                                        (PAMI::Geometry::Common *)parent,
                                        &__global.mapping,
@@ -683,40 +856,76 @@ namespace PAMI
                                        task_count,
                                        tasks,
                                        &_geometry_map,
-                                       start_off,
+                                       context_offset, /* use parameter which may be PAMI_ALL_CONTEXTS */
                                        nctxt);
 
-        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p", Kernel_ProcessorID(),start_off, nctxt, _ncontexts, new_geometry);
-
-/// \todo        for(size_t n=start_off; n<nctxt; n++)
-        for(size_t n = start_off; n < nctxt; n++)
+        TRACE_FORMAT(" analyze %zu - %zu/%zu geometry %p", start_off, nctxt,_ncontexts, new_geometry);
+        for(size_t n = start_off; n < ctxt_arr_sz; n++)
         {
-          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(),&_contexts[n], new_geometry);
-          _contexts[n].analyze(n, new_geometry, 0);
+          TRACE_FORMAT(" analyze %p geometry %p", &_contexts[n], new_geometry);
+          _contexts[n].analyze(context_offset, /* use parameter which may be PAMI_ALL_CONTEXTS */
+                               new_geometry, 0);
         }
-
-        *geometry = (pami_geometry_t) new_geometry;
-
-        /// \todo  deliver completion to the appropriate context
-        new_geometry->setCompletion(fn, cookie);
-        new_geometry->addCompletion(); // ensure completion doesn't happen until
-        // all have been analyzed (_geom_opt_finish).
-
-        // Start the barrier (and then the global analyze and (maybe) the optimize ...
-        start_barrier(bargeom, new_geometry,
-                      ctxt->getId(), context,
-                      num_configs ? PAMI_GEOMETRY_OPTIMIZE : (pami_attribute_name_t) - 1);
-        // todo, fix barrier for proper context
-        new_geometry->processUnexpBarrier(&ctxt->_ueb_queue,
-                                          &ctxt->_ueb_allocator);
       }
-      else
+
+      if(start_off == 0 && nctxt == 1)
+      { // Only context 0, single context geometry uses optimized protocols 
+        if(geometry != NULL)
+        {
+          *geometry = (pami_geometry_t) new_geometry;
+
+          /// \todo  deliver completion to the appropriate context
+          new_geometry->setCompletion(fn, cookie);
+          new_geometry->addCompletion(); // ensure completion doesn't happen until
+                                         // all have been analyzed (_geom_opt_finish).
+
+          // Start the barrier (and then the global analyze and (maybe) the optimize ...
+          start_barrier(bargeom, new_geometry,
+                        ctxt->getId(), context,
+                        num_configs? PAMI_GEOMETRY_OPTIMIZE: (pami_attribute_name_t)-1);
+          new_geometry->processUnexpBarrier(&ctxt->_ueb_queue,
+                                            &ctxt->_ueb_allocator);
+        }
+        else if(bargeom)
+        {
+          // non-participant members of parent won't know if new geom exists...
+          bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        }
+      }
+#ifdef PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
+      else // multicontext (endpoint) or non-0 context geometry are not optimized so just barrier on [n] contexts
       {
-        // non-participant members of parent won't know if new geom exists...
-        bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        if(geometry != NULL)
+        {
+          *geometry = (pami_geometry_t) new_geometry;
+          for(ssize_t n=(ssize_t)ctxt_arr_sz-1; n>=(ssize_t)start_off; n--)
+          {
+            MultiepCookie *mcookie;
+            pami_result_t rc; 
+            rc = __global.heap_mm->memalign((void **)&mcookie,0,sizeof(MultiepCookie));
+            PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc multiep cookie");
+            new(mcookie) MultiepCookie(new_geometry,
+                                       (pami_context_t)&_contexts[start_off], 
+                                       (pami_context_t)&_contexts[n], 
+                                       fn,
+                                       cookie);
+            pami_work_t* work = mcookie->getWork();
+            TRACE_FORMAT(" post context work on context %zu(%zu,%zu), cookie %p",  n,ctxt_arr_sz,start_off, mcookie);
+            _contexts[n].post(work,
+                              MultiepCookie::barrier,
+                              mcookie);
+            //_contexts[n].advance_impl(10,rc);
+          }
+        }
+        else if(bargeom)
+        {
+          // non-participant members of parent won't know if new geom exists...
+          bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
+        }
       }
+#endif
 
-      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(), geometry, *geometry);
+      TRACE_FORMAT(" exit geometry %p/%p",  geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -731,18 +940,97 @@ namespace PAMI
                                                            pami_event_function     fn,
                                                            void                  * cookie)
     {
-      /// \todo EP geometry support:
-      PAMI_abortf("No support for geometry_create_endpointlist");
+      TRACE_FN_ENTER();
+      PAMI::Context *ctxt = (PAMI::Context *)context;
+      size_t         nctxt     = 0;
+      size_t         start_off = 0;
+      BGQGeometry *new_geometry;
+
+      if(geometry != NULL)
+      {
+        pami_result_t rc;
+        rc = __global.heap_mm->memalign((void **)&new_geometry, 0,
+                                        sizeof(*new_geometry)); /// \todo use allocator
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc new_geometry");
+        TRACE_FORMAT("<%p> geometry %p, sizeof geometry %zu ", this, new_geometry, sizeof(*new_geometry));
+        new (new_geometry) BGQGeometry(_client,
+                                       (BGQGeometry*)PAMI_GEOMETRY_NULL,
+                                       &__global.mapping,
+                                       id,
+                                       endpoint_count,
+                                       endpoints,
+                                       &_geometry_map,
+                                       true);
+
+        PAMI::Topology *local_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
+        // Find endpoints that are in my task to calculate the total number of contexts participating
+        // as well as the indexes of those contexts
+        int index_array[MAX_CONTEXTS];
+        int num_local_ep       = 0;
+        int master_context_idx = -1;
+        for(size_t n=0; n<local_topology->size(); n++)
+        {
+          pami_endpoint_t ep    = local_topology->index2Endpoint(n);
+          pami_task_t     task;
+          size_t          offset;
+          PAMI_ENDPOINT_INFO(ep, task, offset);
+          if(task == __global.mapping.task())
+          {
+            if(ctxt->getId() == offset)
+              master_context_idx = num_local_ep;
+            index_array[num_local_ep++] = offset;
+          }
+        }
+        PAMI_assertf(master_context_idx != -1, "Fatal:  Geometry create posted context is not represented in the endpoint list");
+        TRACE_FORMAT("<%p:%zu> geometry %p/%p, nctxt %zu, start_off %zu", this, _clientid, geometry, *geometry,nctxt,start_off);
+        // simple for now: only PAMI_GEOMETRY_OPTIMIZE
+        if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
+        {
+          TRACE_FN_EXIT();
+          return PAMI_INVAL;
+        }
+
+        TRACE_FORMAT(" analyze %zu - %zu/%zu geometry %p", start_off, nctxt,_ncontexts, new_geometry);
+
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
+        {
+          size_t idx = index_array[n];
+          TRACE_FORMAT("%s analyze %p geometry %p", __PRETTY_FUNCTION__, &_contexts[idx], new_geometry);
+          _contexts[idx].analyze(idx, new_geometry, 0);
+        }
+        *geometry = (pami_geometry_t) new_geometry;
+        for(size_t n=0; n<(size_t)num_local_ep;n++)
+        {
+          size_t idx = index_array[n];
+          MultiepCookie *mcookie;
+          pami_result_t rc; 
+          rc = __global.heap_mm->memalign((void **)&mcookie,0,sizeof(MultiepCookie));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc multiep cookie");
+          new(mcookie) MultiepCookie(new_geometry,
+                                     (pami_context_t)&_contexts[index_array[0]], 
+                                     (pami_context_t)&_contexts[idx], 
+                                     fn,
+                                     cookie);
+          pami_work_t* work = mcookie->getWork();
+          TRACE_FORMAT(" post context work on context %zu, cookie %p",  idx, mcookie);
+          _contexts[idx].post(work,
+                              MultiepCookie::barrier,
+                              mcookie);
+          //_contexts[n].advance_impl(10,rc);
+        }
+      }
+
+      TRACE_FORMAT(" exit geometry %p/%p",  geometry, *geometry);
+      TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
-
 
     inline pami_result_t geometry_query_impl(pami_geometry_t geometry,
                                              pami_configuration_t configuration[],
                                              size_t num_configs)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
+      TRACE_FORMAT("<%p:%zu>", this, _clientid);
       // for now, this must be very simple...
       if(num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
       {
@@ -770,7 +1058,7 @@ namespace PAMI
                                               void *cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
+      TRACE_FORMAT("<%p:%zu>", this, _clientid);
       // for now, this must be very simple...
       if(num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
       {
@@ -856,7 +1144,7 @@ namespace PAMI
                                                 void                *cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p ", Kernel_ProcessorID(),this, _clientid, (BGQGeometry *)geometry);
+      TRACE_FORMAT("<%p:%zu> geometry %p ", this, _clientid, (BGQGeometry *)geometry);
       /// \todo #warning must free up geometry resources, etc.
       BGQGeometry *gp = (BGQGeometry *)geometry;
       TRACE_FORMAT("<%p> geometry %p ", this, gp);
@@ -875,7 +1163,7 @@ namespace PAMI
     {
       TRACE_FN_ENTER();
       pami_geometry_t g = _geometry_map[comm];
-      TRACE_FORMAT( "(%8.8u)<%p>%s", Kernel_ProcessorID(),g, __PRETTY_FUNCTION__);
+      TRACE_FORMAT("<%p>%s", g, __PRETTY_FUNCTION__);
       TRACE_FN_EXIT();
       return g;
     }
@@ -931,7 +1219,7 @@ namespace PAMI
     inline void initializeMemoryManager ()
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
+      TRACE_FORMAT("<%p:%zu>", this, _clientid);
       char   shmemfile[PAMI::Memory::MMKEYSIZE];
 #if 0
       size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
@@ -959,7 +1247,7 @@ namespace PAMI
       // Round up to the page size
       //size_t size = (bytes + pagesize - 1) & ~(pagesize - 1);
 
-      //fprintf (stderr, "initialize client shmem to %zu bytes\n", bytes);
+      //fprintf (stderr, "initialize client shmem to %zu bytesg", bytes);
       pami_result_t rc;
       rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
       PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
@@ -986,7 +1274,7 @@ namespace PAMI
                                     &alg, /* making an assumption here about short working now */
                                     &mdata,
                                     1);
-      TRACE_FORMAT( "(%8.8u)<%p> algorithm %s", Kernel_ProcessorID(),this, mdata.name);
+      TRACE_FORMAT("<%p> algorithm %s", this, mdata.name);
       Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
 
       pami_event_function done_fn = _geom_newopt_finish;
@@ -1004,12 +1292,13 @@ namespace PAMI
                                                         done_fn,
                                                         (void*)go);
 
-      for(size_t i = 0; i < _ncontexts; ++i)
-      {
-        _contexts[i].registerWithOptimizer(go);
-      }
+//      for(size_t i = 0; i < _ncontexts; ++i)
+//      {
+//        _contexts[i].registerWithOptimizer(go);
+//      }
+      _contexts[context_id].registerWithOptimizer(go);
 
-      TRACE_FORMAT( "(%8.8u)<%p:%zu> context %p  %s", Kernel_ProcessorID(),this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" ");
+      TRACE_FORMAT("<%p:%zu> context %p  %s", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" ");
 
       if(bargeom)
         if(bargeom->size() == 1)
@@ -1023,7 +1312,32 @@ namespace PAMI
       TRACE_FN_EXIT();
     }
 
+//  void start_barrier_no_opt(BGQGeometry          *bargeom,
+//                            BGQGeometry          *new_geometry,
+//                            size_t                context_id,
+//                            pami_context_t        context)
+//  {
+//    TRACE_FN_ENTER();
+//    TRACE_FORMAT("<%p>BGQ::Client::start_barrier_no_opt() algorithm %s", this);
+//
+//    pami_event_function done_fn = _geom_newopt_finish;
+//
+//
+//    if (bargeom)
+//      if (bargeom->size() == 1)
+//        Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start(context, (void *)go, PAMI_SUCCESS);
+//      else
+//        bargeom->default_barrier(Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start, (void *)go, context_id, context);
+//    else
+//      if (new_geometry->size() == 1)
+//      Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start(context, (void *)go, PAMI_SUCCESS);
+//    else
+//      new_geometry->ue_barrier(Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start, (void *)go, context_id, context);
+//    TRACE_FN_EXIT();
+//  }
+
   }; // end class PAMI::Client
+
 }; // end namespace PAMI
 
 #undef  DO_TRACE_ENTEREXIT
