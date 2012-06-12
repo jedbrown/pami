@@ -24,9 +24,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 
 static const char *optString = "DdSXh?";
 
+#define MAXSIZE 4096
 /* char device_str[3][50] = {"DEFAULT", "SHMem", "MU"}; */
 char hint_str[3][50] = {"PAMI_HINT_DEFAULT", "PAMI_HINT_ENABLE", "PAMI_HINT_DISABLE"};
 char xtalk_str[2][50] = {"no crosstalk", "crosstalk"};
@@ -36,8 +38,7 @@ char debug_str[500];
 
 size_t debug = 0;
 size_t _my_task;
-uint8_t __recv_buffer[2048];
-char recv_str[2048];               /* used to print __recv_buffer as string */
+uint8_t __recv_buffer[MAXSIZE];
 size_t __recv_size;
 size_t __header_errors = 0;
 size_t __data_errors = 0;
@@ -85,24 +86,13 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
 
       fprintf (stderr, "ERROR (E):validate(%p,%zu):  byte[%zu] != %d (&byte[%zu] = %p, value is %d)\n", addr, total_bytes, i, expected_value, i, &byte[i], byte[i]);
 
+      if (debug)
+          pause();
+
       status = 1;
     }
 
-    /* Print element to string to print later if desired */
-    sprintf(&recv_str[j], "%d", byte[i]);
-    if (byte[i] < 10) {
-      j++;
-    } else if (byte[i] < 100) {
-      j+=2;
-    } else {
-      j+=3;
-    }
   } /* end loop thru recv_buffer */
-
-  /* Print __recv_buffer */
-  if (debug) {
-    fprintf(stderr, "recv buffer[0:%zu] after send: %s\n", total_bytes-1, recv_str);
-  }
 
   return status;
 }
@@ -121,6 +111,9 @@ static void recv_done (pami_context_t   context,
 
   /* Check payload data integrity */
   validateRC = validate(__recv_buffer, __recv_size, 1);
+  if (debug) {
+      printf("PAYLOAD at %p with %zu bytes validated\n", __recv_buffer, __recv_size);
+  }
 
   switch (validateRC) {
 
@@ -165,6 +158,9 @@ static void test_dispatch (
 
   /* Check header data integrity */
   validateRC = validate(header_addr, header_size, 0);
+  if (debug) {
+      printf("HEADER at %p with %zu bytes validated\n", header_addr, header_size);
+  }
 
   switch (validateRC) {
 
@@ -204,7 +200,6 @@ static void test_dispatch (
     recv->offset   = 0;
     recv->data_fn  = PAMI_DATA_COPY;
     recv->data_cookie = NULL;
-    /*fprintf (stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn); */
   }
 
   return;
@@ -232,7 +227,6 @@ static void send_done_remote (pami_context_t   context,
     fprintf (stderr, "Called send_done_remote function.  active(%p): %zu -> %zu\n", active, *active, *active-1);
   }
   (*active)--;
-  /*fprintf (stderr, "... send_done_remote function.  active = %zu\n", *active); */
 }
 /* --------------------------------------------------------------- */
 
@@ -546,12 +540,14 @@ int main (int argc, char ** argv)
 
   size_t dispatch_recv_immediate_max[max_contexts][3];
   
-  uint8_t header[1024];
-  uint8_t data[1024];
+  uint8_t header[MAXSIZE];
+  uint8_t data[MAXSIZE];
 
-  for (i=0; i<1024; i++) {
+  for (i=0; i<MAXSIZE; i++) {
     header[i] = (uint8_t)i;
     data[i]   = (uint8_t)i;
+    assert(r==0);
+    __recv_buffer[i] = (uint8_t)(reset_value[r]);
   }
 
   size_t h, hsize = 0;
@@ -696,7 +692,7 @@ int main (int argc, char ** argv)
 
 		    /* Reset __recv_buffer to new value if this is last task/header/payload combo */
 		    if ((n == num_tasks - 1) && (h == hsize - 1) && (p == psize - 1)) {
-		      for (i = 0; i < 2048; i++) {			
+		      for (i = 0; i < MAXSIZE; i++) {			
 			if (r == reset_elements - 1) { /* time to loop back to 0 */
 			  __recv_buffer[i] = reset_value[0];
 			} else { /* move to next reset value */
@@ -715,7 +711,7 @@ int main (int argc, char ** argv)
 		    return 1;
 		  }
 
-		  fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [use_shmem=%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n\n", &hint_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], __recv_buffer[0], &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[0][hint]][0], header_bytes[h], data_bytes[p], _my_task, n, xtalk);
+		  fprintf (stderr, "===== PAMI_Send() FUNCTIONAL Test [use_shmem=%s][%s][%s][+/-1 bit = %d][%s] %zu %zu (%zu, 0) -> (%zu, %zu) =====\n", &hint_str[hint][0], &xtalk_str[xtalk][0], &callback_str[remote_cb][0], __recv_buffer[0], &longheader_str[header_bytes[h]>dispatch_recv_immediate_max[0][hint]][0], header_bytes[h], data_bytes[p], _my_task, n, xtalk);
 
 		  if (remote_cb) {
 		    send_active++;
@@ -755,7 +751,7 @@ int main (int argc, char ** argv)
 		  if (recv_active == 0) {
 
 		    /* Reset __recv_buffer */
-		    for (i = 0; i < 2048; i++) {
+		    for (i = 0; i < MAXSIZE; i++) {
 		      /* Need special cases for transitioning from 0 <-> 255 */
 		      if ((n == num_tasks - 1) && (h == hsize - 1) && (p == psize - 1)) { /* Last header/payload combo sent to last task */
 			if (r == reset_elements - 1) { /* time to loop back to 0 */
@@ -763,7 +759,7 @@ int main (int argc, char ** argv)
 			} else { /* move to next reset value */
 			  __recv_buffer[i] = reset_value[r+1];
 			}
-		      } else {
+              } else {
 			__recv_buffer[i] = reset_value[r];
 		      }
 		    }
@@ -842,7 +838,7 @@ int main (int argc, char ** argv)
 		if (recv_active == 0) {
 
 		  /* Reset __recv_buffer */
-		  for (i = 0; i < 2048; i++) {
+		  for (i = 0; i < MAXSIZE; i++) {
 		    /* Need special cases for transitioning from 0 <-> 255 */
 		    if ((h == hsize - 1) && (p == psize - 1)) { /* last header/payload combo */
 		      if (r == reset_elements - 1) { /* loop back to 0 */
@@ -850,10 +846,10 @@ int main (int argc, char ** argv)
 		      } else { /* move to next reset value */
 			__recv_buffer[i] = reset_value[r+1];
 		      }
-		    } else {
-		      __recv_buffer[i] = reset_value[r];
-		    }
-		  }
+            } else {
+              __recv_buffer[i] = reset_value[r];
+            }
+          }
 
 		  recv_active = 1;
 		}
@@ -898,6 +894,25 @@ int main (int argc, char ** argv)
 		}
 
 		send_active = 1;
+
+		if (recv_active == 0) {
+
+		  /* Reset __recv_buffer */
+		  for (i = 0; i < MAXSIZE; i++) {
+		    /* Need special cases for transitioning from 0 <-> 255 */
+		    if ((h == hsize - 1) && (p == psize - 1)) { /* last header/payload combo */
+		      if (r == reset_elements - 1) { /* loop back to 0 */
+			__recv_buffer[i] = reset_value[0];
+		      } else { /* move to next reset value */
+			__recv_buffer[i] = reset_value[r+1];
+		      }
+            } else {
+              __recv_buffer[i] = reset_value[r];
+            }
+          }
+
+		  recv_active = 1;
+		}
 
 		if (debug) {
 		  fprintf (stderr, "... after send advance loop\n");
