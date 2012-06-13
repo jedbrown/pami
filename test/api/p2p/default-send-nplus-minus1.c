@@ -52,7 +52,7 @@ unsigned validate (const void * addr, size_t bytes, size_t test_n_plus_minus1)
   uint8_t * byte = (uint8_t *) addr;
   uint8_t expected_value = 0;
   size_t total_bytes = 0;
-  size_t i, j = 0;
+  size_t i = 0;
 
   /* Verify data received as well as 0-minus-1 and n-plus-1 bytes */
   if (test_n_plus_minus1) {
