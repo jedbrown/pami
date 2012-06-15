@@ -96,7 +96,7 @@ int main(int argc, char*argv[])
                              &bar_must_query_algo,
                              &bar_must_query_md);
 
-    if (rc != PAMI_SUCCESS)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   barrier.cb_done   = cb_done;
@@ -127,7 +127,7 @@ int main(int argc, char*argv[])
                               1);
 
       if (rc != PAMI_SUCCESS)
-      return 1;
+        return 1;
 
     /*  Query the world geometry for allreduce algorithms */
     rc |= query_geometry_world(client,
@@ -140,7 +140,7 @@ int main(int argc, char*argv[])
                                &allreduce_must_query_algo,
                                &allreduce_must_query_md);
 
-      if (rc != PAMI_SUCCESS)
+    if (rc != PAMI_SUCCESS)
       return 1;
     total_alg = allreduce_num_algorithm[0]+allreduce_num_algorithm[1];
     for (nalg = 0; nalg < total_alg; nalg++)
@@ -218,10 +218,10 @@ int main(int argc, char*argv[])
                                       allreduce,
                                       dt_array[dt],
                                       sz, /* metadata uses bytes i, */
-                                      allreduce.cmd.xfer_allreduce.sndbuf,
+                                      sbuf,
                                       dt_array[dt],
                                       sz,
-                                      allreduce.cmd.xfer_allreduce.rcvbuf);
+                                      rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -244,7 +244,7 @@ int main(int argc, char*argv[])
                 reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
                 blocking_coll(context[iContext], &allreduce, &allreduce_poll_flag);
                 int rc_check;
-                rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+                rc |= rc_check = reduce_check_rcvbuf (sbuf, i, op, dt, task_id, num_tasks);
               if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s/%s\n", gProtocolName, dt_array_str[dt], op_array_str[op]);
               }
 
@@ -252,6 +252,7 @@ int main(int argc, char*argv[])
               allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
               allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+              memset(rbuf, 0xFF, dataSent);
 
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
