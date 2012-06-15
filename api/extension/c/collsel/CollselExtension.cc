@@ -68,6 +68,15 @@ pami_result_t CollselExtension::Collsel_table_unload_fn(advisor_table_t *advisor
   return   at->unload();
 }
 
+pami_result_t CollselExtension::Collsel_query_fn(advisor_table_t *advisor_table,
+                                                 pami_geometry_t  geometry,
+                                                 fast_query_t    *fast_query)
+{
+  // Todo:  Implement
+  return PAMI_SUCCESS;
+}
+
+
 pami_result_t CollselExtension::Collsel_advise_fn(fast_query_t        fast_query,
                                                   pami_xfer_type_t    xfer_type,
                                                   pami_xfer_t        *xfer,
