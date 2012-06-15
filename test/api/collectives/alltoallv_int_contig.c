@@ -185,11 +185,9 @@ int main(int argc, char*argv[])
       alltoallv_int.cb_done    = cb_done;
       alltoallv_int.cookie     = (void*) & alltoallv_int_poll_flag;
       alltoallv_int.algorithm  = *next_algo;
-      alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
       alltoallv_int.cmd.xfer_alltoallv_int.stype         = PAMI_TYPE_BYTE;
       alltoallv_int.cmd.xfer_alltoallv_int.stypecounts   = sndlens;
       alltoallv_int.cmd.xfer_alltoallv_int.sdispls       = sdispls;
-      alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = rbuf;
       alltoallv_int.cmd.xfer_alltoallv_int.rtype         = PAMI_TYPE_BYTE;
       alltoallv_int.cmd.xfer_alltoallv_int.rtypecounts   = rcvlens;
       alltoallv_int.cmd.xfer_alltoallv_int.rdispls       = rdispls;
@@ -232,14 +230,6 @@ int main(int argc, char*argv[])
               else
                 niter = NITERBW;
 
-              for (j = 0; j < num_tasks; j++)
-              {
-                sndlens[j] = rcvlens[j] = i;
-                sdispls[j] = rdispls[j] = i * j;
-
-                alltoallv_int_initialize_bufs_dt(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j, dt);
-
-              }
               alltoallv_int.cmd.xfer_alltoallv_int.rtype = dt_array[dt];
               alltoallv_int.cmd.xfer_alltoallv_int.stype = dt_array[dt];
 
@@ -250,10 +240,10 @@ int main(int argc, char*argv[])
                                         alltoallv_int,
                                         dt_array[dt],
                                         sz, /* metadata uses bytes i, */
-                                        alltoallv_int.cmd.xfer_alltoallv_int.sndbuf,
+                                        sbuf,
                                         dt_array[dt],
                                         sz,
-                                        alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf);
+                                        rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -263,6 +253,41 @@ int main(int argc, char*argv[])
 
                 if (result.bitmask) continue;
               }
+
+              /* Do one 'in-place' collective and validate it */
+              {
+                for (j = 0; j < num_tasks; j++)
+                {
+                  sndlens[j] = rcvlens[j] = i;
+                  sdispls[j] = rdispls[j] = i * j;
+                  alltoallv_int_initialize_bufs_dt(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j, dt); /*rbuf not used here*/
+  
+                }
+                alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
+                alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = sbuf;
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&alltoallv_int);
+                  if (result.bitmask) continue;
+                }
+                blocking_coll(context[iContext], &alltoallv_int, &alltoallv_int_poll_flag);
+  
+                int rc_check;
+                rc |= rc_check = alltoallv_int_check_rcvbuf_dt(alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf, rcvlens, rdispls, num_tasks, task_id, dt);
+  
+                if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              for (j = 0; j < num_tasks; j++)
+              {
+                sndlens[j] = rcvlens[j] = i;
+                sdispls[j] = rdispls[j] = i * j;
+                alltoallv_int_initialize_bufs_dt(sbuf, rbuf, sndlens, rcvlens, sdispls, rdispls, j, dt);
+
+              }
+              alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
+              alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = rbuf;
 
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 

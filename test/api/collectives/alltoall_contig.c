@@ -212,15 +212,8 @@ int main(int argc, char*argv[])
               else
                 niter = NITERBW;
 
-              for (j = 0; j < num_tasks; j++)
-              {
-                alltoall_initialize_bufs_dt(sbuf, rbuf, i, j, dt);
-              }
-
-              alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
               alltoall.cmd.xfer_alltoall.stype         = dt_array[dt];
               alltoall.cmd.xfer_alltoall.stypecount    = i;
-              alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
               alltoall.cmd.xfer_alltoall.rtype         = dt_array[dt];
               alltoall.cmd.xfer_alltoall.rtypecount    = i;
 
@@ -231,10 +224,10 @@ int main(int argc, char*argv[])
                                         alltoall,
                                         dt_array[dt],
                                         sz, /* metadata uses bytes i, */
-                                        alltoall.cmd.xfer_alltoall.sndbuf,
+                                        sbuf,
                                         dt_array[dt],
                                         sz,
-                                        alltoall.cmd.xfer_alltoall.rcvbuf);
+                                        rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -244,7 +237,34 @@ int main(int argc, char*argv[])
 
                 if (result.bitmask) continue;
               }
-
+              /* Do one 'in-place' collective and validate it */
+              {
+                for (j = 0; j < num_tasks; j++)
+                {
+                  alltoall_initialize_bufs_dt(sbuf, rbuf, i, j, dt); /*rbuf not used here*/
+                }
+                alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
+                alltoall.cmd.xfer_alltoall.rcvbuf        = sbuf;
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&alltoall);
+                  if (result.bitmask) continue;
+                }
+                blocking_coll(context[iContext], &alltoall, &alltoall_poll_flag);
+                int rc_check;
+                rc |= rc_check = alltoall_check_rcvbuf_dt(sbuf, i, num_tasks, task_id, dt);
+                
+                if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
+  
+              /* Iterate (and time) with separate buffers, not in-place */
+              for (j = 0; j < num_tasks; j++)
+              {
+                alltoall_initialize_bufs_dt(sbuf, rbuf, i, j, dt);
+              }
+              alltoall.cmd.xfer_alltoall.sndbuf        = sbuf;
+              alltoall.cmd.xfer_alltoall.rcvbuf        = rbuf;
+  
               blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
               ti = timer();

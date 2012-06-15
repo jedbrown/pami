@@ -85,7 +85,7 @@ int main(int argc, char*argv[])
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Query the world geometry for barrier algorithms */
@@ -99,7 +99,7 @@ int main(int argc, char*argv[])
                              &bar_must_query_algo,
                              &bar_must_query_md);
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   barrier.cb_done   = cb_done;
@@ -125,7 +125,7 @@ int main(int argc, char*argv[])
                                &reduce_must_query_algo,
                                &reduce_must_query_md);
 
-    if (rc == 1)
+    if (rc != PAMI_SUCCESS)
       return 1;
     total_alg = reduce_num_algorithm[0]+reduce_num_algorithm[1];
     for (nalg = 0; nalg < total_alg; nalg++)
@@ -165,8 +165,6 @@ int main(int argc, char*argv[])
       reduce.cb_done   = cb_done;
       reduce.cookie    = (void*) & reduce_poll_flag;
       reduce.algorithm = *next_algo;
-      reduce.cmd.xfer_reduce.sndbuf    = sbuf;
-      reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
       reduce.cmd.xfer_reduce.rtype     = PAMI_TYPE_BYTE;
       reduce.cmd.xfer_reduce.rtypecount = 0;
 
@@ -187,6 +185,9 @@ int main(int argc, char*argv[])
               size_t  dataSent = i * sz;
               int niter;
 
+              pami_endpoint_t root_ep;
+              root = 0; /* reset root on each message size */
+
               if (dataSent < CUTOFF)
                 niter = gNiterlat;
               else
@@ -205,10 +206,10 @@ int main(int argc, char*argv[])
                                       reduce,
                                       dt_array[dt],
                                       sz, /* metadata uses bytes i, */
-                                      reduce.cmd.xfer_reduce.sndbuf,
+                                      sbuf,
                                       dt_array[dt],
                                       sz,
-                                      reduce.cmd.xfer_reduce.rcvbuf);
+                                      rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -220,16 +221,42 @@ int main(int argc, char*argv[])
               }
 
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+
+              /* Do one 'in-place' collective and validate it */
+              {
+                PAMI_Endpoint_create(client, root, 0, &root_ep);
+                reduce.cmd.xfer_reduce.root    = root_ep;
+                reduce.cmd.xfer_reduce.sndbuf    = sbuf;
+                if (task_id == root)
+                  reduce.cmd.xfer_reduce.rcvbuf    = sbuf;
+                else
+                  reduce.cmd.xfer_reduce.rcvbuf    = NULL;
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&reduce);
+                  if (result.bitmask) continue;
+                }
+                blocking_coll(context[iContext], &reduce, &reduce_poll_flag);
+                if (task_id == root)
+                {  
+                  int rc_check;
+                  rc |= rc_check = reduce_check_rcvbuf (sbuf, i, op, dt, task_id, num_tasks);
+                  if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s/%s\n", gProtocolName, dt_array_str[dt], op_array_str[op]);
+                }
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              reduce.cmd.xfer_reduce.sndbuf    = sbuf;
+              reduce.cmd.xfer_reduce.rcvbuf    = rbuf;
+              reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
               memset(rbuf, 0xFF, dataSent);
 
               /* We aren't testing barrier itself, so use context 0. */
               blocking_coll(context[0], &barrier, &bar_poll_flag);
               ti = timer();
 
-              root = 0;
               for (j = 0; j < niter; j++)
               {
-                pami_endpoint_t root_ep;
                 PAMI_Endpoint_create(client, root, 0, &root_ep);
                 reduce.cmd.xfer_reduce.root    = root_ep;
 

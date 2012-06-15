@@ -151,10 +151,8 @@ int main(int argc, char*argv[])
       allgather.cb_done    = cb_done;
       allgather.cookie     = (void*) & allgather_poll_flag;
       allgather.algorithm  = *next_algo;
-      allgather.cmd.xfer_allgather.sndbuf     = buf;
       allgather.cmd.xfer_allgather.stype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.stypecount = 0;
-      allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
       allgather.cmd.xfer_allgather.rtype      = PAMI_TYPE_BYTE;
       allgather.cmd.xfer_allgather.rtypecount = 0;
 
@@ -202,8 +200,6 @@ int main(int argc, char*argv[])
                 allgather.cmd.xfer_allgather.stypecount = i;
                 allgather.cmd.xfer_allgather.rtypecount = i;
 
-                gather_initialize_sndbuf_dt (buf, i, task_id, dt);
-                memset(rbuf, 0xFF, i);
                 if(query_protocol)
                 {
                   size_t sz=get_type_size(dt_array[dt])*i;
@@ -211,10 +207,10 @@ int main(int argc, char*argv[])
                                           allgather,
                                           dt_array[dt],
                                           sz, /* metadata uses bytes i, */
-                                          allgather.cmd.xfer_allgather.sndbuf,
+                                          buf,
                                           dt_array[dt],
                                           sz,
-                                          allgather.cmd.xfer_allgather.rcvbuf);
+                                          rbuf);
                   if (next_md->check_correct.values.nonlocal)
                   {
                     /* \note We currently ignore check_correct.values.nonlocal
@@ -225,6 +221,31 @@ int main(int argc, char*argv[])
                   if (result.bitmask) continue;
                 }
 
+                /* Do one 'in-place' collective and validate it */
+                {
+                  memset(rbuf, 0xFF, i);
+                  allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
+                  allgather.cmd.xfer_allgather.sndbuf     = (char*)rbuf + dataSent*task_id;
+                  gather_initialize_sndbuf_dt (allgather.cmd.xfer_allgather.sndbuf, i, task_id, dt);
+                  if (checkrequired) /* must query every time */
+                  {
+                    result = next_md->check_fn(&allgather);
+                    if (result.bitmask) continue;
+                  }
+                  blocking_coll (context[iContext], &allgather, &allgather_poll_flag);
+                  int rc_check;
+                  rc |= rc_check = gather_check_rcvbuf_dt (num_tasks, rbuf, i, dt);
+    
+                  if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+                }
+  
+                /* Iterate (and time) with separate buffers, not in-place */
+                allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
+                allgather.cmd.xfer_allgather.sndbuf     = buf;
+
+                gather_initialize_sndbuf_dt (buf, i, task_id, dt);
+                memset(rbuf, 0xFF, i);
+  
                 blocking_coll(context[iContext], &barrier, &bar_poll_flag);
                 ti = timer();
 

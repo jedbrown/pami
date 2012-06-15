@@ -143,8 +143,6 @@ int main (int argc, char ** argv)
       allgatherv_int.cb_done    = cb_done;
       allgatherv_int.cookie     = (void*) & allgatherv_int_poll_flag;
       allgatherv_int.algorithm  = *next_algo;
-      allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
-      allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
       allgatherv_int.cmd.xfer_allgatherv_int.rtypecounts = lengths;
       allgatherv_int.cmd.xfer_allgatherv_int.rdispls     = displs;
 
@@ -193,8 +191,6 @@ int main (int argc, char ** argv)
               allgatherv_int.cmd.xfer_allgatherv_int.stype            = dt_array[dt];
               allgatherv_int.cmd.xfer_allgatherv_int.rtype            = dt_array[dt];
 
-              gather_initialize_sndbuf_dt (buf, i, task_id, dt);
-              memset(rbuf, 0xFF, i);
               if(query_protocol)
               {
                 size_t sz=get_type_size(dt_array[dt])*i;
@@ -202,10 +198,10 @@ int main (int argc, char ** argv)
                                         allgatherv_int,
                                         dt_array[dt],
                                         sz, /* metadata uses bytes i, */
-                                        allgatherv_int.cmd.xfer_allgatherv_int.sndbuf,
+                                        buf,
                                         dt_array[dt],
                                         sz,
-                                        allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf);
+                                        rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -215,6 +211,30 @@ int main (int argc, char ** argv)
 
                 if (result.bitmask) continue;
               }
+
+              /* Do one 'in-place' collective and validate it */
+              {
+                memset(rbuf, 0xFF, i);
+                allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
+                allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = (char*)rbuf + dataSent*task_id;
+                gather_initialize_sndbuf_dt (allgatherv_int.cmd.xfer_allgatherv_int.sndbuf, i, task_id, dt);
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&allgatherv_int);
+                  if (result.bitmask) continue;
+                }
+                blocking_coll(context, &allgatherv_int, &allgatherv_int_poll_flag);
+                int rc_check;
+                rc |= rc_check = gather_check_rcvbuf_dt (num_tasks, rbuf, i, dt);
+  
+                if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
+              allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
+              gather_initialize_sndbuf_dt (buf, i, task_id, dt);
+              memset(rbuf, 0xFF, i);
 
               blocking_coll(context, &barrier, &bar_poll_flag);
               ti = timer();

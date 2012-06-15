@@ -167,7 +167,7 @@ int main(int argc, char*argv[])
       scan.algorithm = *next_algo;
       scan.cmd.xfer_scan.rtype     = PAMI_TYPE_BYTE;
       scan.cmd.xfer_scan.rtypecount= 0;
-      scan.cmd.xfer_scan.exclusive = 0;
+      scan.cmd.xfer_scan.exclusive = 1;
 
       int op, dt;
 

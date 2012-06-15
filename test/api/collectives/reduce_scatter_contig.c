@@ -167,10 +167,8 @@ int main(int argc, char*argv[])
       reduce_scatter.cb_done   = cb_done;
       reduce_scatter.cookie    = (void*)&reduce_scatter_poll_flag;
       reduce_scatter.algorithm = *next_algo;
-      reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
       reduce_scatter.cmd.xfer_reduce_scatter.stype     = PAMI_TYPE_BYTE;
       reduce_scatter.cmd.xfer_reduce_scatter.stypecount= 0;
-      reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = rbuf;
       reduce_scatter.cmd.xfer_reduce_scatter.rtype     = PAMI_TYPE_BYTE;
 
       int op, dt;
@@ -209,10 +207,10 @@ int main(int argc, char*argv[])
                                       reduce_scatter,
                                       dt_array[dt],
                                       sz, /* metadata uses bytes i, */
-                                      reduce_scatter.cmd.xfer_reduce_scatter.sndbuf,
+                                      sbuf,
                                       dt_array[dt],
                                       sz,
-                                      reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf);
+                                      rbuf);
                 if (next_md->check_correct.values.nonlocal)
                 {
                   /* \note We currently ignore check_correct.values.nonlocal
@@ -223,6 +221,29 @@ int main(int argc, char*argv[])
                 if (result.bitmask) continue;
               }
 
+              /* Do one 'in-place' collective and validate it */
+              {
+                reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
+                reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = sbuf;
+              reduce_scatter_initialize_sndbuf (sbuf, i, op, dt, task_id);
+
+              if (checkrequired) /* must query every time */
+              {
+                result = next_md->check_fn(&reduce_scatter);
+                if (result.bitmask) continue;
+              }
+
+              blocking_coll(context[iContext], &reduce_scatter, &reduce_scatter_poll_flag);
+
+              int rc_check;
+              rc |= rc_check = reduce_scatter_check_rcvbuf (sbuf, i, op, dt, num_tasks, task_id);
+
+              if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
+              reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = rbuf;
               reduce_scatter_initialize_sndbuf (sbuf, i, op, dt, task_id);
 
               blocking_coll(context[0], &barrier, &bar_poll_flag);

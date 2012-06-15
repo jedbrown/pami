@@ -84,6 +84,7 @@ APPS            += reduce_scatter_multiep.${EXTENSION}
 APPS            += reduce_scatter_subcomm.${EXTENSION}
 APPS            += reduce_subcomm.${EXTENSION}
 APPS            += scan.${EXTENSION}
+APPS            += exscan_contig.${EXTENSION}
 APPS            += scan_contig.${EXTENSION}
 APPS            += scan_multiep.${EXTENSION}
 APPS            += scan_subcomm.${EXTENSION}
@@ -93,6 +94,7 @@ APPS            += scatter_multiep.${EXTENSION}
 APPS            += scatter_subcomm.${EXTENSION}
 APPS            += scatterv.${EXTENSION}
 APPS            += scatterv_int.${EXTENSION}
+APPS            += scatterv_int_contig.${EXTENSION}
 APPS            += scatterv_multiep.${EXTENSION}
 include @abs_top_builddir@/Build.rules
 
