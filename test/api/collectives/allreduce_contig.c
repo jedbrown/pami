@@ -180,8 +180,6 @@ int main(int argc, char*argv[])
       allreduce.cb_done   = cb_done;
       allreduce.cookie    = (void*) & allreduce_poll_flag;
       allreduce.algorithm = *next_algo;
-      allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
-      allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
       allreduce.cmd.xfer_allreduce.rtype     = PAMI_TYPE_BYTE;
       allreduce.cmd.xfer_allreduce.rtypecount = 0;
 
@@ -234,6 +232,25 @@ int main(int argc, char*argv[])
                 if (result.bitmask) continue;
               }
 
+              /* Do one 'in-place' collective and validate it */
+              {
+                allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+                allreduce.cmd.xfer_allreduce.rcvbuf    = sbuf;
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&allreduce);
+                  if (result.bitmask) continue;
+                }
+                reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
+                blocking_coll(context[iContext], &allreduce, &allreduce_poll_flag);
+                int rc_check;
+                rc |= rc_check = reduce_check_rcvbuf (rbuf, i, op, dt, task_id, num_tasks);
+              if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s/%s\n", gProtocolName, dt_array_str[dt], op_array_str[op]);
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+              allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
 
               /* We aren't testing barrier itself, so use context 0. */
