@@ -52,11 +52,11 @@ int alltoall_check_rcvbuf(char *rbuf, size_t l, size_t nranks, size_t myrank)
     {
       if (rbuf[ d + k ] != (char)((myrank + k) & 0xff))
       {
-        printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+        printf("%zu: (E) rbuf[%zu]:%02x instead of %02x (r:%zu)\n",
                myrank,
                d + k,
                rbuf[ d + k ],
-               ((r + k) & 0xff),
+               (char)((myrank + k) & 0xff),
                r );
         return 1;
       }
@@ -132,11 +132,11 @@ int alltoall_check_rcvbuf_dt(char * rbuf, size_t l, size_t nranks, size_t myrank
       {
         if ((unsigned)irbuf[ d + k ] != (unsigned)((myrank + k)))
         {
-          printf("%zu: (E) rbuf[%zu]:%02x instead of %02zx (r:%zu)\n",
+          printf("%zu: (E) rbuf[%zu]:%02x instead of %02x (r:%zu)\n",
                  myrank,
                  d + k,
                  (unsigned int)irbuf[ d + k ],
-                 ((r + k)),
+                 (unsigned)((myrank + k)),
                  r );
           return 1;
         }
@@ -153,11 +153,11 @@ int alltoall_check_rcvbuf_dt(char * rbuf, size_t l, size_t nranks, size_t myrank
       {
         if ((double)drbuf[ d + k ] != (double)(((myrank*1.0) + (k*1.0))))
         {
-          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
+          printf("%zu: (E) rbuf[%zu]:%f instead of %f (r:%zu)\n",
                  myrank,
                  d + k,
                  (double)drbuf[ d + k ],
-                 ((r + k)),
+                 (double)((myrank*1.0) + (k*1.0)),
                  r );
           return 1;
         }
@@ -174,11 +174,11 @@ int alltoall_check_rcvbuf_dt(char * rbuf, size_t l, size_t nranks, size_t myrank
       {
         if ((float)frbuf[ d + k ] != (float)(((myrank*1.0) + (k*1.0))))
         {
-          printf("%zu: (E) rbuf[%zu]:%02f instead of %02zx (r:%zu)\n",
+          printf("%zu: (E) rbuf[%zu]:%02f instead of %02f (r:%zu)\n",
                  myrank,
                  d + k,
                  (float)frbuf[ d + k ],
-                 ((r + k)),
+                 (float)(((myrank*1.0) + (k*1.0))),
                  r );
           return 1;
         }
@@ -209,11 +209,11 @@ int alltoallv_check_rcvbuf(char *rbuf, size_t *rcvlens, size_t *rdispls, size_t 
       {
         if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
           {
-            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
                     gProtocolName, rcvlens[r],
                     rdispls[r], k,
                     rbuf[ rdispls[r] + k ],
-                    ((r + k) & 0xff),
+                    (char)((myrank + k) & 0xff),
                     r );
             return 1;
           }
@@ -292,11 +292,11 @@ int alltoallv_check_rcvbuf_dt(void *rbuf, size_t *rcvlens, size_t *rdispls, size
       {
         if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   irbuf[ rdispls[r] + k ],
-                  ((myrank + k)),
+                  (unsigned int)((myrank + k)),
                   r );
         return 1;
         }
@@ -310,11 +310,11 @@ int alltoallv_check_rcvbuf_dt(void *rbuf, size_t *rcvlens, size_t *rdispls, size
       {
         if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02f (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   drbuf[ rdispls[r] + k ],
-                  ((r + k)),
+                  (double)(((myrank*1.0) + (k*1.0))),
                   r );
         return 1;
         }
@@ -328,11 +328,11 @@ int alltoallv_check_rcvbuf_dt(void *rbuf, size_t *rcvlens, size_t *rdispls, size
       {
         if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02f instead of %02f (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   frbuf[ rdispls[r] + k ],
-                  ((r + k)),
+                  (float)(((myrank*1.0) + (k*1.0))),
                   r );
         return 1;
         }
@@ -363,11 +363,11 @@ int alltoallv_int_check_rcvbuf(char *rbuf, int *rcvlens, int *rdispls, size_t sz
       {
         if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
           {
-            fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02zx (rank:%zu)\n",
+            fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02x (rank:%zu)\n",
                     gProtocolName, rcvlens[r],
                     rdispls[r], k,
                     rbuf[ rdispls[r] + k ],
-                    ((r + k) & 0xff),
+                    (char)((myrank + k) & 0xff),
                     r );
             return 1;
           }
@@ -456,11 +456,11 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (drbuf[ rdispls[r] + k ] != (double)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02f (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   drbuf[ rdispls[r] + k ],
-                  ((r + k)),
+                  (double)(((myrank*1.0) + (k*1.0))),
                   r );
         return 1;
         }
@@ -474,11 +474,11 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (frbuf[ rdispls[r] + k ] != (float)(((myrank*1.0) + (k*1.0))))
         {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02f instead of %02f (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   frbuf[ rdispls[r] + k ],
-                  ((r + k)),
+                  (float)(((myrank*1.0) + (k*1.0))),
                   r );
         return 1;
         }
@@ -1149,7 +1149,9 @@ void scatter_initialize_sndbuf_dt (void *sbuf, int counts, size_t ntasks, int dt
     {
       unsigned int u = 0xFFFFFFFF & (unsigned)i;
       for(j = 0; j < counts; j++)
+      {  
         ibuf[i*counts+j] = u;
+      }
     }
   }
   else if (dt_array[dt] == PAMI_TYPE_SIGNED_INT)
@@ -1205,7 +1207,7 @@ int scatter_check_rcvbuf_dt (void *rbuf, int counts, pami_task_t task, int dt)
     {
       if (ibuf[i] != u)
       {
-        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%.2u != %.2u \n", gProtocolName, counts, ibuf, i, ibuf[i], u);
+        fprintf(stderr, "%s:Check(%d) failed <%p>rbuf[%d]=%u != %u \n", gProtocolName, counts, ibuf, i, ibuf[i], u);
         return 1;
       }
     }
@@ -1333,6 +1335,7 @@ void reduce_scatter_initialize_sndbuf (void *buf, int count, int op, int dt, int
     for (i = 0; i < count; i++)
     {
       ibuf[i] = i;
+//      fprintf(stderr,"init task %u, ibuf[%u]=%u\n",task_id, i, ibuf[i]);
     }
   }
   else
@@ -1352,6 +1355,7 @@ int reduce_scatter_check_rcvbuf (void *buf, int count, int op, int dt, int num_t
     unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count / num_tasks; i++)
     {
+//      fprintf(stderr,"check task %u/%u, ibuf[%u]=%u\n",task_id, num_tasks, i, rbuf[i]);
       if (rbuf[i] != (i + task_id * (count / num_tasks))* num_tasks)
       {
         fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],(i+task_id * (count/num_tasks))*num_tasks);

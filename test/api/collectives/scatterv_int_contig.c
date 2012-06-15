@@ -15,8 +15,9 @@
 /*                                                                  */
 /* end_generated_IBM_copyright_prolog                               */
 /**
- * \file test/api/collectives/scatter_contig.c
- * \brief Simple Scatter test on world geometry with contiguous datatypes
+ * \file test/api/collectives/scatterv_int_contig.c
+ * \brief Simple Scatterv_int test on world geometry with 
+ * contiguous datatypes 
  */
 
 /* see setup_env() for environment variable overrides               */
@@ -42,21 +43,21 @@ int main(int argc, char*argv[])
   pami_xfer_type_t     barrier_xfer = PAMI_XFER_BARRIER;
   volatile unsigned    bar_poll_flag = 0;
 
-  /* Scatter variables */
+  /* Scatterv_int variables */
   pami_algorithm_t    *next_algo = NULL;
   pami_metadata_t     *next_md= NULL;
-  size_t               scatter_num_algorithm[2];
-  pami_algorithm_t    *scatter_always_works_algo = NULL;
-  pami_metadata_t     *scatter_always_works_md = NULL;
-  pami_algorithm_t    *scatter_must_query_algo = NULL;
-  pami_metadata_t     *scatter_must_query_md = NULL;
-  pami_xfer_type_t     scatter_xfer = PAMI_XFER_SCATTER;
-  volatile unsigned    scatter_poll_flag = 0;
+  size_t               scatterv_int_num_algorithm[2];
+  pami_algorithm_t    *scatterv_int_always_works_algo = NULL;
+  pami_metadata_t     *scatterv_int_always_works_md = NULL;
+  pami_algorithm_t    *scatterv_int_must_query_algo = NULL;
+  pami_metadata_t     *scatterv_int_must_query_md = NULL;
+  pami_xfer_type_t     scatterv_int_xfer = PAMI_XFER_SCATTERV_INT;
+  volatile unsigned    scatterv_int_poll_flag = 0;
 
   int                  nalg= 0, total_alg;
   double               ti, tf, usec;
   pami_xfer_t          barrier;
-  pami_xfer_t          scatter;
+  pami_xfer_t          scatterv_int;
 
   /* Process environment variables and setup globals */
   setup_env();
@@ -96,10 +97,14 @@ int main(int argc, char*argv[])
   }
 
   void* rbuf = NULL;
-  err = posix_memalign(&rbuf, 128, gMax_byte_count + gBuffer_offset);
+  err = posix_memalign(&rbuf, 128, (gMax_byte_count * num_tasks) + gBuffer_offset);
   assert(err == 0);
   rbuf = (char*)rbuf + gBuffer_offset;
 
+  int *lengths   = (int*)malloc(num_tasks * sizeof(int));
+  assert(lengths);
+  int *displs    = (int*)malloc(num_tasks * sizeof(int));
+  assert(displs);
 
   unsigned iContext = 0;
 
@@ -123,16 +128,16 @@ int main(int argc, char*argv[])
     if (rc == 1)
       return 1;
 
-    /*  Query the world geometry for scatter algorithms */
+    /*  Query the world geometry for scatterv_int algorithms */
     rc |= query_geometry_world(client,
                                context[iContext],
                                &world_geometry,
-                               scatter_xfer,
-                               scatter_num_algorithm,
-                               &scatter_always_works_algo,
-                               &scatter_always_works_md,
-                               &scatter_must_query_algo,
-                               &scatter_must_query_md);
+                               scatterv_int_xfer,
+                               scatterv_int_num_algorithm,
+                               &scatterv_int_always_works_algo,
+                               &scatterv_int_always_works_md,
+                               &scatterv_int_must_query_algo,
+                               &scatterv_int_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -142,42 +147,41 @@ int main(int argc, char*argv[])
     barrier.algorithm = bar_always_works_algo[0];
     blocking_coll(context[iContext], &barrier, &bar_poll_flag);
 
-    total_alg = scatter_num_algorithm[0]+scatter_num_algorithm[1];
+    total_alg = scatterv_int_num_algorithm[0]+scatterv_int_num_algorithm[1];
     for (nalg = 0; nalg < total_alg; nalg++)
     {
       metadata_result_t result = {0};
       unsigned query_protocol;
-      if(nalg < scatter_num_algorithm[0])
+      if(nalg < scatterv_int_num_algorithm[0])
       {  
         query_protocol = 0;
-        next_algo = &scatter_always_works_algo[nalg];
-        next_md  = &scatter_always_works_md[nalg];
+        next_algo = &scatterv_int_always_works_algo[nalg];
+        next_md  = &scatterv_int_always_works_md[nalg];
       }
       else
       {  
         query_protocol = 1;
-        next_algo = &scatter_must_query_algo[nalg-scatter_num_algorithm[0]];
-        next_md  = &scatter_must_query_md[nalg-scatter_num_algorithm[0]];
+        next_algo = &scatterv_int_must_query_algo[nalg-scatterv_int_num_algorithm[0]];
+        next_md  = &scatterv_int_must_query_md[nalg-scatterv_int_num_algorithm[0]];
       }
 
       pami_task_t root = 0;
       pami_endpoint_t root_ep;
       PAMI_Endpoint_create(client, root, 0, &root_ep);
-      scatter.cmd.xfer_scatter.root       = root_ep;
+      scatterv_int.cmd.xfer_scatterv_int.root       = root_ep;
 
-      scatter.cb_done    = cb_done;
-      scatter.cookie     = (void*) & scatter_poll_flag;
-      scatter.algorithm  = *next_algo;
-      scatter.cmd.xfer_scatter.stype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.stypecount = 0;
-      scatter.cmd.xfer_scatter.rtype      = PAMI_TYPE_BYTE;
-      scatter.cmd.xfer_scatter.rtypecount = 0;
+      scatterv_int.cb_done    = cb_done;
+      scatterv_int.cookie     = (void*) & scatterv_int_poll_flag;
+      scatterv_int.algorithm  = *next_algo;
+      scatterv_int.cmd.xfer_scatterv_int.stype      = PAMI_TYPE_BYTE;
+      scatterv_int.cmd.xfer_scatterv_int.rtype      = PAMI_TYPE_BYTE;
+
 
       gProtocolName = next_md->name;
 
       if (task_id == root)
       {
-        printf("# Scatter Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
+        printf("# Scatterv_int Bandwidth Test(size:%zu) -- context = %d, protocol: %s, Metadata: range %zu <-> %zd, mask %#X\n",num_tasks,
                iContext, gProtocolName,
                next_md->range_lo,(ssize_t)next_md->range_hi,
                next_md->check_correct.bitmask_correct);
@@ -200,22 +204,29 @@ int main(int argc, char*argv[])
         if ((gFull_test && ((dt != DT_NULL) && (dt != DT_BYTE))) || gValidTable[op][dt])
         {
           if (task_id == 0)
-            printf("Running scatter: %s\n", dt_array_str[dt]);
+            printf("Running scatterv_int: %s\n", dt_array_str[dt]);
 
           for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
           {
             size_t dataSent = i * get_type_size(dt_array[dt]);
-            int          niter;
+            int          niter, k;
+
+            for (k = 0; k < num_tasks; k++)
+            {
+              lengths[k] = i;
+              displs[k]  = i*k;
+            }
 
             if (dataSent < CUTOFF)
               niter = gNiterlat;
             else
               niter = NITERBW;
 
-            scatter.cmd.xfer_scatter.stypecount = i;
-            scatter.cmd.xfer_scatter.stype      = dt_array[dt];
-            scatter.cmd.xfer_scatter.rtypecount = i;
-            scatter.cmd.xfer_scatter.rtype      = dt_array[dt];
+            scatterv_int.cmd.xfer_scatterv_int.stype      = dt_array[dt];
+            scatterv_int.cmd.xfer_scatterv_int.stypecounts= lengths;
+            scatterv_int.cmd.xfer_scatterv_int.sdispls    = displs;
+            scatterv_int.cmd.xfer_scatterv_int.rtypecount = i;
+            scatterv_int.cmd.xfer_scatterv_int.rtype      = dt_array[dt];
 
 
 
@@ -223,7 +234,7 @@ int main(int argc, char*argv[])
             {
               size_t sz=get_type_size(dt_array[dt])*i;
               result = check_metadata(*next_md,
-                                      scatter,
+                                      scatterv_int,
                                       dt_array[dt],
                                       sz, /* metadata uses bytes i, */
                                       buf,
@@ -243,31 +254,31 @@ int main(int argc, char*argv[])
             {
               if (task_id == root)
               {
-                scatter.cmd.xfer_scatter.sndbuf     = buf;
-                scatter.cmd.xfer_scatter.rcvbuf     = (char*)buf + dataSent*task_id;
+                scatterv_int.cmd.xfer_scatterv_int.sndbuf     = buf;
+                scatterv_int.cmd.xfer_scatterv_int.rcvbuf     = (char*)buf + dataSent*task_id;
                 scatter_initialize_sndbuf_dt (buf, i, num_tasks, dt);
               }
               else
               {
-                scatter.cmd.xfer_scatter.sndbuf     = buf;
-                scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
+                scatterv_int.cmd.xfer_scatterv_int.sndbuf     = buf;
+                scatterv_int.cmd.xfer_scatterv_int.rcvbuf     = rbuf;
                 memset(rbuf, 0xFF, i);
               }
               if (checkrequired) /* must query every time */
               {
-                result = next_md->check_fn(&scatter);
+                result = next_md->check_fn(&scatterv_int);
                 if (result.bitmask) continue;
               }
-              blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+              blocking_coll(context[iContext], &scatterv_int, &scatterv_int_poll_flag);
               int rc_check;
-              rc |= rc_check = scatter_check_rcvbuf_dt (scatter.cmd.xfer_scatter.rcvbuf, i, task_id, dt);
+              rc |= rc_check = scatter_check_rcvbuf_dt (scatterv_int.cmd.xfer_scatterv_int.rcvbuf, i, task_id, dt);
   
               if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
             }
 
             /* Iterate (and time) with separate buffers, not in-place */
-            scatter.cmd.xfer_scatter.sndbuf     = buf;
-            scatter.cmd.xfer_scatter.rcvbuf     = rbuf;
+            scatterv_int.cmd.xfer_scatterv_int.sndbuf     = buf;
+            scatterv_int.cmd.xfer_scatterv_int.rcvbuf     = rbuf;
 
             if (task_id == root)
               scatter_initialize_sndbuf_dt (buf, i, num_tasks, dt);
@@ -281,10 +292,10 @@ int main(int argc, char*argv[])
             {
               if (checkrequired) /* must query every time */
               {
-                result = next_md->check_fn(&scatter);
+                result = next_md->check_fn(&scatterv_int);
                 if (result.bitmask) continue;
               }
-              blocking_coll(context[iContext], &scatter, &scatter_poll_flag);
+              blocking_coll(context[iContext], &scatterv_int, &scatterv_int_poll_flag);
             }
 
             tf = timer();
@@ -314,10 +325,10 @@ int main(int argc, char*argv[])
     free(bar_always_works_md);
     free(bar_must_query_algo);
     free(bar_must_query_md);
-    free(scatter_always_works_algo);
-    free(scatter_always_works_md);
-    free(scatter_must_query_algo);
-    free(scatter_must_query_md);
+    free(scatterv_int_always_works_algo);
+    free(scatterv_int_always_works_md);
+    free(scatterv_int_must_query_algo);
+    free(scatterv_int_must_query_md);
 
   } /*for(unsigned iContext = 0; iContext < gNum_contexts; ++iContexts)*/
 
@@ -330,6 +341,9 @@ int main(int argc, char*argv[])
   rbuf = (char*)rbuf - gBuffer_offset;
   free(rbuf);
 
-  rc |= pami_shutdown(&client, context, &gNum_contexts);
+  free(lengths);
+  free(displs);
+
+ rc |= pami_shutdown(&client, context, &gNum_contexts);
   return rc;
 }

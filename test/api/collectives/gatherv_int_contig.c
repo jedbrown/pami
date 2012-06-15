@@ -160,10 +160,8 @@ int main(int argc, char*argv[])
       gatherv.cookie                        = (void*) & gatherv_poll_flag;
       gatherv.algorithm  = *next_algo;
 
-      gatherv.cmd.xfer_gatherv_int.sndbuf      = buf;
       gatherv.cmd.xfer_gatherv_int.stype       = PAMI_TYPE_BYTE;
       gatherv.cmd.xfer_gatherv_int.stypecount  = 0;
-      gatherv.cmd.xfer_gatherv_int.rcvbuf      = rbuf;
       gatherv.cmd.xfer_gatherv_int.rtype       = PAMI_TYPE_BYTE;
       gatherv.cmd.xfer_gatherv_int.rtypecounts = lengths;
       gatherv.cmd.xfer_gatherv_int.rdispls     = displs;
@@ -223,10 +221,10 @@ int main(int argc, char*argv[])
                                           gatherv,
                                           dt_array[dt],
                                           sz, /* metadata uses bytes i, */
-                                          gatherv.cmd.xfer_gatherv_int.sndbuf,
+                                          buf,
                                           dt_array[dt],
                                           sz,
-                                          gatherv.cmd.xfer_gatherv_int.rcvbuf);
+                                          rbuf);
                   if (next_md->check_correct.values.nonlocal)
                   {
                     /* \note We currently ignore check_correct.values.nonlocal
@@ -236,6 +234,52 @@ int main(int argc, char*argv[])
 
                   if (result.bitmask) continue;
                 }
+
+              /* Do one 'in-place' collective and validate it */
+              {
+                root_zero = (root_zero + num_tasks - 1) % num_tasks;
+                pami_endpoint_t root_ep;
+                PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+                gatherv.cmd.xfer_gatherv_int.root       = root_ep;
+
+                memset(rbuf, 0xFF, i*num_tasks);
+                if (task_id == root_zero)
+                {  
+                  gatherv.cmd.xfer_gatherv_int.sndbuf     = (char*)rbuf + dataSent*task_id;
+                  gatherv.cmd.xfer_gatherv_int.rcvbuf     = rbuf;
+                }
+                else
+                {  
+                  gatherv.cmd.xfer_gatherv_int.sndbuf     = buf;
+                  gatherv.cmd.xfer_gatherv_int.rcvbuf     = NULL;
+                }
+                gather_initialize_sndbuf_dt (gatherv.cmd.xfer_gatherv_int.sndbuf, i, task_id, dt);
+
+                if (task_id != num_tasks - 1)
+                {
+                  gatherv.cmd.xfer_gatherv_int.stypecount  = i;
+                }
+                gatherv.cmd.xfer_gatherv_int.stype       = dt_array[dt];
+                gatherv.cmd.xfer_gatherv_int.rtype       = dt_array[dt];
+
+                if (checkrequired) /* must query every time */
+                {
+                  result = next_md->check_fn(&gatherv);
+                  if (result.bitmask) continue;
+                }
+                blocking_coll(context[iContext], &gatherv, &gatherv_poll_flag);
+
+                if (task_id == root_zero)
+                {
+                  int rc_check;
+                  rc |= rc_check = gather_check_rcvbuf_dt(task_id, rbuf, i, dt);
+                  if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+                }
+              }
+
+              /* Iterate (and time) with separate buffers, not in-place */
+              gatherv.cmd.xfer_gatherv_int.rcvbuf     = rbuf;
+              gatherv.cmd.xfer_gatherv_int.sndbuf     = buf;
 
             blocking_coll(context[iContext], &barrier, &bar_poll_flag);
             ti = timer();

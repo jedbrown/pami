@@ -235,11 +235,11 @@ int main(int argc, char*argv[])
         for (j = 0; j < niter; j++)
         {
           scatterv.cmd.xfer_scatterv_int.rtypecount = i;
-              if (checkrequired) /* must query every time */
-              {
-                result = next_md->check_fn(&scatterv);
-                if (result.bitmask) continue;
-              }
+          if (checkrequired) /* must query every time */
+          {
+            result = next_md->check_fn(&scatterv);
+            if (result.bitmask) continue;
+          }
           blocking_coll(context[iContext], &scatterv, &scatterv_poll_flag);
         }
 
