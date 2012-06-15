@@ -66,34 +66,34 @@ class CollselExtension
 {
 public:
   static pami_result_t Collsel_init_fn(pami_client_t            client,
-                             advisor_configuration_t  configuration[],
-                             size_t                   num_configs,
-                             pami_context_t           contexts[],
-                             size_t                   num_contexts,
-                             advisor_t               *advisor);
+                                       advisor_configuration_t  configuration[],
+                                       size_t                   num_configs,
+                                       pami_context_t           contexts[],
+                                       size_t                   num_contexts,
+                                       advisor_t               *advisor);
 
   static pami_result_t Collsel_destroy_fn(advisor_t *advisor);
 
   static pami_result_t Collsel_table_generate_fn(advisor_t         advisor,
-                                       char             *filename,
-                                       advisor_params_t *params,
-                                       int               mode);
+                                                 char             *filename,
+                                                 advisor_params_t *params,
+                                                 int               mode);
 
   static pami_result_t Collsel_table_load_fn(advisor_t        advisor,
-                                   char            *filename,
-                                   advisor_table_t *advisor_table);
+                                             char            *filename,
+                                             advisor_table_t *advisor_table);
 
   static pami_result_t Collsel_table_unload_fn(advisor_table_t *advisor_table);
 
   static pami_result_t Collsel_query_fn(advisor_table_t *advisor_table,
-                              pami_geometry_t  geometry,
-                              fast_query_t    *fast_query );
+                                        pami_geometry_t  geometry,
+                                        fast_query_t    *fast_query );
 
   static pami_result_t Collsel_advise_fn(fast_query_t        fast_query,
-                               pami_xfer_type_t    xfer_type,
-                               pami_xfer_t        *xfer,
-                               sorted_algorithm_t  algorithms_optimized[],
-                               size_t              max_algorithms);
+                                         pami_xfer_type_t    xfer_type,
+                                         pami_xfer_t        *xfer,
+                                         sorted_algorithm_t  algorithms_optimized[],
+                                         size_t              max_algorithms);
 };
 };
 
