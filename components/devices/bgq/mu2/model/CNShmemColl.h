@@ -130,7 +130,7 @@ namespace PAMI
               return PAMI_SUCCESS;
             }
 
-            if (__global.mapping.tSize() != 64)
+            if ((__global.mapping.tSize() != 64) && (__global.mapping.tSize() != 32))
             {
               flag = msg->advance_large();
 
