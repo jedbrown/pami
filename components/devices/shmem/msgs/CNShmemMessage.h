@@ -189,20 +189,37 @@ namespace PAMI
             {
               /* local ranks other than 0 do the following quad sum */
               unsigned chunk;
+                
 
               for (chunk=0; chunk < NumChunks(bytes)-1; chunk++){
                 if ((chunk%(_npeers-1) +1) == _local_rank){
-
-                  quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
-                  _controlB->chunk_done[_local_rank] = chunk;
+                  if (likely(_in_place  ==  0))
+                  {
+                    quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  }
+                  else
+                  {
+                    double* srcs[16] = { G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl};
+                    coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, _opcode, 16);
+                    func(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, (void**)srcs,  16, NumDblsPerChunk);
+                  }
+                    _controlB->chunk_done[_local_rank] = chunk;
                 }
               }
 
@@ -210,28 +227,62 @@ namespace PAMI
               if ((chunk%(_npeers-1) +1) == _local_rank){
                 if (bytes%ChunkSize == 0)
                 {
-                  quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  if (likely(_in_place == 0))
+                  {
+                    quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  }
+                  else
+                  {
+                    double* srcs[16] = { G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl};
+                    coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, _opcode, 16);
+                    func(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, (void**)srcs,  16, NumDblsPerChunk);
+                  }
 
                 }
                 else
                 {
-                  quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
-                      G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, (bytes%ChunkSize)/sizeof(double), _opcode);
+                  if (likely(_in_place == 0))
+                  {
+                    quad_double_math_16way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl, (bytes%ChunkSize)/sizeof(double), _opcode);
+                  }
+                  else
+                  {
+                    double* srcs[16] = { G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(8)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(9)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(10)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(11)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(12)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(13)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(14)+chunk*NumDblsPerChunk+offset_dbl,
+                        G_Srcs(15)+chunk*NumDblsPerChunk+offset_dbl};
+                    coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, _opcode, 16);
+                    func(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, (void**)srcs,  16, (bytes%ChunkSize)/sizeof(double));
+                  }
                 }
                 _controlB->chunk_done[_local_rank] = chunk;
               }
@@ -275,17 +326,17 @@ namespace PAMI
               for (chunk=0; chunk < NumChunks(bytes)-1; chunk++){
                 if ((chunk%(_npeers-1) +1) == _local_rank){
       
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
-                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
-                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(4),G_Srcs(8),G_Srcs(12),G_Srcs(16),G_Srcs(20),G_Srcs(24),G_Srcs(28),G_Srcs(32),
+                            G_Srcs(36),G_Srcs(40),G_Srcs(44),G_Srcs(48),G_Srcs(52),G_Srcs(56),G_Srcs(60), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(5),G_Srcs(9),G_Srcs(13),G_Srcs(17),G_Srcs(21),G_Srcs(25),G_Srcs(29),G_Srcs(33),
+                            G_Srcs(37), G_Srcs(41),G_Srcs(45),G_Srcs(49),G_Srcs(53),G_Srcs(57),G_Srcs(61), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(6),G_Srcs(10),G_Srcs(14),G_Srcs(18),G_Srcs(22),G_Srcs(26),G_Srcs(30),G_Srcs(34),
+                            G_Srcs(38), G_Srcs(42),G_Srcs(46),G_Srcs(50),G_Srcs(54),G_Srcs(58),G_Srcs(62), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(7),G_Srcs(11),G_Srcs(15),G_Srcs(19),G_Srcs(23),G_Srcs(27),G_Srcs(31),G_Srcs(35),
+                            G_Srcs(39), G_Srcs(43),G_Srcs(47),G_Srcs(51),G_Srcs(55),G_Srcs(59),G_Srcs(63), NumDblsPerChunk);
                 quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
-                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
-                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
                 Memory::sync();
 
                   _controlB->chunk_done[_local_rank] = chunk;
@@ -296,32 +347,32 @@ namespace PAMI
               if ((chunk%(_npeers-1) +1) == _local_rank){
                 if (bytes%ChunkSize == 0)
                 {
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
-                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
-                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(4),G_Srcs(8),G_Srcs(12),G_Srcs(16),G_Srcs(20),G_Srcs(24),G_Srcs(28),G_Srcs(32),
+                            G_Srcs(36),G_Srcs(40),G_Srcs(44),G_Srcs(48),G_Srcs(52),G_Srcs(56),G_Srcs(60), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(5),G_Srcs(9),G_Srcs(13),G_Srcs(17),G_Srcs(21),G_Srcs(25),G_Srcs(29),G_Srcs(33),
+                            G_Srcs(37), G_Srcs(41),G_Srcs(45),G_Srcs(49),G_Srcs(53),G_Srcs(57),G_Srcs(61), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(6),G_Srcs(10),G_Srcs(14),G_Srcs(18),G_Srcs(22),G_Srcs(26),G_Srcs(30),G_Srcs(34),
+                            G_Srcs(38), G_Srcs(42),G_Srcs(46),G_Srcs(50),G_Srcs(54),G_Srcs(58),G_Srcs(62), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(7),G_Srcs(11),G_Srcs(15),G_Srcs(19),G_Srcs(23),G_Srcs(27),G_Srcs(31),G_Srcs(35),
+                            G_Srcs(39), G_Srcs(43),G_Srcs(47),G_Srcs(51),G_Srcs(55),G_Srcs(59),G_Srcs(63), NumDblsPerChunk);
                 quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
-                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
-                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
 
                 }
                 else
                 {
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), ((bytes%ChunkSize)/sizeof(double)));
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), ((bytes%ChunkSize)/sizeof(double)));
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(31),G_Srcs(32),G_Srcs(33),G_Srcs(34),G_Srcs(35),G_Srcs(36),G_Srcs(37),G_Srcs(38),
-                            G_Srcs(39), G_Srcs(40),G_Srcs(41),G_Srcs(42),G_Srcs(43),G_Srcs(44),G_Srcs(45), ((bytes%ChunkSize)/sizeof(double)));
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(46),G_Srcs(47),G_Srcs(48),G_Srcs(49),G_Srcs(50),G_Srcs(51),G_Srcs(52),G_Srcs(53),
-                            G_Srcs(54), G_Srcs(55),G_Srcs(56),G_Srcs(57),G_Srcs(58),G_Srcs(59),G_Srcs(60), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(4),G_Srcs(8),G_Srcs(12),G_Srcs(16),G_Srcs(20),G_Srcs(24),G_Srcs(28),G_Srcs(32),
+                            G_Srcs(36),G_Srcs(40),G_Srcs(44),G_Srcs(48),G_Srcs(52),G_Srcs(56),G_Srcs(60), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(5),G_Srcs(9),G_Srcs(13),G_Srcs(17),G_Srcs(21),G_Srcs(25),G_Srcs(29),G_Srcs(33),
+                            G_Srcs(37), G_Srcs(41),G_Srcs(45),G_Srcs(49),G_Srcs(53),G_Srcs(57),G_Srcs(61), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(6),G_Srcs(10),G_Srcs(14),G_Srcs(18),G_Srcs(22),G_Srcs(26),G_Srcs(30),G_Srcs(34),
+                            G_Srcs(38), G_Srcs(42),G_Srcs(46),G_Srcs(50),G_Srcs(54),G_Srcs(58),G_Srcs(62), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(7),G_Srcs(11),G_Srcs(15),G_Srcs(19),G_Srcs(23),G_Srcs(27),G_Srcs(31),G_Srcs(35),
+                            G_Srcs(39), G_Srcs(43),G_Srcs(47),G_Srcs(51),G_Srcs(55),G_Srcs(59),G_Srcs(63), ((bytes%ChunkSize)/sizeof(double)));
                 quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
-                G_Srcs(61)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(62)+chunk*NumDblsPerChunk+offset_dbl, 
-                G_Srcs(63)+chunk*NumDblsPerChunk+offset_dbl, ((bytes%ChunkSize)/sizeof(double)), _opcode);
+                G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl, 
+                G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, ((bytes%ChunkSize)/sizeof(double)), _opcode);
                 }
                 Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
@@ -332,16 +383,16 @@ namespace PAMI
             {
               /* local ranks other than 0 do the following quad sum */
               unsigned chunk;
-
               for (chunk=0; chunk < NumChunks(bytes)-1; chunk++){
                 if ((chunk%(_npeers-1) +1) == _local_rank){
       
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(2),G_Srcs(4),G_Srcs(6),G_Srcs(8),G_Srcs(10),G_Srcs(12),G_Srcs(14),G_Srcs(16),
+                            G_Srcs(18),G_Srcs(20),G_Srcs(22),G_Srcs(24),G_Srcs(26),G_Srcs(28),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(1),G_Srcs(3),G_Srcs(5),G_Srcs(7),G_Srcs(9),G_Srcs(11),G_Srcs(13),G_Srcs(15),
+                            G_Srcs(17), G_Srcs(19),G_Srcs(21),G_Srcs(23),G_Srcs(25),G_Srcs(27),G_Srcs(29), NumDblsPerChunk);
                 quad_double_math_2way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
                 G_Srcs(31)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                ppc_msync();
                 Memory::sync();
 
                   _controlB->chunk_done[_local_rank] = chunk;
@@ -352,28 +403,28 @@ namespace PAMI
               if ((chunk%(_npeers-1) +1) == _local_rank){
                 if (bytes%ChunkSize == 0)
                 {
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), NumDblsPerChunk);
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(2),G_Srcs(4),G_Srcs(6),G_Srcs(8),G_Srcs(10),G_Srcs(12),G_Srcs(14),G_Srcs(16),
+                            G_Srcs(18),G_Srcs(20),G_Srcs(22),G_Srcs(24),G_Srcs(26),G_Srcs(28),G_Srcs(30), NumDblsPerChunk);
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(1),G_Srcs(3),G_Srcs(5),G_Srcs(7),G_Srcs(9),G_Srcs(11),G_Srcs(13),G_Srcs(15),
+                            G_Srcs(17), G_Srcs(19),G_Srcs(21),G_Srcs(23),G_Srcs(25),G_Srcs(27),G_Srcs(29), NumDblsPerChunk);
                 quad_double_math_2way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
                 G_Srcs(31)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
 
                 }
                 else
                 {
-                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(1),G_Srcs(2),G_Srcs(3),G_Srcs(4),G_Srcs(5),G_Srcs(6),G_Srcs(7),G_Srcs(8),
-                            G_Srcs(9),G_Srcs(10),G_Srcs(11),G_Srcs(12),G_Srcs(13),G_Srcs(14),G_Srcs(15), ((bytes%ChunkSize)/sizeof(double)));
-                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(16),G_Srcs(17),G_Srcs(18),G_Srcs(19),G_Srcs(20),G_Srcs(21),G_Srcs(22),G_Srcs(23),
-                            G_Srcs(24), G_Srcs(25),G_Srcs(26),G_Srcs(27),G_Srcs(28),G_Srcs(29),G_Srcs(30), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, G_Srcs(0),G_Srcs(2),G_Srcs(4),G_Srcs(6),G_Srcs(8),G_Srcs(10),G_Srcs(12),G_Srcs(14),G_Srcs(16),
+                            G_Srcs(18),G_Srcs(20),G_Srcs(22),G_Srcs(24),G_Srcs(26),G_Srcs(28),G_Srcs(30), ((bytes%ChunkSize)/sizeof(double)));
+                MATH_16WAY(_rcvbuf, _rcvbuf, G_Srcs(1),G_Srcs(3),G_Srcs(5),G_Srcs(7),G_Srcs(9),G_Srcs(11),G_Srcs(13),G_Srcs(15),
+                            G_Srcs(17), G_Srcs(19),G_Srcs(21),G_Srcs(23),G_Srcs(25),G_Srcs(27),G_Srcs(29), ((bytes%ChunkSize)/sizeof(double)));
                 quad_double_math_2way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, _rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, 
                 G_Srcs(31)+chunk*NumDblsPerChunk+offset_dbl, ((bytes%ChunkSize)/sizeof(double)), _opcode);
                 }
+                ppc_msync();
                 Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
               }
             }
-
 
             //The buffer is partitioned among "npeers" in a balanced manner depending on the "MinChunkSize", total_bytes
             // Used for short to medium messages
@@ -882,6 +933,10 @@ namespace PAMI
               _opcode = opcode;
               _dt     = dt;
 
+              _in_place = 0;
+              if (_srcbuf == _rcvbuf)
+                _in_place = 1;
+
               void* buf = _my_desc->get_buffer();
               _controlB = (ControlBlock*)buf;
 
@@ -947,6 +1002,7 @@ namespace PAMI
             //unsigned  _chunk_array[Num16kChunks];
             unsigned  _chunk_array[Num32kChunks];
             unsigned  _cur_offset;
+            unsigned  _in_place;
 
 
         };  // PAMI::Device::CNShmemMessage class

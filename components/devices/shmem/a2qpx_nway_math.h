@@ -79,7 +79,7 @@ inline unsigned quad_double_math_4way(double* dst, double* src0, double *src1, d
 {
   switch (opcode )
   {
-    case PAMI_SUM:
+   case PAMI_SUM:
    quad_double_sum_4way( dst,  src0,  src1, src2,  src3, num_dbls );
       break;
 
