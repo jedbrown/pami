@@ -1335,7 +1335,6 @@ void reduce_scatter_initialize_sndbuf (void *buf, int count, int op, int dt, int
     for (i = 0; i < count; i++)
     {
       ibuf[i] = i;
-//      fprintf(stderr,"init task %u, ibuf[%u]=%u\n",task_id, i, ibuf[i]);
     }
   }
   else
@@ -1355,7 +1354,6 @@ int reduce_scatter_check_rcvbuf (void *buf, int count, int op, int dt, int num_t
     unsigned int *rbuf = (unsigned int *)  buf;
     for (i = 0; i < count / num_tasks; i++)
     {
-//      fprintf(stderr,"check task %u/%u, ibuf[%u]=%u\n",task_id, num_tasks, i, rbuf[i]);
       if (rbuf[i] != (i + task_id * (count / num_tasks))* num_tasks)
       {
         fprintf(stderr,"Check(%d) failed rbuf[%d] %u != %u\n",count,i,rbuf[i],(i+task_id * (count/num_tasks))*num_tasks);
