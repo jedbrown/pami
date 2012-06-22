@@ -176,11 +176,26 @@ namespace PAMI
           {
             /* local ranks other than 0 do the following quad sum */
             unsigned iter;
+            typename T_Device::CollectiveFifo::Descriptor* _my_desc = this->_my_desc;
 
             for (iter=0; iter < NUM_CHUNKS(bytes)-1; iter++){
               if ((iter%(_npeers-1) +1) == _local_rank){
 
-                bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                if (likely(_my_desc->_in_place == 0))
+                {
+                  bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                      SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
+                }
+                else
+                {
+                  char* srcs[16] = {SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
@@ -188,9 +203,13 @@ namespace PAMI
                     SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
-                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE};
+                  coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 16);
+                  func((void*)(dst+ iter* CHUNK_SIZE), (void**)srcs,  16, CHUNK_SIZE/sizeof(double));
+                }
                 mcomb_control->chunks_done[_local_rank] += 1;
               }
+
               //TRACE_ERR((stderr,"dst[%zu]:%f\n", iter*CHUNK_SIZE, dst[iter*CHUNK_SIZE]));
             }
 
@@ -198,6 +217,8 @@ namespace PAMI
             if ((iter%(_npeers-1) +1) == _local_rank){
               if (bytes%CHUNK_SIZE == 0)
               {
+                if (likely(_my_desc->_in_place == 0))
+                {
                 bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
@@ -207,10 +228,27 @@ namespace PAMI
                     SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, CHUNK_SIZE, opcode, dt);
+                }
+                else
+                {
+                  char* srcs[16] = {SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE};
+                  coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 16);
+                  func((void*)(dst+ iter* CHUNK_SIZE), (void**)srcs,  16, CHUNK_SIZE/sizeof(double));
+                }
 
               }
               else
               {
+                if (likely(_my_desc->_in_place == 0))
+                {
                 bgq_math_16way(dst+ iter* CHUNK_SIZE, SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
@@ -220,6 +258,21 @@ namespace PAMI
                     SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
                     SHADDR_SRCBUF(15)+iter*CHUNK_SIZE, (bytes%CHUNK_SIZE), opcode, dt);
+                }
+                else
+                {
+                  char* srcs[16] = {SHADDR_SRCBUF(0)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(1)+iter*CHUNK_SIZE, SHADDR_SRCBUF(2)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(3)+iter*CHUNK_SIZE, SHADDR_SRCBUF(4)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(5)+iter*CHUNK_SIZE, SHADDR_SRCBUF(6)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(7)+iter*CHUNK_SIZE, SHADDR_SRCBUF(8)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(9)+iter*CHUNK_SIZE, SHADDR_SRCBUF(10)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(11)+iter*CHUNK_SIZE, SHADDR_SRCBUF(12)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(13)+iter*CHUNK_SIZE, SHADDR_SRCBUF(14)+iter*CHUNK_SIZE,
+                    SHADDR_SRCBUF(15)+iter*CHUNK_SIZE};
+                  coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, opcode, 16);
+                  func((void*)(dst+ iter* CHUNK_SIZE), (void**)srcs,  16, (bytes%CHUNK_SIZE)/sizeof(double));
+                }
               }
               mcomb_control->chunks_done[_local_rank] += 1;
             }

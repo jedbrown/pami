@@ -101,6 +101,7 @@ public:
             T_Atomic		synch_counter;	/* Whether everyone has arrived */
             T_Atomic		done_counter; 	/* Whether everyone finished 	*/
           };
+          unsigned            _in_place;
 
         private:
 
@@ -137,6 +138,7 @@ public:
             _shared = _shmem_region + index;
             _my_seq_num = (uint64_t)index;
 
+            _in_place = 0;
           };
 
           inline Descriptor(Memory::MemoryManager &mm, T_Atomic (&atomic)[2*DESCRIPTOR_FIFO_SIZE], size_t index): _shared(NULL), _master(0), _storage(NULL), _my_seq_num(0),  _my_state(DESCSTATE_FREE) 

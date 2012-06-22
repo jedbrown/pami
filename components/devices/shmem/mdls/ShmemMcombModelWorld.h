@@ -126,6 +126,9 @@ namespace PAMI
               TRACE_ERR((stderr, "Taking shaddr path local_root%u my_local_rank:%u my_va_src_buf:%p my_va_dst_buf:%p\n",
                     local_root, _local_rank, src_buf, dst_buf));
 
+              if (src_buf == dst_buf)
+                my_desc->_in_place = 1;
+
               Memregion memreg_src;
               Memregion memreg_dst;
               Shmem::McombControl* mcomb_control = (Shmem::McombControl*) my_desc->get_buffer();
