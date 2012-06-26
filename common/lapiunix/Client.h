@@ -1368,7 +1368,6 @@ namespace PAMI
             }
             if(bargeom)
             {
-              PAMI_assertf(nctxt == 1, "Parent Geometry not allowed for multi-endpoint geometries");
               PAMI_assertf(bargeom->isValidChild(new_geometry), "Parent Geometry doesn't include all endpoints in the new geometry\n");
               bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[start_off], ctxt->getId(), context);
             }
@@ -1506,7 +1505,6 @@ namespace PAMI
             }
             if(bargeom)
             {
-              PAMI_assertf(nctxt == 1, "Parent Geometry not allowed for multi-endpoint geometries");
               PAMI_assertf(bargeom->isValidChild(new_geometry), "Parent Geometry doesn't include all endpoints in the new geometry\n");
               bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[start_off], ctxt->getId(), context);
             }

@@ -52,7 +52,7 @@ int alltoall_check_rcvbuf(char *rbuf, size_t l, size_t nranks, size_t myrank)
     {
       if (rbuf[ d + k ] != (char)((myrank + k) & 0xff))
       {
-        printf("%zu: (E) rbuf[%zu]:%02x instead of %02x (r:%zu)\n",
+        printf("%zu: (E) rbuf[%zu]:%#02x instead of %#02x (r:%zu)\n",
                myrank,
                d + k,
                rbuf[ d + k ],
@@ -132,7 +132,7 @@ int alltoall_check_rcvbuf_dt(char * rbuf, size_t l, size_t nranks, size_t myrank
       {
         if ((unsigned)irbuf[ d + k ] != (unsigned)((myrank + k)))
         {
-          printf("%zu: (E) rbuf[%zu]:%02x instead of %02x (r:%zu)\n",
+          printf("%zu: (E) rbuf[%zu]:%#02x instead of %#02x (r:%zu)\n",
                  myrank,
                  d + k,
                  (unsigned int)irbuf[ d + k ],
@@ -209,7 +209,7 @@ int alltoallv_check_rcvbuf(char *rbuf, size_t *rcvlens, size_t *rdispls, size_t 
       {
         if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
           {
-            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
+            fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%#02x instead of %#02x (rank:%zu)\n",
                     gProtocolName, rcvlens[r],
                     rdispls[r], k,
                     rbuf[ rdispls[r] + k ],
@@ -292,7 +292,7 @@ int alltoallv_check_rcvbuf_dt(void *rbuf, size_t *rcvlens, size_t *rdispls, size
       {
         if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
         {
-          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%02x instead of %02x (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%zu) failed rbuf[%zu+%zu]:%#02x instead of %#02x (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   irbuf[ rdispls[r] + k ],
@@ -363,7 +363,7 @@ int alltoallv_int_check_rcvbuf(char *rbuf, int *rcvlens, int *rdispls, size_t sz
       {
         if (rbuf[ rdispls[r] + k ] != (char)((myrank + k) & 0xff))
           {
-            fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02x (rank:%zu)\n",
+            fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%#02x instead of %#02x (rank:%zu)\n",
                     gProtocolName, rcvlens[r],
                     rdispls[r], k,
                     rbuf[ rdispls[r] + k ],
@@ -438,7 +438,7 @@ int alltoallv_int_check_rcvbuf_dt(void *rbuf, int *rcvlens, int *rdispls, size_t
       {
         if (irbuf[ rdispls[r] + k ] != (unsigned int)((myrank + k)))
         {
-          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%02x instead of %02zx (rank:%zu)\n",
+          fprintf(stderr, "%s:Check(%u) failed rbuf[%u+%zu]:%#02x instead of %#02zx (rank:%zu)\n",
                   gProtocolName, rcvlens[r],
                   rdispls[r], k,
                   irbuf[ rdispls[r] + k ],
