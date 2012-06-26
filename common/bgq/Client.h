@@ -86,7 +86,19 @@ namespace PAMI
 	  // Get some shared memory for this client
 	  initializeMemoryManager ();
 	  
-	  new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, &__global.topology_global, &_geometry_map, 0, 1);
+	  _world_range.lo = 0;
+	  _world_range.hi = __global.mapping.size() - 1;
+
+    // If the glocal is a coordinate topology, use it internally for efficiency (but we still need the range)
+    PAMI::Topology* coord = &__global.topology_global;
+    if(coord->type() !=  PAMI_COORD_TOPOLOGY) coord = NULL;
+
+    // Also pass the local topo for efficiency instead of recreating it internally
+    new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, 
+                                             &_world_range, 
+                                             coord, 
+                                             &__global.topology_local, 
+                                             &_geometry_map, 0, 1);
 
 	  // This must return immediately (must not enqueue non-blocking ops).
 	  // Passing a NULL context should ensure that.
@@ -872,6 +884,7 @@ namespace PAMI
     char         _name[256];
     BGQGeometry                  *_world_geometry;
     uint8_t                       _world_geometry_storage[sizeof(BGQGeometry)];
+    pami_geometry_range_t         _world_range;
     // This is a map of geometries to geometry id's
     std::map<unsigned, pami_geometry_t>          _geometry_map;
 

@@ -586,7 +586,151 @@ namespace PAMI
         }
       }
 
-      void                             buildSpecialTopologies()
+      inline Common (pami_client_t          client,
+                     Common                *parent,
+                     Mapping               *mapping,
+                     unsigned               comm,
+                     int                    numranges,
+                     pami_geometry_range_t  rangelist[],
+                     PAMI::Topology        *coord,
+                     PAMI::Topology        *local,
+                     GeometryMap           *geometry_map,
+                     size_t                 context_offset,
+                     size_t                 ncontexts):
+                     Geometry<Common>(parent,
+                                      mapping,
+                                      comm,
+                                      numranges,
+                                      rangelist),
+      _generation_id(0),
+      _ue_barrier(NULL),
+      _default_barrier(NULL),
+      _commid(comm),
+      _client(client),
+      _rank(mapping->task()),
+      _ranks_malloc(false),
+      _ranks(NULL),
+      _geometry_map(geometry_map),
+      _checkpointed(false),
+      _cb_result(PAMI_EAGAIN),
+      _allcontexts(context_offset==PAMI_ALL_CONTEXTS)
+      {
+        TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
+        pami_result_t rc;
+          if (numranges == 1)
+        {
+          // this creates the topology from a (single) range
+          if(context_offset==0) {
+          new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi);
+        }
+          else {
+            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(rangelist[0].lo, rangelist[0].hi,context_offset, ncontexts);
+          }
+        }
+        else // build a rank list from N ranges
+        {
+          pami_task_t nranks = 0;
+          int i, j, k;
+
+          for (i = 0; i < numranges; i++)
+            nranks += (rangelist[i].hi - rangelist[i].lo + 1);
+
+          _ranks_malloc = true;
+          rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
+          PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
+
+          for (k = 0, i = 0; i < numranges; i++)
+          {
+            int size = rangelist[i].hi - rangelist[i].lo + 1;
+
+            for (j = 0; j < size; j++, k++)
+              _ranks[k] = rangelist[i].lo + j;
+          }
+
+          // this creates the topology
+          if(context_offset==0) {
+          new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
+        }
+          else{
+            new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks,context_offset,ncontexts);
+          }
+        }
+
+        buildSpecialTopologies(coord,local);
+
+        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
+            (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
+        {
+          pami_result_t rc = PAMI_SUCCESS;
+          rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
+          PAMI_assert(rc == PAMI_SUCCESS);
+        }
+        // Initialize remaining members
+
+        (*_geometry_map)[_commid] = this;
+
+        for(size_t n=0; n<MAX_CONTEXTS; n++)
+          {
+            _allreduce[n][0] = _allreduce[n][1] = NULL;
+            _allreduce_async_mode[n]      = 1;
+            _allreduce_iteration[n]       = 0;
+          }
+
+        _cb_done = (pami_callback_t)
+        {
+          NULL, NULL
+        };
+
+        _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
+
+        size_t nctxt     = 1;
+        size_t start_off = context_offset;
+        if (_allcontexts) {
+            nctxt = ncontexts;
+            start_off = 0;
+        }
+        rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
+                                                      0,
+                                                      nctxt*sizeof(*_ue_barrier));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
+
+        rc               = __global.heap_mm->memalign((void **)&_default_barrier,
+                                                      0,
+                                                      nctxt*sizeof(*_default_barrier));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
+
+
+        // Allocate per context UE queues
+        rc = __global.heap_mm->memalign((void **)&_ue,
+                                        0,
+                                        nctxt*sizeof(MatchQueue));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
+
+        // Allocate per context Posted queues
+        rc = __global.heap_mm->memalign((void **)&_post,
+                                        0,
+                                        nctxt*sizeof(MatchQueue));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
+
+        // Allocate per context active message dispatch information
+        rc = __global.heap_mm->memalign((void **)&_dispatch,
+                                        0,
+                                        nctxt*sizeof(DispatchMap));
+        PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
+
+
+        for(size_t n=start_off; n<nctxt; n++)
+        {
+          new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
+          new(&_ue[n]) MatchQueue();
+          new(&_post[n]) MatchQueue();
+          new(&_dispatch[n]) DispatchMap();
+          resetUEBarrier_impl(n);
+        }
+      }
+
+      void                             buildSpecialTopologies(PAMI::Topology* coord=NULL, PAMI::Topology* local=NULL)
       {
         // build local and global topos
         DO_DEBUGg(pami_task_t *list = NULL);
@@ -597,8 +741,15 @@ namespace PAMI
            topology and not from the input/default topology... determine which to use */
         topologyIndex_t BASE_INDEX = DEFAULT_TOPOLOGY_INDEX; /* assume we use the input/default topology */
 
-        _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];  // first copy it
-        if (!_allcontexts) {
+	if (!_allcontexts) {
+	  if(coord) 
+	  {
+	      _topos[COORDINATE_TOPOLOGY_INDEX] = *coord;
+	      BASE_INDEX = COORDINATE_TOPOLOGY_INDEX;
+	  }
+	  else      
+	  {
+          _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];  // first copy it
             if(_topos[COORDINATE_TOPOLOGY_INDEX].type() !=  PAMI_COORD_TOPOLOGY) // convert it?
             {  
                 // Attempt to create a coordinate topo (result may be EMPTY)
@@ -610,11 +761,15 @@ namespace PAMI
                     BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; 
                 }
             }
+          }
         }
 
         /* Use whatever topology we picked above as the basis for Nth masters and local */
         _topos[BASE_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
-        _topos[BASE_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
+
+        /* Copy or create the local topo */
+        if(local) _topos[LOCAL_TOPOLOGY_INDEX] = *local;
+        else      _topos[BASE_INDEX].subTopologyLocalToMe(&_topos[LOCAL_TOPOLOGY_INDEX]);
 
         // Find master participant on the tree/cau network
         _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
