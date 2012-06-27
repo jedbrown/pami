@@ -58,6 +58,12 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketModel::~PacketModel
           virtual ~PacketModelBase () { /*PAMI_abort();*/ }
 
+          typedef union
+          {
+            uint8_t a[sizeof(InjectDescriptorMessage<1>) + MU::Context::packet_payload_size];
+            uint8_t b[MU::InjChannel::completion_event_state_bytes + MU::Context::packet_payload_size];
+          } packet_model_state_t;
+
         public:
 
           typedef MU::Context Device;
@@ -86,7 +92,7 @@ namespace PAMI
           static const size_t packet_model_immediate_bytes       = MU::Context::immediate_payload_size;
 
           /// \see PAMI::Device::Interface::PacketModel::getPacketTransferStateBytes
-          static const size_t packet_model_state_bytes           = 1024 + MU::InjChannel::completion_event_state_bytes;
+          static const size_t packet_model_state_bytes           = sizeof(packet_model_state_t);;
 
           /// \see PAMI::Device::Interface::PacketModel::init
           pami_result_t init_impl (size_t                      dispatch,
@@ -168,7 +174,6 @@ namespace PAMI
           device (context)
       {
         TRACE_FN_ENTER();
-        COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
 
         // Zero-out the descriptor models before initialization
         memset((void *)&_singlepkt, 0, sizeof(_singlepkt));
@@ -450,6 +455,8 @@ namespace PAMI
 
             if (unlikely(tbytes > packet_model_immediate_bytes))
               {
+                COMPILE_TIME_ASSERT((InjChannel::completion_event_state_bytes + packet_model_payload_bytes) <= packet_model_state_bytes);
+
                 // Determine the physical address of the (temporary) payload
                 // buffer from the model state memory.
                 vaddr = ((uint8_t *) state) + InjChannel::completion_event_state_bytes;
@@ -518,6 +525,8 @@ namespace PAMI
           }
         else
           {
+            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
+
             // Create a simple single-descriptor message
             InjectDescriptorMessage<1> * msg =
               (InjectDescriptorMessage<1> *) state;
@@ -635,6 +644,8 @@ namespace PAMI
 
             if (unlikely(tbytes > packet_model_immediate_bytes))
               {
+                COMPILE_TIME_ASSERT((InjChannel::completion_event_state_bytes + packet_model_payload_bytes) <= packet_model_state_bytes);
+
                 // Determine the physical address of the (temporary) payload
                 // buffer from the model state memory.
                 vaddr = ((uint8_t *) state) + InjChannel::completion_event_state_bytes;
@@ -703,6 +714,8 @@ namespace PAMI
           }
         else
           {
+            COMPILE_TIME_ASSERT((sizeof(InjectDescriptorMessage<1>) + packet_model_payload_bytes) <= packet_model_state_bytes);
+
             // Create a simple single-descriptor message
             InjectDescriptorMessage<1> * msg =
               (InjectDescriptorMessage<1> *) state;
@@ -840,12 +853,14 @@ namespace PAMI
 
             // Add a completion event for the sequence number associated with
             // the descriptor that was injected.
+            COMPILE_TIME_ASSERT(InjChannel::completion_event_state_bytes <= packet_model_state_bytes);
             if (likely(fn != NULL))
               channel.addCompletionEvent (state, fn, cookie, sequence);
           }
         else
           {
             // Create a simple single-descriptor message
+            COMPILE_TIME_ASSERT(sizeof(InjectDescriptorMessage<1>) <= packet_model_state_bytes);
             InjectDescriptorMessage<1> * msg =
               (InjectDescriptorMessage<1> *) state;
             new (msg) InjectDescriptorMessage<1> (channel, fn, cookie);
