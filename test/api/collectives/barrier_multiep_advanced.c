@@ -122,7 +122,7 @@ int main(int argc, char*argv[])
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
 
-  rc |= blocking_coll(context[iContext], &barrier, &poll_flag);
+  rc |= blocking_coll_advance_all(iContext, context, &barrier, &poll_flag);
   if (rc == 1) return 1;
   int t;
   /* here we start a number of threads; each of them will query geometry and run an algo*/
@@ -146,7 +146,7 @@ int main(int argc, char*argv[])
     }
   }
 
-  blocking_coll(context[iContext], &barrier, &poll_flag);
+  blocking_coll_advance_all(iContext, context, &barrier, &poll_flag);
 
   free(always_works_algo);
   free(always_works_md);

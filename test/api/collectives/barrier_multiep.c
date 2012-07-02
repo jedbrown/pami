@@ -129,7 +129,7 @@ int main(int argc, char*argv[])
   fence_arrivals = num_threads;
 
   gContext = context[0];
-  rc |= blocking_coll(context[0], &barrier, &poll_flag);
+  rc |= blocking_coll_advance_all(0, context, &barrier, &poll_flag);
   if (rc == 1) return 1;
   int t;
 
@@ -154,7 +154,7 @@ int main(int argc, char*argv[])
     }
   }
   gContext = context[0];
-  blocking_coll(context[0], &barrier, &poll_flag);
+  blocking_coll_advance_all(0, context, &barrier, &poll_flag);
 
   free(always_works_algo);
   free(always_works_md);

@@ -598,6 +598,13 @@ namespace PAMI
         _geometryAlloc.returnObject(_world_geometry);
         _world_geometry = (PEGeometry*)_new_world_geometry;
 
+        // We need a barrier here so that there is no race looking up the 
+        // temporary geometry (with commid=1) in the geometry map.
+        flag = 1;
+        _world_geometry->default_barrier(decrement_done_fn, (void *)&flag, _contexts[0]->getId(), (pami_context_t)_contexts[0]);
+
+        while(flag)
+          _contexts[0]->advance(10,rc);
 
         // Return error code
         _contexts[0]->unlock();
@@ -1063,11 +1070,15 @@ namespace PAMI
               case 400:
                   classroute->_state = 500;
                   master->_syncup.fetch_and_add(1);
+                  TRACE((stderr,"t:%d c:%p cid:%zu cr:%p syncup=%zu syncdown=%zu --> allreduce barrier done and _syncup.fetch_and_add done\n",
+                       (int)pthread_self(),ctxt, ctxt->getId(), classroute,master->_syncup.fetch(), master->_syncdown.fetch()));
                 return PAMI_EAGAIN;
                 break;
               case 500:
                 if(master->_syncup.fetch() == (size_t)master->_num_locals)
                   {
+                    TRACE((stderr,"t:%d c:%p cid:%zu cr:%p syncup=%zu syncdown=%zu master->_num_locals=%zu --> 500: \n",
+                       (int)pthread_self(),ctxt, ctxt->getId(), classroute,master->_syncup.fetch(), master->_syncdown.fetch(), (size_t)master->_num_locals));
                     if(classroute == master)
                       classroute->_state = 600;
                     else
@@ -1076,6 +1087,8 @@ namespace PAMI
                 return PAMI_EAGAIN;
                 break;
               case 600:
+                  TRACE((stderr,"t:%d c:%p cid:%zu cr:%p syncup=%zu syncdown=%zu master->_num_locals=%zu --> 600: \n",
+                       (int)pthread_self(),ctxt, ctxt->getId(), classroute,master->_syncup.fetch(), master->_syncdown.fetch(), (size_t)master->_num_locals));
                 if(master->_syncdown.fetch() == 1L)
                   classroute->_state = 700;
                 return PAMI_EAGAIN;
@@ -1083,17 +1096,20 @@ namespace PAMI
               case 700:
                 if(classroute == classroute->getMasterCr())
                   {
-                    TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> am master, delivering user func\n",
-                           pthread_self(),ctxt, ctxt->getId(), classroute));
+                    TRACE((stderr, "t:%d c:%p cid:%zu cr:%p --> am master, delivering user func\n",
+                           (int)pthread_self(),ctxt, ctxt->getId(), classroute));
                     classroute->_user_cb_done(context,
                                               classroute->_user_cookie,
                                               PAMI_SUCCESS);
                   }
-                TRACE((stderr, "t:%d c:%p cid:%d cr:%p --> freeing classroute: %p %p\n",
-                       pthread_self(),ctxt, ctxt->getId(), classroute, classroute->_bitmask, cookie));
+                else
+                  {  
+                    master->_syncdown.fetch_and_sub(1);
+                  } 
+                TRACE((stderr, "t:%d c:%p cid:%zu cr:%p --> freeing classroute: %p %p\n",
+                       (int)pthread_self(),ctxt, ctxt->getId(), classroute, classroute->_bitmask, cookie));
                 __global.heap_mm->free(classroute->_bitmask);
                 __global.heap_mm->free(cookie);
-                master->_syncdown.fetch_and_sub(1);
                 return PAMI_SUCCESS;
                 break;
               default:
@@ -1197,6 +1213,7 @@ namespace PAMI
         _work(_do_classroute, this),
         _master_cr(master_cr),
         _syncup(),
+        _syncdown(),
         _num_locals(num_locals)
         {
           _syncup.set(0);

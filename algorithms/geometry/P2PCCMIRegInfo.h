@@ -438,7 +438,7 @@ namespace CCMI
       < CCMI::Schedule::TopoMultinomial,
         binomial_analyze,
         PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX,
-        PAMI::Geometry::CKEY_BARRIERCOMPOSITE1 >
+        PAMI::Geometry::CKEY_UEBARRIERCOMPOSITE1 >
       BinomialBarrier;
 
       typedef CCMI::Adaptor::Barrier::BarrierFactoryT
@@ -446,7 +446,7 @@ namespace CCMI
         binomial_barrier_md,
         CCMI::ConnectionManager::SimpleConnMgr,
         true,
-        PAMI::Geometry::CKEY_BARRIERCOMPOSITE1>
+        PAMI::Geometry::CKEY_UEBARRIERCOMPOSITE1>
       BinomialBarrierFactory;
 
       typedef CCMI::Adaptor::Barrier::BarrierT

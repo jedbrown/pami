@@ -93,6 +93,31 @@ int blocking_coll (pami_context_t      context,
   return 0;
 }
 
+int blocking_coll_advance_all (unsigned             myctxt_idx,
+                               pami_context_t*      contexts,
+                               pami_xfer_t         *coll,
+                               volatile unsigned   *active)
+{
+  pami_result_t result;
+  gContext = contexts[myctxt_idx];
+  (*active)++;
+  result = PAMI_Collective(contexts[myctxt_idx], coll);
+  if (result != PAMI_SUCCESS)
+    {
+      fprintf (stderr, "Error. Unable to issue  collective. result = %d\n", result);
+      gContext = NULL;
+      return 1;
+    }
+  unsigned counter = myctxt_idx;
+  while (*active)
+  {
+    result = PAMI_Context_advance (contexts[counter], 1);
+    counter = (counter+1) % gNum_contexts;
+  }
+  gContext = NULL;
+  return 0;
+}
+
 /* Docs08:  Blocking Collective Call */
 
 int query_geometry_world(pami_client_t       client,
