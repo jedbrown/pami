@@ -323,6 +323,38 @@ namespace PAMI
               return false;
           }
 
+          /// \brief Determine if Dest is on a Network Line
+          ///
+          /// Our node's ABCDE coords are compared with the dest node's ABCDE coords
+          /// to determine if the two nodes are on a line.  That is, they only differ
+          /// in one dimension.
+          ///
+          /// \retval  0  Not on a line.
+          /// \retval  1  On a line.
+          ///
+          inline uint32_t getOnALine ( MUHWI_Destination_t dest )
+          {
+            uint32_t destNodeCoords = dest.Destination.Destination;
+
+            static const uint32_t a_coord_mask = 0x3f000000; // mask off the non-a-coord bits
+            static const uint32_t b_coord_mask = 0x00fc0000; // mask off the non-b-coord bits
+            static const uint32_t c_coord_mask = 0x0003f000; // mask off the non-c-coord bits
+            static const uint32_t d_coord_mask = 0x00000fc0; // mask off the non-d-coord bits
+            static const uint32_t e_coord_mask = 0x0000003f; // mask off the non-e-coord bits
+
+            // tmp will have 0's in a coordinate where source and dest match.
+            uint32_t tmp = _myCoords->Destination.Destination ^ destNodeCoords;
+
+            uint32_t numDifferentDimensions =
+              ( ( tmp & a_coord_mask ) != 0 ) +
+              ( ( tmp & b_coord_mask ) != 0 ) +
+              ( ( tmp & c_coord_mask ) != 0 ) +
+              ( ( tmp & d_coord_mask ) != 0 ) +
+              ( ( tmp & e_coord_mask ) != 0 );
+
+            return numDifferentDimensions == 1;
+          }
+
       };
 
       template <class T_Model, unsigned T_PayloadSize>
@@ -762,7 +794,6 @@ namespace PAMI
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
         uint32_t              routingIndex;
-        uint32_t              onALine;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
@@ -770,8 +801,7 @@ namespace PAMI
                                         rfifo,
                                         map,
 					paceRgetsToThisDest,
-                                        routingIndex,
-                                        onALine);
+                                        routingIndex);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 
@@ -957,6 +987,9 @@ namespace PAMI
         else
           { // Not special E dimension case
 	    
+            // Determine if this destination is on a network line
+            uint32_t onALine = getOnALine ( dest );
+            
             // If rget pacing is eligible between these two nodes, and the message size
             // exceeds the _rgetPacingSize threshold,  route the rget requests 
             // to the agent for processing.
@@ -1238,7 +1271,6 @@ namespace PAMI
         uint64_t              map;
 	uint32_t              paceRgetsToThisDest;
         uint32_t              routingIndex;
-        uint32_t              onALine;
 
         size_t fnum = _context.pinFifo (target_task,
                                         target_offset,
@@ -1246,8 +1278,7 @@ namespace PAMI
                                         rfifo,
                                         map,
 					paceRgetsToThisDest,
-                                        routingIndex,
-                                        onALine);
+                                        routingIndex);
 
         InjChannel & channel = _context.injectionGroup.channel[fnum];
 

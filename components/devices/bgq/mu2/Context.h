@@ -828,9 +828,6 @@ namespace PAMI
           /// \param[out] routingIndex The routing index (0 or 1) indicating
           ///                          which of two possible routings to
           ///                          use.
-          /// \param[out] onALine Zero means the destination is not on a
-          ///                     network line with us.  Non-zero means
-          ///                     it is on a line.
           ///
           /// \return Context-relative injection fifo number pinned to the
           ///         task+offset destination
@@ -842,8 +839,7 @@ namespace PAMI
                                  uint16_t            & rfifo,
                                  uint64_t            & map,
 				 uint32_t            & paceRgetsToThisDest,
-                                 uint32_t            & routingIndex,
-                                 uint32_t            & onALine)
+                                 uint32_t            & routingIndex)
           {
             TRACE_FN_ENTER();
 
@@ -852,7 +848,7 @@ namespace PAMI
             // multi-context support.
             size_t tcoord = 0;
             uint32_t fifoPin = 0;
-            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin, paceRgetsToThisDest, routingIndex, onALine );
+            _mapping.getMuDestinationTask( task, dest, tcoord, fifoPin, paceRgetsToThisDest, routingIndex );
 
 	    // Get the recFifo to use for this client, and the destination's
 	    // context and T coord.
