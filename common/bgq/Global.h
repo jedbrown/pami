@@ -505,26 +505,6 @@ namespace PAMI
                                            size_t Csize,
                                            size_t Dsize );
 
-      /// \brief Determine Whether Two Nodes are on a Line
-      ///
-      /// Our node's ABCDE coords are compared with the dest node's ABCDE coords
-      /// to determine if the two nodes are on a line.  That is, they only differ
-      /// in one dimension.
-      ///
-      /// \retval  0  Not on a line.
-      /// \retval  1  On a line.
-      ///
-      inline unsigned int getOnALine ( size_t srcAcoord,
-                                       size_t srcBcoord,
-                                       size_t srcCcoord,
-                                       size_t srcDcoord,
-                                       size_t srcEcoord,
-                                       size_t destAcoord,
-                                       size_t destBcoord,
-                                       size_t destCcoord,
-                                       size_t destDcoord,
-                                       size_t destEcoord );
-
       bgq_mapcache_t   _mapcache;
       size_t           _size;
       bool _useshmem;
@@ -1146,38 +1126,6 @@ unsigned int PAMI::Global::getFlexability ( size_t srcAcoord,
     return 1;
 }
 
-/// \brief Determine Whether Two Nodes are on a Line
-///
-/// Our node's ABCDE coords are compared with the dest node's ABCDE coords
-/// to determine if the two nodes are on a line.  That is, they only differ
-/// in one dimension.
-///
-/// \retval  0  Not on a line.
-/// \retval  1  On a line.
-///
-unsigned int PAMI::Global::getOnALine ( size_t srcAcoord,
-                                        size_t srcBcoord,
-                                        size_t srcCcoord,
-                                        size_t srcDcoord,
-                                        size_t srcEcoord,
-                                        size_t destAcoord,
-                                        size_t destBcoord,
-                                        size_t destCcoord,
-                                        size_t destDcoord,
-                                        size_t destEcoord )
-{
-  unsigned int count=0;
-  if ( srcAcoord != destAcoord ) count++;
-  if ( srcBcoord != destBcoord ) count++;
-  if ( srcCcoord != destCcoord ) count++;
-  if ( srcDcoord != destDcoord ) count++;
-  if ( srcEcoord != destEcoord ) count++;
-  if ( count > 1 ) 
-    return 0;
-  else
-    return 1;
-}
-
 
 // If 'mm' is NULL, compute total memory needed for mapcache and return (doing nothing else).
 size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
@@ -1424,14 +1372,6 @@ size_t PAMI::Global::initializeMapCache (BgqJobPersonality  & personality,
                   if ( routing )
                     mapcache->torus.task2coords[i].raw |= 0x00010000;
                   TRACE_ERR((stderr,"Routing based on flex = %u\n",routing));
-
-                  // Determine whether our task and the dest task are on a network line.
-                  unsigned int onALine;
-                  onALine = getOnALine ( aCoord,bCoord,cCoord,dCoord,eCoord,
-                                         a,b,c,d,e );
-                  if ( onALine )
-                    mapcache->torus.task2coords[i].raw |= 0x00400000;
-                  TRACE_ERR((stderr,"On a Line = %u\n",onALine));
 		}
 
               // Set the bit corresponding to the physical node of this rank,
