@@ -94,7 +94,6 @@ namespace PAMI
 
           typedef uint8_t model_state_t[T_Model::packet_model_state_bytes];
           typedef uint8_t model_packet_t[T_Model::packet_model_payload_bytes];
-          typedef uint8_t model_immediate_packet_t[T_Model::packet_model_immediate_bytes];
 
 
 
@@ -117,10 +116,9 @@ namespace PAMI
 
           typedef struct
           {
-            model_state_t              state;
-            model_immediate_packet_t   packet;
-            packed_metadata_t          metadata;
-            EagerSimpleProtocol      * protocol;
+            model_state_t           state;
+            model_packet_t          packet;
+            packed_metadata_t       metadata;
           } immediate_t;
 
           typedef struct
@@ -219,6 +217,7 @@ namespace PAMI
           {
             union
             {
+              immediate_t           immediate;
               packed_t              packed;
               eager_t               eager;
               ack_t                 ack;
@@ -496,9 +495,19 @@ namespace PAMI
                 // a regular (non-blocking) post.
                 TRACE_STRING("immediate post packet unsuccessful.");
 
-                // Allocate memory to maintain the state of the immediate send.
-                immediate_t * state = allocateImmediateState ();
-                state->protocol     = this;
+                // Allocate memory to maintain the state of the send.
+                eager_state_t * state = allocateState ();
+
+                state->origin.cookie        = NULL;
+                state->origin.local_fn      = NULL;
+                state->origin.remote_fn     = NULL;
+                state->origin.target_task   = task;
+                state->origin.target_offset = offset;
+                state->origin.protocol      = this;
+
+                // Specify the protocol metadata to send with the application
+                // metadata in the envelope packet.
+                //state->immediate.packed_metadata = packed_metadata;
 
                 // This branch should be resolved at compile time and optimized out.
                 if (sizeof(packed_metadata_t) <= T_Model::packet_model_metadata_bytes)
@@ -514,17 +523,17 @@ namespace PAMI
                     packed_metadata.header_bytes = header_bytes;
                     packed_metadata.origin       = _origin;
 
-                    uint8_t * ptr = (uint8_t *) state->packet;
+                    uint8_t * ptr = (uint8_t *) state->origin.immediate.packet;
                     memcpy (ptr, parameters->header.iov_base, parameters->header.iov_len);
                     ptr += parameters->header.iov_len;
                     memcpy (ptr, parameters->data.iov_base, parameters->data.iov_len);
 
                     struct iovec iov[1];
-                    iov[0].iov_base = (void *) state->packet;
+                    iov[0].iov_base = (void *) state->origin.immediate.packet;
                     iov[0].iov_len  = parameters->header.iov_len + parameters->data.iov_len;
 
-                    _short_model.postPacket (state->state,
-                                             send_immediate_complete, (void *) state,
+                    _short_model.postPacket (state->origin.immediate.state,
+                                             send_complete, (void *) state,
                                              task, offset,
                                              (void *) & packed_metadata,
                                              sizeof (packed_metadata_t),
@@ -534,7 +543,7 @@ namespace PAMI
                   {
                     TRACE_STRING("'short' protocol special case, protocol metadata does not fit in the packet metadata");
 
-                    packed_metadata_t * mdata = (packed_metadata_t *) state->packet;
+                    packed_metadata_t * mdata = (packed_metadata_t *) state->origin.immediate.packet;
                     mdata->header_bytes = header_bytes;
                     mdata->data_bytes   = data_bytes;
                     mdata->origin       = _origin;
@@ -545,13 +554,13 @@ namespace PAMI
                     memcpy (ptr, parameters->data.iov_base, parameters->data.iov_len);
 
                     struct iovec iov[1];
-                    iov[0].iov_base = (void *) state->packet;
+                    iov[0].iov_base = (void *) state->origin.immediate.packet;
                     iov[0].iov_len  = sizeof (packed_metadata_t) +
                                       parameters->header.iov_len +
                                       parameters->data.iov_len;
 
-                    _short_model.postPacket (state->state,
-                                             send_immediate_complete, (void *) state,
+                    _short_model.postPacket (state->origin.immediate.state,
+                                             send_complete, (void *) state,
                                              task, offset,
                                              NULL, 0,
                                              iov);
@@ -800,7 +809,6 @@ namespace PAMI
         protected:
 
           MemoryAllocator < sizeof(eager_state_t), 16 > _state_allocator;
-          MemoryAllocator < sizeof(immediate_t), 16 >   _immediate_state_allocator;
 
           T_Model          _envelope_model;
           T_Model          _longheader_envelope_model;
@@ -827,22 +835,6 @@ namespace PAMI
             _state_allocator.returnObject ((void *) state);
           }
 
-          inline immediate_t * allocateImmediateState ()
-          {
-            TRACE_FN_ENTER();
-            immediate_t * state = (immediate_t *) _immediate_state_allocator.allocateObject ();
-            TRACE_FN_EXIT();
-            return state;
-          }
-
-          inline void freeImmediateState (immediate_t * state)
-          {
-            _immediate_state_allocator.returnObject ((void *) state);
-          }
-
-          // ##################################################################
-          // The "remote fn" capability, as required by pami.h, is implemented
-          // as a completely separate communication flow in order to delay
           // ##################################################################
           // The "remote fn" capability, as required by pami.h, is implemented
           // as a completely separate communication flow in order to delay
@@ -1230,26 +1222,6 @@ namespace PAMI
                                       state->origin.remote_fn,
                                       state->origin.cookie);
               }
-
-            TRACE_FN_EXIT();
-            return;
-          }
-
-          ///
-          /// \brief Local immediate send completion event callback.
-          ///
-          /// This callback is invoked when a queued send immediate request
-          /// has been completed by the device.
-          ///
-          static void send_immediate_complete (pami_context_t   context,
-                                               void           * cookie,
-                                               pami_result_t    result)
-          {
-            TRACE_FN_ENTER();
-
-            immediate_t * state = (immediate_t *) cookie;
-            EagerSimpleProtocol * eager = (EagerSimpleProtocol *) state->protocol;
-            eager->freeImmediateState(state);
 
             TRACE_FN_EXIT();
             return;
