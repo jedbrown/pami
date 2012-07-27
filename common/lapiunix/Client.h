@@ -532,7 +532,7 @@ namespace PAMI
                                               1,
                                               &_world_range,
                                               &_geometry_map,
-                                            0,1);
+                                              0,1);
           }
 
         // Initialize "Safe" Collectives, which will be used
@@ -1275,9 +1275,10 @@ namespace PAMI
 
         PEGeometry     *new_geometry = NULL;
 	pami_result_t rc;
-        size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
-        size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
-        uint64_t      *to_reduce[nctxt];
+        size_t         nctxt       = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+        size_t         start_off   = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+        size_t         ctxt_arr_sz = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:context_offset+1;
+        uint64_t      *to_reduce[ctxt_arr_sz];
         uint           to_reduce_count=0;
         // If our new geometry is NOT NULL, we will create a new geometry
         // for this client.  This new geometry will be populated with a
@@ -1300,7 +1301,7 @@ namespace PAMI
 
             PAMI::Topology *master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
 
-            for(size_t n=start_off; n<nctxt; n++)
+            for(size_t n=start_off; n<ctxt_arr_sz; n++)
               {
                 to_reduce_count = 3 + 3*master_topology->size() + _contexts[n]->_fca_collreg->analyze_count(n,new_geometry);
                 rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
@@ -1345,8 +1346,8 @@ namespace PAMI
                                           NULL,
                                           0);
 
-            PostedClassRoute<PEGeometry>    *cr[nctxt];
-            for(size_t n=start_off; n<nctxt; n++)
+            PostedClassRoute<PEGeometry>    *cr[ctxt_arr_sz];
+            for(size_t n=start_off; n<ctxt_arr_sz; n++)
             {
               Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
               to_reduce[n][0]               = 0;
@@ -1361,18 +1362,19 @@ namespace PAMI
                                                      cr[n],
                                                      fn,
                                                      cookie,
-                                                     cr[0],
+                                                     cr[start_off],
                                                      nctxt);
             TRACE((stderr, "Allocated Classroutes:  %ld %p\n", n, cr[n]));              
             }
             if(bargeom)
             {
               PAMI_assertf(nctxt == 1, "Parent Geometry not allowed for multi-endpoint geometries");
-              bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[0], ctxt->getId(), context);
+              PAMI_assertf(bargeom->isValidChild(new_geometry), "Parent Geometry doesn't include all endpoints in the new geometry\n");
+              bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[start_off], ctxt->getId(), context);
             }
             else
             {
-              for(size_t n=start_off; n<nctxt; n++)
+              for(size_t n=start_off; n<ctxt_arr_sz; n++)
                 _contexts[n]->post(&cr[n]->_barrier_work,
                                    _do_ue_barrier,
                                    cr[n]);
@@ -1411,9 +1413,10 @@ namespace PAMI
         // todo:  implement this routine
         PEGeometry    *new_geometry = NULL;
         pami_result_t             rc;
-        size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
-        size_t         start_off = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
-        uint64_t      *to_reduce[nctxt];
+        size_t         nctxt       = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
+        size_t         start_off   = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
+        size_t         ctxt_arr_sz = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:context_offset+1;
+        uint64_t      *to_reduce[ctxt_arr_sz];
         uint           to_reduce_count=0;
 
         // If our new geometry is NOT NULL, we will create a new geometry
@@ -1435,7 +1438,7 @@ namespace PAMI
                                         nctxt);
 
             PAMI::Topology *master_topology  = (PAMI::Topology *)new_geometry->getTopology(PAMI::Geometry::MASTER_TOPOLOGY_INDEX);
-            for(size_t n=start_off; n<nctxt; n++)
+            for(size_t n=start_off; n<ctxt_arr_sz; n++)
               {
                 to_reduce_count = 3 + 3*master_topology->size() + _contexts[n]->_fca_collreg->analyze_count(n,new_geometry);
                 rc = __global.heap_mm->memalign((void **)&to_reduce[n], 0,
@@ -1482,8 +1485,8 @@ namespace PAMI
                                           NULL,
                                           NULL,
                                           0);
-            PostedClassRoute<PEGeometry>    *cr[nctxt];
-            for(size_t n=start_off; n<nctxt; n++)
+            PostedClassRoute<PEGeometry>    *cr[ctxt_arr_sz];
+            for(size_t n=start_off; n<ctxt_arr_sz; n++)
             {
               Geometry::Algorithm<PEGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<PEGeometry> > *)alg))[n];
               rc = __global.heap_mm->memalign((void **)&cr[n], 0, sizeof(PostedClassRoute<PEGeometry>));
@@ -1498,17 +1501,18 @@ namespace PAMI
                                                      cr[n],
                                                      fn,
                                                      cookie,
-                                                     cr[0],
+                                                     cr[start_off],
                                                      nctxt);
             }
             if(bargeom)
             {
               PAMI_assertf(nctxt == 1, "Parent Geometry not allowed for multi-endpoint geometries");
-              bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[0], ctxt->getId(), context);
+              PAMI_assertf(bargeom->isValidChild(new_geometry), "Parent Geometry doesn't include all endpoints in the new geometry\n");
+              bargeom->default_barrier(PostedClassRoute<PEGeometry>::create_classroute, cr[start_off], ctxt->getId(), context);
             }
             else
             {
-              for(size_t n=start_off; n<nctxt; n++)
+              for(size_t n=start_off; n<ctxt_arr_sz; n++)
                 _contexts[n]->post(&cr[n]->_barrier_work,
                                    _do_ue_barrier,
                                    cr[n]);
