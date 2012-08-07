@@ -198,6 +198,7 @@ int main (int argc, char ** argv)
               if(query_protocol)
               {
                 size_t sz=get_type_size(dt_array[dt])*i;
+                /* Must initialize all of cmd for metadata */
                 result = check_metadata(*next_md,
                                         allgatherv,
                                         dt_array[dt],

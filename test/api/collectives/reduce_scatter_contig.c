@@ -203,6 +203,9 @@ int main(int argc, char*argv[])
               if(query_protocol)
               {  
                 size_t sz=get_type_size(dt_array[dt])*i;
+                /* Must initialize all of cmd for metadata */
+                reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
+                reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = rbuf;
                 result = check_metadata(*next_md,
                                       reduce_scatter,
                                       dt_array[dt],

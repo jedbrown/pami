@@ -214,6 +214,9 @@ int main(int argc, char*argv[])
               if(query_protocol)
               {  
                 size_t sz=get_type_size(dt_array[dt])*i;
+                /* Must initialize all of cmd for metadata */
+                allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+                allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
                 result = check_metadata(*next_md,
                                       allreduce,
                                       dt_array[dt],

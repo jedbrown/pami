@@ -236,6 +236,9 @@ int main(int argc, char*argv[])
               if(query_protocol)
               {  
                 size_t sz=get_type_size(dt_array[dt])*i;
+                /* Must initialize all of cmd for metadata */
+                alltoallv_int.cmd.xfer_alltoallv_int.sndbuf        = sbuf;
+                alltoallv_int.cmd.xfer_alltoallv_int.rcvbuf        = rbuf;
                 result = check_metadata(*next_md,
                                         alltoallv_int,
                                         dt_array[dt],

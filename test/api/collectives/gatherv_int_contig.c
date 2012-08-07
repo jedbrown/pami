@@ -217,6 +217,10 @@ int main(int argc, char*argv[])
                 if(query_protocol)
                 {  
                   size_t sz=get_type_size(dt_array[dt])*i;
+                  /* Must initialize all of cmd for metadata */
+                  gatherv.cmd.xfer_gatherv_int.root       = 0;
+                  gatherv.cmd.xfer_gatherv_int.rcvbuf     = rbuf;
+                  gatherv.cmd.xfer_gatherv_int.sndbuf     = buf;
                   result = check_metadata(*next_md,
                                           gatherv,
                                           dt_array[dt],

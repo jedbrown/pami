@@ -203,6 +203,9 @@ int main(int argc, char*argv[])
                 if(query_protocol)
                 {
                   size_t sz=get_type_size(dt_array[dt])*i;
+                  /* Must initialize all of cmd for metadata */
+                  allgather.cmd.xfer_allgather.rcvbuf     = rbuf;
+                  allgather.cmd.xfer_allgather.sndbuf     = buf;
                   result = check_metadata(*next_md,
                                           allgather,
                                           dt_array[dt],

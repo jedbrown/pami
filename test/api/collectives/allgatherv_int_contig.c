@@ -194,6 +194,9 @@ int main (int argc, char ** argv)
               if(query_protocol)
               {
                 size_t sz=get_type_size(dt_array[dt])*i;
+                /* Must initialize all of cmd for metadata */
+                allgatherv_int.cmd.xfer_allgatherv_int.rcvbuf     = rbuf;
+                allgatherv_int.cmd.xfer_allgatherv_int.sndbuf     = buf;
                 result = check_metadata(*next_md,
                                         allgatherv_int,
                                         dt_array[dt],

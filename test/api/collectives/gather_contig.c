@@ -100,28 +100,28 @@ int main(int argc, char*argv[])
 
     /*  Query the world geometry for barrier algorithms */
     rc |= query_geometry_world(client,
-                            context,
-                            &world_geometry,
-                            barrier_xfer,
-                            barrier_num_algorithm,
-                            &bar_always_works_algo,
-                            &bar_always_works_md,
-                            &bar_must_query_algo,
-                            &bar_must_query_md);
+                               context,
+                               &world_geometry,
+                               barrier_xfer,
+                               barrier_num_algorithm,
+                               &bar_always_works_algo,
+                               &bar_always_works_md,
+                               &bar_must_query_algo,
+                               &bar_must_query_md);
 
     if (rc == 1)
       return 1;
 
     /*  Query the world geometry for gather algorithms */
     rc |= query_geometry_world(client,
-                            context[iContext],
-                            &world_geometry,
-                            gather_xfer,
-                            gather_num_algorithm,
-                            &gather_always_works_algo,
-                            &gather_always_works_md,
-                            &gather_must_query_algo,
-                            &gather_must_query_md);
+                               context[iContext],
+                               &world_geometry,
+                               gather_xfer,
+                               gather_num_algorithm,
+                               &gather_always_works_algo,
+                               &gather_always_works_md,
+                               &gather_must_query_algo,
+                               &gather_must_query_md);
 
     if (rc == 1)
       return 1;
@@ -136,14 +136,14 @@ int main(int argc, char*argv[])
     {
       metadata_result_t result = {0};
       unsigned query_protocol;
-      if(nalg < gather_num_algorithm[0])
-      {  
+      if (nalg < gather_num_algorithm[0])
+      {
         query_protocol = 0;
         next_algo = &gather_always_works_algo[nalg];
         next_md  = &gather_always_works_md[nalg];
       }
       else
-      {  
+      {
         query_protocol = 1;
         next_algo = &gather_must_query_algo[nalg-gather_num_algorithm[0]];
         next_md  = &gather_must_query_md[nalg-gather_num_algorithm[0]];
@@ -204,64 +204,68 @@ int main(int argc, char*argv[])
             gather.cmd.xfer_gather.rtype      = dt_array[dt];
 
 
-                if(query_protocol)
-                {  
-                  size_t sz=get_type_size(dt_array[dt])*i;
-                  result = check_metadata(*next_md,
-                                          gather,
-                                          dt_array[dt],
-                                          sz, /* metadata uses bytes i, */
-                                          buf,
-                                          dt_array[dt],
-                                          sz,
-                                          rbuf);
-                  if (next_md->check_correct.values.nonlocal)
-                  {
-                    /* \note We currently ignore check_correct.values.nonlocal
-                      because these tests should not have nonlocal differences (so far). */
-                    result.check.nonlocal = 0;
-                  }
-
-                  if (result.bitmask) continue;
-                }
-              /* Do one 'in-place' collective and validate it */
-              {
-                root_zero = (root_zero + num_tasks - 1) % num_tasks;
-                pami_endpoint_t root_ep;
-                PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
-                gather.cmd.xfer_gather.root       = root_ep;
-
-                memset(rbuf, 0xFF, i*num_tasks);
-                if (task_id == root_zero)
-                {  
-                  gather.cmd.xfer_gather.sndbuf     = (char*)rbuf + dataSent*task_id;
-                  gather.cmd.xfer_gather.rcvbuf     = rbuf;
-                }
-                else
-                {  
-                  gather.cmd.xfer_gather.sndbuf     = buf;
-                  gather.cmd.xfer_gather.rcvbuf     = NULL;
-                }
-                gather_initialize_sndbuf_dt (gather.cmd.xfer_gather.sndbuf, i, task_id, dt);
-
-                if (checkrequired) /* must query every time */
-                {
-                  result = next_md->check_fn(&gather);
-                  if (result.bitmask) continue;
-                }
-                blocking_coll(context[iContext], &gather, &gather_poll_flag);
-
-                if (task_id == root_zero)
-                {
-                  int rc_check;
-                  rc |= rc_check = gather_check_rcvbuf_dt(task_id, rbuf, i, dt);
-                  if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
-                }
-              }
-
-              /* Iterate (and time) with separate buffers, not in-place */
+            if (query_protocol)
+            {
+              size_t sz=get_type_size(dt_array[dt])*i;
+              /* Must initialize all of cmd for metadata */
+              gather.cmd.xfer_gather.root       = 0;
               gather.cmd.xfer_gather.rcvbuf     = rbuf;
               gather.cmd.xfer_gather.sndbuf     = buf;
+              result = check_metadata(*next_md,
+                                      gather,
+                                      dt_array[dt],
+                                      sz, /* metadata uses bytes i, */
+                                      buf,
+                                      dt_array[dt],
+                                      sz,
+                                      rbuf);
+              if (next_md->check_correct.values.nonlocal)
+              {
+                /* \note We currently ignore check_correct.values.nonlocal
+                  because these tests should not have nonlocal differences (so far). */
+                result.check.nonlocal = 0;
+              }
+
+              if (result.bitmask) continue;
+            }
+            /* Do one 'in-place' collective and validate it */
+            {
+              root_zero = (root_zero + num_tasks - 1) % num_tasks;
+              pami_endpoint_t root_ep;
+              PAMI_Endpoint_create(client, root_zero, 0, &root_ep);
+              gather.cmd.xfer_gather.root       = root_ep;
+
+              memset(rbuf, 0xFF, i*num_tasks);
+              if (task_id == root_zero)
+              {
+                gather.cmd.xfer_gather.sndbuf     = (char*)rbuf + dataSent*task_id;
+                gather.cmd.xfer_gather.rcvbuf     = rbuf;
+              }
+              else
+              {
+                gather.cmd.xfer_gather.sndbuf     = buf;
+                gather.cmd.xfer_gather.rcvbuf     = NULL;
+              }
+              gather_initialize_sndbuf_dt (gather.cmd.xfer_gather.sndbuf, i, task_id, dt);
+
+              if (checkrequired) /* must query every time */
+              {
+                result = next_md->check_fn(&gather);
+                if (result.bitmask) continue;
+              }
+              blocking_coll(context[iContext], &gather, &gather_poll_flag);
+
+              if (task_id == root_zero)
+              {
+                int rc_check;
+                rc |= rc_check = gather_check_rcvbuf_dt(task_id, rbuf, i, dt);
+                if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
+              }
+            }
+
+            /* Iterate (and time) with separate buffers, not in-place */
+            gather.cmd.xfer_gather.rcvbuf     = rbuf;
+            gather.cmd.xfer_gather.sndbuf     = buf;
 
             blocking_coll(context[iContext], &barrier, &bar_poll_flag);
             ti = timer();
@@ -300,11 +304,11 @@ int main(int argc, char*argv[])
 
             if (task_id == root_zero)
             {
-               printf("  %11lld %16d %14.1f %12.2f\n",
-                 (long long)dataSent,
-                 niter,
-                 (double)1e6*(double)dataSent / (double)usec,
-                 usec);
+              printf("  %11lld %16d %14.1f %12.2f\n",
+                     (long long)dataSent,
+                     niter,
+                     (double)1e6*(double)dataSent / (double)usec,
+                     usec);
               fflush(stdout);
             }
           }
