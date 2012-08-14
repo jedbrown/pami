@@ -948,26 +948,17 @@ namespace PAMI
     {
       //Assume algorithm 0 always works
       pami_algorithm_t  alg   = PAMI_ALGORITHM_NULL;
-      pami_algorithm_t  alg_short = PAMI_ALGORITHM_NULL;
       pami_metadata_t   mdata;
-      pami_metadata_t   mdata_short;
       memset(&mdata, 0, sizeof(mdata));
-      memset(&mdata_short, 0, sizeof(mdata));
       new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
-                                    &alg,
+                                    NULL,
+                                    NULL,
+                                    0,
+                                    &alg, /* making an assumption here about short working now */
                                     &mdata,
-                                    1,
-                                    &alg_short, /* making an assumption here about short working now */
-                                    &mdata_short,
                                     1);
       TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::start_barrier() algorithm %s\n", Kernel_ProcessorID(),this, mdata.name));
-      TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::start_barrier() algorithm %s\n", Kernel_ProcessorID(),this, mdata_short.name));
-
-      Geometry::Algorithm<BGQGeometry> *ar_algo;
-      if(alg_short != PAMI_ALGORITHM_NULL)
-         ar_algo= &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg_short))[context_id];
-      else
-        ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
+      Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
 
       pami_event_function done_fn = _geom_newopt_finish;
       if (optimize == PAMI_GEOMETRY_OPTIMIZE)
