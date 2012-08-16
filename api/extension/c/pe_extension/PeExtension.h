@@ -25,7 +25,7 @@
 #include "pami_ext_pe.h"
 
 #define PAMI_MAX_CLIENT_NUM   128 /**< max number of clients allowed */
-#define PAMI_MAX_CONTEXT_NUM    1 /**< max number of contexts allowed in a client */
+#define PAMI_MAX_CONTEXT_NUM  128 /**< max number of contexts allowed in a client */
 
 typedef struct {
     unsigned mask; // mask of a trace type
