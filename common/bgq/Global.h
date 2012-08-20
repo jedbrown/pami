@@ -750,7 +750,7 @@ void PAMI::Global::initializeFlexabilityMetric ( BgqJobPersonality  & personalit
                                                  { 1.3, 3.0 },   /* 48 racks */
                                                  { 1.3, 3.0 },   /* 64 racks */
                                                  { 1.3, 3.0 },   /* 80 racks */
-                                                 { 1.3, 3.0 } }; /* 96 racks */
+                                                 { 0.75, 3.0 } }; /* 96 racks */
   unsigned int defaultRouting[15][2] = { { 3, 3 },   /*    32    */
                                          { 3, 3 },   /*    64    */
                                          { 3, 3 },   /*   128    */
