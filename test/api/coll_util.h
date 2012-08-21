@@ -33,7 +33,7 @@
 char *gProtocolName = (char*)""; /* Global protocol name, some tests set it for error msgs   */
 static size_t get_type_size(pami_type_t intype);
 THREAD_LOCAL pami_context_t      gContext;
-THREAD_LOCAL pthread_t           gThreadId;
+THREAD_LOCAL int                 gThreadId;
 
 /* Docs09:  Done/Decrement call */
 void cb_done (void *ctxt, void * clientdata, pami_result_t err)
@@ -48,7 +48,7 @@ void cb_done (void *ctxt, void * clientdata, pami_result_t err)
                                  "%s: Context Error(tid=%d/%d) want:%p got:%p\n",
                                  gProtocolName,
                                  (int)pthread_self(),
-                                 (int)gThreadId,
+                                 gThreadId,
                                  gContext,
                                  ctxt);
     assert(ctxt);
@@ -79,20 +79,17 @@ int blocking_coll (pami_context_t      context,
 {
   pami_result_t result;
   gContext = context;
-  gThreadId = pthread_self();
   (*active)++;
   result = PAMI_Collective(context, coll);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue  collective. result = %d\n", result);
       gContext = NULL;
-      gThreadId = 0;
       return 1;
     }
   while (*active)
     result = PAMI_Context_advance (context, 1);
   gContext = NULL;
-  gThreadId = 0;
   return 0;
 }
 
@@ -103,14 +100,12 @@ int blocking_coll_advance_all (unsigned             myctxt_idx,
 {
   pami_result_t result;
   gContext = contexts[myctxt_idx];
-  gThreadId = pthread_self();
   (*active)++;
   result = PAMI_Collective(contexts[myctxt_idx], coll);
   if (result != PAMI_SUCCESS)
     {
       fprintf (stderr, "Error. Unable to issue  collective. result = %d\n", result);
       gContext = NULL;
-      gThreadId = 0;
       return 1;
     }
   unsigned counter = myctxt_idx;
@@ -120,7 +115,6 @@ int blocking_coll_advance_all (unsigned             myctxt_idx,
     counter = (counter+1) % gNum_contexts;
   }
   gContext = NULL;
-  gThreadId = 0;
   return 0;
 }
 
@@ -192,7 +186,6 @@ int destroy_geometry(pami_client_t    client,
   pami_result_t     rc             = PAMI_SUCCESS;
   volatile unsigned geom_poll_flag = 1;
   gContext = context;
-  gThreadId = pthread_self();
   rc = PAMI_Geometry_destroy(client,
 			     geometry,
 			     context,
@@ -214,7 +207,6 @@ int update_geometry(pami_client_t    client,
   pami_result_t     rc             = PAMI_SUCCESS;
   volatile unsigned geom_poll_flag = 1;
   gContext = context;
-  gThreadId = pthread_self();
   rc = PAMI_Geometry_update (geometry,
                              configuration,
                              num_configs,
@@ -287,7 +279,6 @@ int create_all_ctxt_geometry(pami_client_t           client,
   pami_result_t result;
   int           geom_init=1;
   gContext = contexts[0];
-  gThreadId = pthread_self();
 
   pami_configuration_t config;
   config.name = PAMI_GEOMETRY_OPTIMIZE;
@@ -316,7 +307,6 @@ int create_all_ctxt_geometry(pami_client_t           client,
       cnt++;
     }
     gContext = NULL;
-    gThreadId = 0;
     return 0;
 }
 
@@ -340,7 +330,6 @@ int create_and_query_geometry(pami_client_t           client,
   pami_result_t result;
   int           geom_init=1;
   gContext = context;
-  gThreadId = pthread_self();
 
   pami_configuration_t config;
   config.name = PAMI_GEOMETRY_OPTIMIZE;
@@ -366,7 +355,6 @@ int create_and_query_geometry(pami_client_t           client,
       result = PAMI_Context_advance (context, 1);
 
     gContext = NULL;
-    gThreadId = 0;
 
     return query_geometry(client,
                           contextq,
