@@ -1132,7 +1132,7 @@ inline unsigned quad_double_max_16way(double* dst, double* src0, double *src1, d
   uint64_t    mask    = 0;
   mask = (alignment - 1);
 
-  if (mask & ((uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|(uint64_t)src4|(uint64_t)src5|(uint64_t)src6|
+  if (mask & ((uint64_t)dst | (uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|(uint64_t)src4|(uint64_t)src5|(uint64_t)src6|
       (uint64_t)src7| (uint64_t)src8|(uint64_t)src9|(uint64_t)src10|(uint64_t)src11|(uint64_t)src12|(uint64_t)src13|
       (uint64_t)src14|(uint64_t)src15))
   {
