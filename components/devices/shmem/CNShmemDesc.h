@@ -54,8 +54,8 @@ namespace PAMI
           void* dstbufs[CN_SHMEM_TASKS_PER_NODE];
         }                     GAT;
         void*                 phybufs[CN_SHMEM_TASKS_PER_NODE];
-        volatile int16_t     chunk_done[CN_SHMEM_TASKS_PER_NODE];
-        volatile uint32_t     bytes_incoming;
+        volatile int32_t     chunk_done[CN_SHMEM_TASKS_PER_NODE];
+        volatile uint64_t     bytes_incoming;
       } __attribute__((__aligned__(128)));
 
 
