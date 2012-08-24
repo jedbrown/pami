@@ -331,7 +331,7 @@ inline void xlpgas::CollExchange<T_NI>::send (int phase)
   MUTEX_UNLOCK(&_mutex);
 
   assert (_sbuf[phase] != NULL);
-  assert (_sbufln[phase] >= 0);
+  assert ((size_t)_sbufln[phase] >= 0);
 
   pami_send_event_t   events;
   events.cookie           = &_cmplt[phase];
