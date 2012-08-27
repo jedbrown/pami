@@ -21,6 +21,9 @@
 #define __api_extension_c_collsel_CollselExtension_h__
 
 #include "sys/pami.h"
+#include <stdio.h>
+#include <string.h>
+#include "util/common.h"
 
 namespace PAMI{
 
@@ -51,16 +54,52 @@ typedef struct {
    size_t             num_geometry_sizes;
    size_t            *message_sizes;
    size_t             num_message_sizes;
+   int                iter;
+   int 		      verify;
+   int                verbose;
 } advisor_params_t;
+
+typedef struct
+{
+  unsigned cookie;
+} user_header_t;
+
+typedef struct
+{
+  void *rbuf;
+  void *cookie;
+  int bytes;
+  int root;
+} validation_t;
 
 typedef struct
 {
   pami_algorithm_t            algo;
   pami_metadata_t             md;
   int                         must_query;
-} sorted_algorithm_t;
+} advisor_algorithm_t;
 
 typedef void* fast_query_t;
+
+typedef struct
+{
+  pami_algorithm_t algo;
+  double times[3];
+} sorted_list;
+
+typedef struct
+{
+  pami_xfer_type_t xfer;
+  int bytes;
+  int np;
+  size_t  task_id;
+  int iters; // if > 0, then use default, if 0, it means use dynamic
+  int data_check;
+  int passed_data_check; 
+  int verbose;
+  int isRoot;
+  double times[3];
+} bench_setup;
 
 class CollselExtension
 {
@@ -70,7 +109,7 @@ public:
                                        size_t                   num_configs,
                                        pami_context_t           contexts[],
                                        size_t                   num_contexts,
-                                       advisor_t               *advisor);
+                                       advisor_t                *advisor);
 
   static pami_result_t Collsel_destroy_fn(advisor_t *advisor);
 
@@ -92,7 +131,7 @@ public:
   static pami_result_t Collsel_advise_fn(fast_query_t        fast_query,
                                          pami_xfer_type_t    xfer_type,
                                          pami_xfer_t        *xfer,
-                                         sorted_algorithm_t  algorithms_optimized[],
+                                         advisor_algorithm_t algorithms_optimized[],
                                          size_t              max_algorithms);
 };
 };

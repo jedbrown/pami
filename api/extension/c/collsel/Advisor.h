@@ -32,6 +32,8 @@ public:
           pami_context_t           contexts[],
           size_t                   num_contexts);
   ~Advisor();
+  size_t getNumContext();
+  friend class AdvisorTable;
 private:
   pami_client_t            _client;
   advisor_configuration_t *_configuration;
@@ -55,8 +57,6 @@ inline Advisor::Advisor(pami_client_t            client,
 {
   
   
-  
-  
 }
 
 inline Advisor::~Advisor()
@@ -65,5 +65,12 @@ inline Advisor::~Advisor()
   
 }
 
+inline size_t Advisor::getNumContext(){
+  return _num_contexts;
+}
+
 } // Nnamespace pami
+
+
+
 #endif // __api_extension_c_collsel_Extension_h__

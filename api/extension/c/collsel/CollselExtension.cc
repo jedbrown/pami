@@ -25,16 +25,16 @@ pami_result_t CollselExtension::Collsel_init_fn(pami_client_t            client,
                                                 size_t                   num_configs,
                                                 pami_context_t           contexts[],
                                                 size_t                   num_contexts,
-                                                advisor_t               *advisor)
+                                                advisor_t                *advisor)
 {
-  advisor = (advisor_t*)new Advisor(client,configuration,num_configs,
+  *advisor = (advisor_t*)new Advisor(client,configuration,num_configs,
                                     contexts,num_contexts);
   return PAMI_SUCCESS;
 }
 
 pami_result_t CollselExtension::Collsel_destroy_fn(advisor_t *advisor)
 {
-  Advisor *deleteme = (Advisor*)advisor;
+  Advisor *deleteme = (Advisor *)advisor;
   delete deleteme;
   return PAMI_SUCCESS;
 }
@@ -80,7 +80,7 @@ pami_result_t CollselExtension::Collsel_query_fn(advisor_table_t *advisor_table,
 pami_result_t CollselExtension::Collsel_advise_fn(fast_query_t        fast_query,
                                                   pami_xfer_type_t    xfer_type,
                                                   pami_xfer_t        *xfer,
-                                                  sorted_algorithm_t  algorithms_optimized[],
+                                                  advisor_algorithm_t algorithms_optimized[],
                                                   size_t              max_algorithms)
 {
   // Todo:  Implement
