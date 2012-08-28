@@ -22,7 +22,7 @@
 
 #include "api/extension/c/collsel/CollselExtension.h"
 #include "api/extension/c/collsel/Benchmark.h"
-#define DBL_DIG (9.999999999999999e99)
+#define DOUBLE_DIG (9.999999999999999e99)
 #define COLLSEL_MAX_ALGO 40 // Maximum number of algorithms per collective
 
 namespace PAMI{
@@ -275,16 +275,16 @@ inline pami_result_t AdvisorTable::generate(char             *filename,
             if(msg_size <low || msg_size > high)
             {
               if(!_task_id) printf("  %s skipped as message size %zu is not in range (%zu-%zu)\n", algo_name, msg_size, low, high);
-              algo_list[l].times[0] = DBL_DIG;
-              algo_list[l].times[1] = DBL_DIG;
-              algo_list[l].times[2] = DBL_DIG;
+              algo_list[l].times[0] = DOUBLE_DIG;
+              algo_list[l].times[1] = DOUBLE_DIG;
+              algo_list[l].times[2] = DOUBLE_DIG;
               continue;
             }
             if(result.bitmask)
             {
-              algo_list[l].times[0] = DBL_DIG;
-              algo_list[l].times[1] = DBL_DIG;
-              algo_list[l].times[2] = DBL_DIG;
+              algo_list[l].times[0] = DOUBLE_DIG;
+              algo_list[l].times[1] = DOUBLE_DIG;
+              algo_list[l].times[2] = DOUBLE_DIG;
               continue;
             }
 
