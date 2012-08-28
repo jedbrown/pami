@@ -365,7 +365,7 @@ int destroy_geometry(pami_client_t    client,
                              cb_done,
                              (void*)&geom_poll_flag);
 
-  PAMI_assertf(result == PAMI_SUCCESS, "Failed to destroy geometry");
+  PAMI_assertf(rc == PAMI_SUCCESS, "Failed to destroy geometry");
 
   while(geom_poll_flag)
     rc = PAMI_Context_advance (context, 1);
