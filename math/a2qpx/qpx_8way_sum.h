@@ -365,10 +365,12 @@ inline unsigned _quad_double_sum_8way_align32B(double* dst, double* src0, double
     return num_dbls;
   }
 
-  _quad_double_sum_8way_single(dst, src0, src1, src2, src3, src4, src5, src6, src7, 4);
+  
+  /*_quad_double_sum_8way_single(dst, src0, src1, src2, src3, src4, src5, src6, src7, 4);
 
   dbls = _quad_double_sum_8way_align64B(dst+4, src0+4, src1+4, src2+4, src3+4, src4+4, src5+4, src6+4, src7+4, num_dbls - 4);
-  dbls+=4;
+  dbls+=4;*/
+   dbls = _quad_double_sum_8way_align32B_short(dst, src0, src1, src2, src3, src4, src5, src6, src7, num_dbls);
 
   return dbls;
 
