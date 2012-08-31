@@ -959,12 +959,14 @@ inline unsigned _quad_double_sum_16way_align32B(double* dst, double* src0, doubl
     return num_dbls;
   }
 
-  _quad_double_sum_16way_single(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
+  /*_quad_double_sum_16way_single(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
                                 src9, src10, src11, src12, src13, src14, src15, 4);
 
   dbls = _quad_double_sum_16way_align64B(dst+4, src0+4, src1+4, src2+4, src3+4, src4+4, src5+4, src6+4, src7+4, src8+4, 
                                         src9+4, src10+4, src11+4, src12+4, src13+4, src14+4, src15+4, num_dbls - 4);
-  dbls+=4;
+  dbls+=4;*/
+   dbls = _quad_double_sum_16way_align32B_short(dst, src0, src1, src2, src3, src4, src5, src6, src7, src8, 
+                                          src9, src10, src11, src12, src13, src14, src15, num_dbls);
 
   return dbls;
 

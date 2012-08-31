@@ -475,7 +475,7 @@ inline unsigned _quad_double_max_8way_align32B(double* dst, double* src0, double
   mask = (uint64_t)dst|(uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3|  
          (uint64_t)src4|(uint64_t)src5|(uint64_t)src6|(uint64_t)src7;  
   bool is_64B_aligned;
-  is_64B_aligned = !((mask & ((uint64_t)63)) == 0);
+  is_64B_aligned = ((mask & ((uint64_t)63)) == 0);
   
   if (is_64B_aligned)
   {

@@ -379,7 +379,7 @@ inline unsigned _quad_double_min_4way_align32B(double* dst, double* src0, double
   mask = (uint64_t)dst|(uint64_t)src0|(uint64_t)src1|(uint64_t)src2|(uint64_t)src3 ; 
 
   bool is_64B_aligned;
-  is_64B_aligned = !((mask & ((uint64_t)63)) == 0);
+  is_64B_aligned = ((mask & ((uint64_t)63)) == 0);
   
   if (is_64B_aligned)
   {
@@ -389,10 +389,11 @@ inline unsigned _quad_double_min_4way_align32B(double* dst, double* src0, double
     return num_dbls;
   }
 
-  _quad_double_min_4way_single(dst, src0, src1, src2, src3, 4);
+  /*_quad_double_min_4way_single(dst, src0, src1, src2, src3, 4);
 
   dbls = _quad_double_min_4way_align64B(dst+4, src0+4, src1+4, src2+4, src3+4, num_dbls - 4);
-  dbls+=4;
+  dbls+=4;*/
+  dbls = _quad_double_min_4way_align32B_short(dst, src0, src1, src2, src3, num_dbls);
 
   return dbls;
 
