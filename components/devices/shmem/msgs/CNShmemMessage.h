@@ -86,6 +86,7 @@ namespace PAMI
 
                   quad_double_math_2way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  Memory::sync();
                   _controlB->chunk_done[_local_rank] = chunk;
                 }
                 TRACE_ERR((stderr,"_rcvbuf[%u]:%f\n", chunk*NumDblsPerChunk, _rcvbuf[chunk*NumDblsPerChunk]));
@@ -104,6 +105,7 @@ namespace PAMI
                   quad_double_math_2way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, (bytes%ChunkSize)/sizeof(double), _opcode);
                 }
+                  Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
               }
 
@@ -120,6 +122,7 @@ namespace PAMI
                   quad_double_math_4way(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, G_Srcs(0)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  Memory::sync();
                   _controlB->chunk_done[_local_rank] = chunk;
                 }
                 TRACE_ERR((stderr,"_rcvbuf[%u]:%f\n", chunk*NumDblsPerChunk, _rcvbuf[chunk*NumDblsPerChunk]));
@@ -140,6 +143,7 @@ namespace PAMI
                       G_Srcs(1)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(2)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, (bytes%ChunkSize)/sizeof(double), _opcode);
                 }
+                  Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
               }
 
@@ -158,6 +162,7 @@ namespace PAMI
                       G_Srcs(3)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(4)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, NumDblsPerChunk, _opcode);
+                  Memory::sync();
                   _controlB->chunk_done[_local_rank] = chunk;
                 }
               }
@@ -180,7 +185,8 @@ namespace PAMI
                       G_Srcs(5)+chunk*NumDblsPerChunk+offset_dbl, G_Srcs(6)+chunk*NumDblsPerChunk+offset_dbl,
                       G_Srcs(7)+chunk*NumDblsPerChunk+offset_dbl, (bytes%ChunkSize)/sizeof(double), _opcode);
                 }
-                mbar();
+                //mbar();
+                  Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
               }
             }
@@ -219,7 +225,8 @@ namespace PAMI
                     coremath func = MATH_OP_FUNCS(PAMI_DOUBLE, _opcode, 16);
                     func(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, (void**)srcs,  16, NumDblsPerChunk);
                   }
-                    _controlB->chunk_done[_local_rank] = chunk;
+                  Memory::sync();
+                  _controlB->chunk_done[_local_rank] = chunk;
                 }
               }
 
@@ -284,6 +291,7 @@ namespace PAMI
                     func(_rcvbuf+ chunk* NumDblsPerChunk+offset_dbl, (void**)srcs,  16, (bytes%ChunkSize)/sizeof(double));
                   }
                 }
+                Memory::sync();
                 _controlB->chunk_done[_local_rank] = chunk;
               }
             }
