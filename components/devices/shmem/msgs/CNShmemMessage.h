@@ -865,7 +865,7 @@ namespace PAMI
 
               if (_controlB->chunk_done[my_peer] >= _chunk_for_injection)
               { 
-                *bytes_available  = (_chunk_for_injection < (NumChunks(total_bytes)-1)) ? (ChunkSize):
+                *bytes_available  = ((unsigned)_chunk_for_injection < (NumChunks(total_bytes)-1)) ? (ChunkSize):
                   (total_bytes - ChunkSize*(NumChunks(total_bytes)-1));
                 return (void*)(rbuf + _chunk_for_injection*ChunkSize);
               }
@@ -914,7 +914,7 @@ namespace PAMI
                 }
                 else
                 {
-                  *bytes_available  = (_chunk_for_injection < (NumChunks(total_bytes)-1)) ? (ChunkSize):
+                  *bytes_available  = ((unsigned)_chunk_for_injection < (NumChunks(total_bytes)-1)) ? (ChunkSize):
                     (total_bytes - ChunkSize*(NumChunks(total_bytes)-1));
                   return (void*)(rbuf + _chunk_for_injection*ChunkSize);
                 }
@@ -1002,7 +1002,7 @@ namespace PAMI
             unsigned  _total_bytes;
             double*     _srcbuf;
             double*     _rcvbuf;
-            uint16_t _chunk_for_injection;
+            int32_t _chunk_for_injection;
             ControlBlock* _controlB;
             pami_op _opcode;
             pami_dt _dt;
