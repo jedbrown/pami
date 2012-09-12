@@ -2691,10 +2691,9 @@ extern "C"
    * The data size of a type is the sum of all sizes of its buffers, i.e.
    *    bytes_1 + bytes_2 + ... + bytes_n.
    *
-   * The extent of a type is the difference between the end of the last buffer
-   * and the beginning of the first buffer, i.e.
-   *    disp_n + bytes_n - disp_1.
-   * The order of the buffers matters in calculating the extent.
+   * The extent of a type is the difference between the cursor position after
+   * the last buffer is added and the cursor position (0) before the first 
+   * buffer is added.
    *
    * An atom size can be associated with a type as long as the atom size is a
    * common divisor of all the buffer sizes. Refer to ::pami_data_function for
@@ -3146,6 +3145,10 @@ extern "C"
    * buffers in a type but the overlapping buffers hold undefined data when
    * such a type is used in data manipulation.
    *
+   * The cursor is of size_t. To move the cursor backward, one can cast a
+   * negative number to size_t, such as (size_t)-1, and use it as an offset
+   * or a stride.
+   *
    * \param [in,out] type   Type identifier to be modified
    * \param [in]     bytes  Number of bytes of each contiguous buffer
    * \param [in]     offset Offset from the cursor to place the buffers
@@ -3182,6 +3185,10 @@ extern "C"
    * move the cursor forward or backward. It is also valid to place overlapping
    * buffers in a type but the overlapping buffers hold undefined data when
    * such a type is used in data manipulation.
+   *
+   * The cursor is of size_t. To move the cursor backward, one can cast a
+   * negative number to size_t, such as (size_t)-1, and use it as an offset
+   * or a stride.
    *
    * \warning It is considered \b illegal to append an incomplete type to
    *          another type.
