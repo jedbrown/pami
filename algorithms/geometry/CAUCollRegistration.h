@@ -384,6 +384,11 @@ namespace PAMI
 
             if(!mm) _enabled=false;
 
+            // CAU/FCA should be disabled for x86 platform
+#ifdef INTEL_ARCH
+            _enabled = false;
+#endif
+
             if(!_enabled) return;
 
             // To initialize shared memory, we need to provide the task offset into the
