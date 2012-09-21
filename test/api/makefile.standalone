@@ -16,12 +16,12 @@
 # end_generated_IBM_copyright_prolog
 
 # Change these parameters for your platform
-PAMI_INCLUDE   := /usr/include
-PAMI_LIB       := /usr/lib
-PAMI_LIBNAME   := -lpami
-C_COMPILER     := mpcc -q64
-CXX_COMPILER   := mpCC -q64
-LINKER         := mpcc -q64
+PAMI_INCLUDE   := 
+PAMI_LIB       := 
+PAMI_LIBNAME   := 
+C_COMPILER     := mpcc -q64 -pami
+CXX_COMPILER   := mpCC -q64 -pami
+LINKER         := mpcc -q64 -pami
 
 ##### You shouldn't have to edit under this line ######
 CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default

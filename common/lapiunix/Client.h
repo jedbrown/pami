@@ -285,7 +285,7 @@ namespace PAMI
         numtasks = __global.mapping.size();
 
         bool  use_shm    = mm_ptr?true:false;
-        char *shm_method = getenv("PAMI_COLLECTIVES_SHM_DIRECT");
+        char *shm_method = getenv("MP_S_SHM_COLLECTIVES_DIRECT");
         if(shm_method && use_shm)
         {
           use_shm = atoi(shm_method);

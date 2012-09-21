@@ -59,7 +59,7 @@ extern "C" {
 // We should have some interface to query the amount of shared memory required
 #define MAX_CONTEXTS        (128)  
 #define P2PSHM_HDRSIZE      (64)
-#define P2PSHM_PKTSIZE      (1024)
+#define P2PSHM_PKTSIZE      (12288 + P2PSHM_HDRSIZE)
 #define P2PSHM_TOTALPKTSIZE (P2PSHM_PKTSIZE + P2PSHM_HDRSIZE)
 #define P2PSHM_FIFOSIZE     (128)
 #define P2PSHM_ALLOCATION   ((((P2PSHM_TOTALPKTSIZE + sizeof(size_t))*P2PSHM_FIFOSIZE) + (2*sizeof(size_t)))*MAX_CONTEXTS)

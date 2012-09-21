@@ -32,6 +32,7 @@
 
 // common includes
 #include "Mapping.h"
+#include "common/default/Dispatch.h"
 #include "common/lapiunix/lapifunc.h"
 #include "common/lapiunix/Client.h"
 #include "common/ContextInterface.h"
@@ -477,7 +478,7 @@ namespace PAMI
     ShmemDevice                          *_shmem;
   }; // class PlatformDeviceList
 
-
+#define SHM_DIRECT 0
     class Context : public Interface::Context<PAMI::Context>
     {
     public:
@@ -498,7 +499,15 @@ namespace PAMI
         _cau_collreg(NULL),
         _fca_collreg(NULL),
         _devices(devices)
+#if SHM_DIRECT==1        
+        ,_dispatch(this)
+#endif        
       {
+#if SHM_DIRECT==1
+        char *env = getenv("MP_S_SHM_DIRECT");
+        _shm_direct_on = false;
+        if(env && atoi(env)) _shm_direct_on = true;
+#endif
       }
 
       inline pami_result_t initP2P(pami_configuration_t cxt_config[],
@@ -595,7 +604,6 @@ namespace PAMI
           _devices->_generics[_contextid].postThread(work);
           return PAMI_SUCCESS;
         }
-
       inline size_t advance_impl (size_t maximum, pami_result_t & result)
         {
           LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
@@ -656,34 +664,66 @@ namespace PAMI
           return PAMI_SUCCESS;
         }
 
+      inline bool shm_direct_on()
+        {
+#if SHM_DIRECT==1
+          return _shm_direct_on;
+#else
+          return false;
+#endif          
+        }
 
       inline pami_result_t send_impl (pami_send_t * parameters)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_rc_t rc = (cp->*(cp->pSend))(parameters->send.dest,
-                                                   parameters->send.dispatch,         // hdr_hdl
-                                                   parameters->send.header.iov_base,  // uhdr
-                                                   parameters->send.header.iov_len,   // uhdr_len
-                                                   parameters->send.data.iov_base,    // udata
-                                                   parameters->send.data.iov_len,     // udata_len
-                                                   parameters->send.hints,                             // send hints
-                                                   parameters->events.local_fn,       //
-                                                   parameters->events.remote_fn,      //
-                                                   parameters->events.cookie,         //
-                                                   NULL, NULL,                        //  unused send completion handler
-                                                   NULL, NULL, NULL,                  // unused counter
-                                                   INTERFACE_PAMI,                    // caller
-                                                   FLAG_NULL); 
-          return PAMI_RC(rc);
+          // Compiler should optimize out these branches when SHM_DIRECT=0
+          pami_result_t rc = PAMI_ERROR;
+          if(SHM_DIRECT && shm_direct_on())
+          {
+#if SHM_DIRECT==1
+            rc = _dispatch.send (parameters);
+#endif            
+          }
+          if(rc != PAMI_SUCCESS)
+          {
+            LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+            internal_rc_t rc = (cp->*(cp->pSend))(parameters->send.dest,
+                                                  parameters->send.dispatch,         // hdr_hdl
+                                                  parameters->send.header.iov_base,  // uhdr
+                                                  parameters->send.header.iov_len,   // uhdr_len
+                                                  parameters->send.data.iov_base,    // udata
+                                                  parameters->send.data.iov_len,     // udata_len
+                                                  parameters->send.hints,            // send hints
+                                                  parameters->events.local_fn,       //
+                                                  parameters->events.remote_fn,      //
+                                                  parameters->events.cookie,         //
+                                                  NULL, NULL,                        //  unused send completion handler
+                                                  NULL, NULL, NULL,                  // unused counter
+                                                  INTERFACE_PAMI,                    // caller
+                                                  FLAG_NULL);
+            return PAMI_RC(rc);
+          }
+          return rc;
         }
 
       inline pami_result_t send_impl (pami_send_immediate_t * send)
         {
-          LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
-          internal_rc_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
-                  send->header.iov_base, send->header.iov_len,
-                  send->data.iov_base, send->data.iov_len, send->hints, FLAG_NULL);
-          return PAMI_RC(rc);
+          // Compiler should optimize out these branches when SHM_DIRECT=0
+          pami_result_t rc = PAMI_ERROR;
+          if(SHM_DIRECT && shm_direct_on())
+          {
+#if SHM_DIRECT==1            
+            rc = _dispatch.send (send);
+#endif            
+          }
+          if(rc != PAMI_SUCCESS)
+          {
+            LapiImpl::Context *cp = (LapiImpl::Context *)&_lapi_state[0];
+            internal_rc_t rc = (cp->*(cp->pSendSmall))(send->dest, send->dispatch,
+                                                       send->header.iov_base, send->header.iov_len,
+                                                       send->data.iov_base, send->data.iov_len, send->hints, FLAG_NULL);
+            return PAMI_RC(rc);
+          }
+          return rc;
         }
 
       inline pami_result_t send_impl (pami_send_typed_t * send_typed)
@@ -927,6 +967,21 @@ namespace PAMI
                                           void                          * cookie,
                                           pami_dispatch_hint_t            options)
         {
+#if SHM_DIRECT==1          
+          pami_result_t   result;
+          pami_endpoint_t self = PAMI_ENDPOINT_INIT(_clientid, __global.mapping.task(), _contextid);
+          Protocol::Send::Send * send = ShmemEagerBase::generate (id,
+                                                                  fn.p2p,
+                                                                  cookie,
+                                                                  _devices->_shmem[_contextid],
+                                                                  self,
+                                                                  _context,
+                                                                  options,
+                                                                  __global.heap_mm,
+                                                                  result);
+          _dispatch.set (id, send);
+          assert(result == PAMI_SUCCESS);
+#endif          
           LapiImpl::Context  *cp = (LapiImpl::Context *)&_lapi_state[0];
           internal_rc_t rc =
               (cp->*(cp->pDispatchSet))(id, (void *)fn.p2p, cookie,
@@ -1092,6 +1147,12 @@ namespace PAMI
 
       //  Unexpected Barrier allocator
       MemoryAllocator <sizeof(PAMI::Geometry::UnexpBarrierQueueElement), 16> _ueb_allocator;
+
+      // shared memory direct, using bg device
+#if SHM_DIRECT==1
+      bool                                   _shm_direct_on;
+      Dispatch<4096>                         _dispatch;
+#endif      
   private:
     }; // end PAMI::Context
 }; // end namespace PAMI

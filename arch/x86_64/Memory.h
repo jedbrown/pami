@@ -23,7 +23,9 @@
 #ifndef __arch_x86_64_Memory_h__
 #define __arch_x86_64_Memory_h__
 
-#define mem_barrier() __sync_synchronize()
+//#define mem_barrier() __sync_synchronize()
+#define mem_barrier()
+
 
 #include "arch/MemoryInterface.h"
 

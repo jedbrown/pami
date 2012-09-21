@@ -24,10 +24,9 @@
 #include <math.h>
 #include <assert.h>
 #include <unistd.h>
-
 #include "../init_util.h"
 
-#define ITERATIONS 10000
+#define ITERATIONS 100000
 
 #define WARMUP
 
@@ -52,6 +51,7 @@
 #ifndef TRACE_ERR
 #define TRACE_ERR(x) /* fprintf x */
 #endif
+
 
 volatile unsigned _send_active;
 volatile unsigned _recv_active;
@@ -202,7 +202,7 @@ int main (int argc, char ** argv)
                  0,              /* no configuration   */
                  &_my_task,      /* task id            */
                  &num_tasks) );  /* number of tasks    */
-
+  
   pami_configuration_t configuration;
 
   configuration.name = PAMI_CLIENT_NUM_LOCAL_TASKS;
@@ -407,6 +407,16 @@ int main (int argc, char ** argv)
         fprintf (stdout, "%s\n", str);
     }
 
+  unsigned long long t1 = PAMI_Wtimebase(client);
+  for(i=0; i<ITERATIONS; i++)
+    PAMI_Context_advance (context, 1);
+  if (_my_task == origin_task)
+  {
+    unsigned long long cycles = PAMI_Wtimebase(client) - t1;
+    cycles = cycles/ITERATIONS;
+    double             usec   = cycles*tick*1000000.0;
+    fprintf (stdout, "# Empty Advance Time:  %8lld %8.4f\n", cycles, usec);    
+  }
   RC( pami_shutdown(&client, &context, &num_contexts) );
 
   return 0;
