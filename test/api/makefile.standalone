@@ -24,13 +24,14 @@ CXX_COMPILER   := mpCC -q64 -pami
 LINKER         := mpcc -q64 -pami
 
 ##### You shouldn't have to edit under this line ######
-CC        := ${C_COMPILER}  -O0 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default
-CXX       := ${CXX_COMPILER} -O0 -g -I${PAMI_INCLUDE} -I${PAMI_INCLUDE}/default
+CC        := ${C_COMPILER}  -Wall -O2 -g -I${PAMI_INCLUDE}  -I${PAMI_INCLUDE}/default
+CXX       := ${CXX_COMPILER} -Wall -O2 -g -I${PAMI_INCLUDE} -I${PAMI_INCLUDE}/default
 LD        := ${LINKER}    -L${PAMI_LIB} ${PAMI_LIBNAME} -lpthread -lrt
 ECHO      := echo
 
 MODULES   := p2p client collectives context endpoint extensions p2p/send p2p/get p2p/put p2p/rget p2p/rput \
-	     p2p/send/send_to_self_immed p2p/send/send_to_self_perf time extensions/test extensions/torus
+	     p2p/send/send_to_self_immed p2p/send/send_to_self_perf time extensions/test extensions/torus \
+             extensions/collsel
 SRC_DIR   := $(addprefix ./,$(MODULES))
 BUILD_DIR := $(addprefix build/,$(MODULES))
 
@@ -214,7 +215,8 @@ build/time/time.exe \
 build/time/timebase.exe \
 
 EXTENSION_TESTS = build/extensions/test/extension_test.exe \
-build/extensions/torus/extension_torus.exe 
+build/extensions/torus/extension_torus.exe \
+build/extensions/collsel/pami_tune.exe 
 
 TESTS = ${COLLECTIVES_TESTS} ${BASE_TESTS} ${CLIENT_TESTS} ${CONTEXT_TESTS} \
         ${ENDPOINT_TESTS} ${P2P_TESTS} ${TIME_TESTS} ${EXTENSION_TESTS}
