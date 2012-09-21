@@ -18,7 +18,7 @@
 VPATH		= @abs_srcdir@
 SUBDIRS         = 
 NOTBUILT        = 
-APPS             = pami_tune.${EXTENSION}
+APPS             = pami_tune.${EXTENSION} table_generate.${EXTENSION}
 
 include @abs_top_builddir@/Build.rules
 

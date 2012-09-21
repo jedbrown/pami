@@ -80,6 +80,7 @@ build/collectives/alltoall_multiep.exe \
 build/collectives/alltoallv_multiep.exe \
 build/collectives/amgather_multiep.exe \
 build/collectives/barrier_multiep.exe \
+build/collectives/barrier_multiep_advanced.exe \
 build/collectives/bcast_multiep.exe \
 build/collectives/gather_multiep.exe \
 build/collectives/gatherv_multiep.exe \
@@ -110,6 +111,7 @@ build/collectives/alltoallv_contig.exe \
 build/collectives/alltoallv_int.exe \
 build/collectives/alltoallv_int_contig.exe \
 build/collectives/alltoallv_int_subcomm.exe \
+build/collectives/alltoallv_subcomm.exe \
 build/collectives/ambcast.exe \
 build/collectives/ambcast_contig.exe \
 build/collectives/amgather.exe \
@@ -124,6 +126,7 @@ build/collectives/bcast_contig.exe \
 build/collectives/bcast_query.exe \
 build/collectives/bcast_subcomm.exe \
 build/collectives/bcast_subcomm_query.exe \
+build/collectives/exscan_contig.exe \
 build/collectives/gather.exe \
 build/collectives/gather_contig.exe \
 build/collectives/gather_subcomm.exe \
@@ -147,6 +150,8 @@ build/collectives/scatter.exe \
 build/collectives/scatter_contig.exe \
 build/collectives/scatter_subcomm.exe \
 build/collectives/scatterv.exe \
+build/collectives/scatterv_int.exe \
+build/collectives/scatterv_int_contig.exe \
 build/collectives/allgather_noncontig.exe \
 build/collectives/allreduce_noncontig.exe \
 build/collectives/alltoall_noncontig.exe \
@@ -158,9 +163,8 @@ build/collectives/gatherv_noncontig.exe \
 build/collectives/reduce_noncontig.exe \
 build/collectives/reduce_scatter_noncontig.exe \
 build/collectives/scan_noncontig.exe \
-build/collectives/scatter_noncontig.exe \
-build/context/advance.exe \
-build/collectives/scatterv_int.exe
+build/collectives/scatter_noncontig.exe 
+
 
 BASE_TESTS = build/init.exe \
 build/init_coll.exe
@@ -179,7 +183,8 @@ build/context/post-multithreaded-perf.exe \
 build/context/post-multithreaded.exe \
 build/context/post-perf.exe \
 build/context/post.exe \
-build/context/post-stress.exe
+build/context/post-stress.exe \
+build/context/advance.exe
 
 ENDPOINT_TESTS = build/endpoint/endpoint_table.exe
 
@@ -216,7 +221,8 @@ build/time/timebase.exe \
 
 EXTENSION_TESTS = build/extensions/test/extension_test.exe \
 build/extensions/torus/extension_torus.exe \
-build/extensions/collsel/pami_tune.exe 
+build/extensions/collsel/pami_tune.exe \
+build/extensions/collsel/table_generate.exe 
 
 TESTS = ${COLLECTIVES_TESTS} ${BASE_TESTS} ${CLIENT_TESTS} ${CONTEXT_TESTS} \
         ${ENDPOINT_TESTS} ${P2P_TESTS} ${TIME_TESTS} ${EXTENSION_TESTS}
