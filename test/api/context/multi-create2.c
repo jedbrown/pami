@@ -52,7 +52,6 @@ int main (int argc, char ** argv)
   for(i=0;i<max_clients;i++)
   {
     if (result_cl[i] == PAMI_SUCCESS) {
-       int num = 1;
        result = PAMI_Context_destroyv (&context[i], 1);
        if (result != PAMI_SUCCESS)
        {
