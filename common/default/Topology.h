@@ -1691,21 +1691,16 @@ namespace PAMI
         _new->__offset       = 0;
         _new->__all_contexts = false;
         size_t s = __size;
-        typedef size_t tb_t[2];
-        pami_endpoint_t *epl;
-        tb_t  *tb, *tb_iter;
+        typedef size_t tb_t[3]; //{global address, count of ranks found for this address, index into ranklist of Nth rank }
+        pami_endpoint_t *epl, *epl_free;
+        tb_t  *tb;
         pami_result_t rc;
-
         PAMI_assert(s != 0);
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-                                                           (void **)&epl, 0, s * sizeof(*epl));
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&epl, 0, s * sizeof(*epl));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-                                                           (void **)&tb, 0, s * sizeof(*tb));
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&tb, 0, s * sizeof(*tb));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
-
-        tb_iter = tb;
-        memset(tb_iter, 0, s * sizeof(*tb));
+        memset(tb, 0, s * sizeof(*tb));
         size_t k = 0;
         pami_endpoint_t ep_r;
         pami_task_t r;
@@ -1722,16 +1717,28 @@ namespace PAMI
           {
             if(j == l)
             {
-              tb_iter[j][0] = a.global;
+              tb[j][0] = a.global;
+              tb[j][2] = -1UL; // haven't found a rank yet
               ++l;
             }
-            if(a.global == tb_iter[j][0])
+            if(a.global == tb[j][0])
             {
-              if(tb_iter[j][1] == (size_t)n)
+              if(a.local == (size_t)n) 
               {
+                // Prefer to slice Nth based on local address not an arbitrary counter, so overwrite if one was already stored at tb[j][2] index.
+                //fprintf(stderr,"rank %u, a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u)), k %zu, found k %zd \n",r, a.global, a.local, j, tb[j][1], n, k, tb[j][2]);
+                if(tb[j][2] == -1UL)   // didn't already find by Nth counter
+                  tb[j][2] = k++; // Inserting into eplist at 'k' 
+                epl[tb[j][2]] = ep_r;
+              }
+              if((tb[j][1] == (size_t)n) && // Nth (arbitrary counter) rank found and
+                 (tb[j][2] == -1UL))          // didn't find by local address
+              {
+                //fprintf(stderr,"rank %u, a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u)), k %zu, found k %zd \n",r, a.global, a.local, j, tb[j][1], n, k, tb[j][2]);
+                tb[j][2] = k; // Inserting into eplist at 'k' 
                 epl[k++] = ep_r;
               }
-              ++tb_iter[j][1];
+              ++tb[j][1];
               break;
             }
           }
@@ -1739,6 +1746,13 @@ namespace PAMI
         PAMI::Memory::MemoryManager::heap_mm->free(tb);
         if(k > 0)
         {
+          // The eplist could be too big... e.g. on BGQ with 64 PPN this may be 64 x ncontexts too large and that 
+          // could be significant at 96K nodes (x 64 ranks per node x ncontexts x 8 bytes)
+          epl_free = epl;
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&epl, 0, k * sizeof(*epl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd eplist[%zd] alloc failed", k);
+          memcpy(epl, epl_free, k*sizeof(*epl));
+          PAMI::Memory::MemoryManager::heap_mm->free(epl_free);
           _new->__type = PAMI_EPLIST_TOPOLOGY;
           _new->topo_ranklist = epl;
           _new->__size = k;
@@ -1757,17 +1771,15 @@ namespace PAMI
         _new->__offset = 0;
         _new->__all_contexts=false;
         size_t s = size();
-        typedef size_t tb_t[2];
-        pami_task_t *rl;
+        typedef size_t tb_t[3]; //{global address, count of ranks found for this address, index into ranklist of Nth rank }
+        pami_task_t *rl, *rl_free;
         tb_t *tb;
         pami_result_t rc;
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-                                                           (void **)&rl, 0, s * sizeof(*rl));
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&rl, 0, s * sizeof(*rl));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-                                                           (void **)&tb, 0, s * sizeof(*tb));
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&tb, 0, s * sizeof(*tb));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed", s);
-        memset(tb, 0, s * sizeof(tb_t));
+        memset(tb, 0, s * sizeof(*tb));
         size_t k = 0;
         pami_task_t r;
         PAMI::Interface::Mapping::nodeaddr_t a;
@@ -1781,15 +1793,24 @@ namespace PAMI
             if(j == l)
             {
               tb[j][0] = a.global;
+              tb[j][2] = -1UL; // haven't found a rank yet
               ++l;
-//			goto there; // compiler should optimize into this...
             }
             if(a.global == tb[j][0])
             {
-//there:
-              fprintf(stderr,"a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u))\n",a.global, a.local, j, tb[j][1], n);
-              if(tb[j][1] == (size_t)n)
+              if(a.local == (size_t)n) 
               {
+                // Prefer to slice Nth based on local address not an arbitrary counter, so overwrite if one was already stored at tb[j][2] index.
+                //fprintf(stderr,"rank %u, a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u)), k %zu, found k %zd \n",r, a.global, a.local, j, tb[j][1], n, k, tb[j][2]);
+                if(tb[j][2] == -1UL)   // didn't already find by Nth counter
+                  tb[j][2] = k++; // Inserting into ranklist at 'k' 
+                rl[tb[j][2]] = r;
+              }
+              if((tb[j][1] == (size_t)n) && // Nth (arbitrary counter) rank found and
+                 (tb[j][2] == -1UL))          // didn't find by local address
+              {
+                //fprintf(stderr,"rank %u, a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u)), k %zu, found k %zd \n",r, a.global, a.local, j, tb[j][1], n, k, tb[j][2]);
+                tb[j][2] = k; // Inserting into ranklist at 'k' 
                 rl[k++] = r;
               }
               ++tb[j][1];
@@ -1809,6 +1830,13 @@ namespace PAMI
         }
         if(k > 1)
         {
+          // The ranklist could be too big... e.g. on BGQ with 64 PPN this may be 64x too large and that 
+          // could be significant at 96K nodes (x 64 ranks per node x 8 bytes)
+          rl_free = rl;
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&rl, 0, k * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd ranklist[%zd] alloc failed", k);
+          memcpy(rl, rl_free, k*sizeof(*rl));
+          PAMI::Memory::MemoryManager::heap_mm->free(rl_free);
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->topo_ranklist = rl;
           _new->__size = k;
