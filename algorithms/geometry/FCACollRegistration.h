@@ -84,6 +84,12 @@ public:
         }
         return;
       }  
+      if (((Context*)context)->is_udp) {
+        if (_Lapi_env.MP_infolevel >= 2) {
+          fprintf(stderr, "ATTENTION: FCA is disabled for IP jobs.\n");  
+        }
+        return;
+      }  
     } else {
       return;  
     }
