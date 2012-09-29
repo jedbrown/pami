@@ -201,6 +201,7 @@ build/p2p/immediate_send_overflow.exe \
 build/p2p/put/simple_put_func.exe \
 build/p2p/rget/simple_rget_func.exe \
 build/p2p/rput/simple_rput_func.exe \
+build/p2p/send/send_alltoall_perf.exe \
 build/p2p/send/default-send-1.exe \
 build/p2p/send/long-header-matrix.exe \
 build/p2p/send/long-header.exe \
