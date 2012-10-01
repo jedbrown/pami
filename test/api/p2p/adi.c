@@ -50,6 +50,7 @@
 
 #define SSIZE 4     /**< This is the size (in bytes) of the small send */
 #define LSIZE 1*1024*1024 /**< This is the size (in bytes) of the long  send */
+#define ADVNUM 100
 
 
 static pami_client_t client;
@@ -74,6 +75,17 @@ static struct
   } sshort;
 } done = { {0,0}, {0,0} }; /**< Both the long and short messages have send and recv callbacks that must complete. */
 
+void lock_all_contexts() {
+    int i;
+    for (i = 0; i < num_contexts; i ++)
+        PAMI_Context_lock(contexts[i]);
+}
+
+void unlock_all_contexts() {
+    int i;
+    for (i = 0; i < num_contexts; i ++)
+        PAMI_Context_unlock(contexts[i]);
+}
 
 /**
  * The long-recv is asynchronous; this is used to signal its
@@ -110,6 +122,7 @@ static void RecvLongCB(pami_context_t    context,
   assert(_addr == NULL);
   assert(size > 0);
   assert(msginfo_size == 4*sizeof(unsigned));
+  assert(size == LSIZE);
 
   unsigned* msginfo   = (unsigned*)_msginfo;
   size_t    contextid = (size_t)cookie;
@@ -143,6 +156,7 @@ static void RecvShortCB(pami_context_t    context,
   assert(_addr != NULL);
   assert(size > 0);
   assert(msginfo_size == 4*sizeof(unsigned));
+  assert(size == SSIZE);
 
   unsigned* msginfo   = (unsigned*)_msginfo;
   unsigned* data      = (unsigned*)_addr;
@@ -217,8 +231,11 @@ static void *SendLong(void *c)
 
   pami_work_t state;
   PAMI_Context_post(contexts[local_context], &state, SendLongHandoff, quad);
-  while (!done.slong.send)
-    PAMI_Context_advancev(contexts, num_contexts, 1);
+  while (!done.slong.send) {
+    lock_all_contexts();
+    PAMI_Context_advancev(contexts, num_contexts, ADVNUM);
+    unlock_all_contexts();
+  }
   return NULL;
 }
 
@@ -266,8 +283,11 @@ static void *SendShort(void *c)
 
   pami_work_t state;
   PAMI_Context_post(contexts[local_context], &state, SendShortHandoff, NULL);
-  while (!done.sshort.send)
-    PAMI_Context_advancev(contexts, num_contexts, 1);
+  while (!done.sshort.send) {
+    lock_all_contexts();
+    PAMI_Context_advancev(contexts, num_contexts, ADVNUM);
+    unlock_all_contexts();
+  }
   return NULL;
 }
 
@@ -283,9 +303,11 @@ static void *advance(void* c)
           done.slong.send &&
           done.slong.recv
          )
-        )
-    /* I'm using "13" for the poll-iterations just because I like the number */
-    PAMI_Context_advancev(contexts, num_contexts, 13);
+        ) {
+    lock_all_contexts();
+    PAMI_Context_advancev(contexts, num_contexts, ADVNUM);
+    unlock_all_contexts();
+  }
 
   return NULL;
 }
