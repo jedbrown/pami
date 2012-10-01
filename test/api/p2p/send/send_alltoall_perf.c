@@ -192,6 +192,8 @@ int main (int argc, char ** argv)
   for (i=0; i<num_tasks; i++)
     PAMI_Endpoint_create (client, i, 0, &endpoints[i]);
 
+  /*  Randomize the ranks */
+  srand(my_taskid);
   shuffle(endpoints, num_endpoints);
 
   alltoall (client, context, dispatch,
