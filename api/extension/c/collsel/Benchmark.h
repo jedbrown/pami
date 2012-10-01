@@ -864,9 +864,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       coll[0].cmd.xfer_allgatherv.rcvbuf     = (char *)rbuf;
       coll[0].cmd.xfer_allgatherv.rtypecounts = lengths;
       coll[0].cmd.xfer_allgatherv.rdispls     = displs;
-      size_t k;
-      for (k = 0; k < ntasks; k++)lengths[k] = msg_size;
-      for (k = 0; k < ntasks; k++)displs[k]  = k*msg_size;
       break;
     }
     case PAMI_XFER_ALLGATHERV_INT:
@@ -890,9 +887,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       coll[0].cmd.xfer_allgatherv_int.rcvbuf     = (char *)rbuf;
       coll[0].cmd.xfer_allgatherv_int.rtypecounts = lengths;
       coll[0].cmd.xfer_allgatherv_int.rdispls     = displs;
-      size_t k;
-      for (k = 0; k < ntasks; k++)lengths[k] = msg_size;
-      for (k = 0; k < ntasks; k++)displs[k]  = k*msg_size;
       break;
     }
     case PAMI_XFER_SCATTER:
@@ -927,12 +921,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       size_t *displs    = (size_t*)malloc(ntasks * sizeof(size_t));
       assert(displs);
 
-      size_t k;
-      for (k = 0; k < ntasks; k++)
-      {
-        lengths[k] = msg_size;
-        displs[k]  = k * msg_size;
-      }
     
       coll[0].cmd.xfer_scatterv.sndbuf      = (char *)buf;
       coll[0].cmd.xfer_scatterv.stypecounts = lengths;
@@ -957,12 +945,7 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       int *displs    = (int*)malloc(ntasks * sizeof(int));
       assert(displs);
 
-      size_t k;
-      for (k = 0; k < ntasks; k++)
-      {
-        lengths[k] = msg_size;
-        displs[k]  = k * msg_size;
-      }
+
       coll[0].cmd.xfer_scatterv_int.sndbuf      = (char *)buf;
       coll[0].cmd.xfer_scatterv_int.stypecounts = lengths;
       coll[0].cmd.xfer_scatterv_int.sdispls     = displs;
@@ -1001,12 +984,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       size_t *displs    = (size_t*)malloc(ntasks * sizeof(size_t));
       assert(displs);
 
-      size_t k = 0;
-      for (k = 0; k < ntasks; k++)
-      {
-        lengths[k] = msg_size;
-        displs[k]  = k * msg_size;
-      }
 
       coll[0].cmd.xfer_gatherv.sndbuf      = (char *)buf;
       coll[0].cmd.xfer_gatherv.rcvbuf      = (char *)rbuf;
@@ -1031,13 +1008,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       int *displs    = (int*)malloc(ntasks * sizeof(int));
       assert(displs);
 
-      size_t           k = 0;
-
-      for (k = 0; k < ntasks; k++)
-      {
-        lengths[k] = msg_size;
-        displs[k]  = k * msg_size;
-      }
 
       coll[0].cmd.xfer_gatherv_int.sndbuf      = (char *)buf;
       coll[0].cmd.xfer_gatherv_int.rcvbuf      = (char *)rbuf;
@@ -1085,12 +1055,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       size_t *rdispls = (size_t*) malloc(ntasks * sizeof(size_t));
       assert(rdispls);
 
-      size_t j;
-      for (j = 0; j < ntasks; j++)
-      {
-         sndlens[j] = rcvlens[j] = msg_size;
-         sdispls[j] = rdispls[j] = msg_size;
-      }
    
       coll[0].cmd.xfer_alltoallv.sndbuf        = (char *)sbuf;
       coll[0].cmd.xfer_alltoallv.stypecounts   = sndlens;
@@ -1121,12 +1085,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       int *rdispls = (int*) malloc(ntasks * sizeof(int));
       assert(rdispls);
  
-      size_t j;
-      for (j = 0; j < ntasks; j++)
-      {
-        sndlens[j] = rcvlens[j] = msg_size;
-        sdispls[j] = rdispls[j] = msg_size * j;
-      }
 
       coll[0].cmd.xfer_alltoallv_int.sndbuf        = (char *)sbuf;
       coll[0].cmd.xfer_alltoallv_int.stypecounts   = sndlens;
@@ -1354,6 +1312,13 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_allgatherv.stype      = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_allgatherv.stypecount = msg_size;
       coll[0].cmd.xfer_allgatherv.rtype      = PAMI_TYPE_BYTE;
+
+      size_t k;
+      for (k = 0; k < ntasks; k++)
+        coll[0].cmd.xfer_allgatherv.rtypecounts[k] = msg_size;
+      for (k = 0; k < ntasks; k++)
+        coll[0].cmd.xfer_allgatherv.rdispls[k]  = k*msg_size;
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_allgatherv.stype,
@@ -1370,6 +1335,13 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_allgatherv_int.stype      = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_allgatherv_int.stypecount = msg_size;
       coll[0].cmd.xfer_allgatherv_int.rtype      = PAMI_TYPE_BYTE;
+
+      size_t k;
+      for (k = 0; k < ntasks; k++)
+        coll[0].cmd.xfer_allgatherv_int.rtypecounts[k] = msg_size;
+      for (k = 0; k < ntasks; k++)
+        coll[0].cmd.xfer_allgatherv_int.rdispls[k]  = k*msg_size;
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_allgatherv_int.stype,
@@ -1403,10 +1375,17 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_scatterv.rtype       = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_scatterv.rtypecount  = msg_size;
       coll[0].cmd.xfer_scatterv.root = root_ep;
+      size_t k;
+      for (k = 0; k < ntasks; k++)
+      {
+        coll[0].cmd.xfer_scatterv.stypecounts[k] = msg_size;
+        coll[0].cmd.xfer_scatterv.sdispls[k]  = k * msg_size;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_scatterv.stype,
-			       coll[0].cmd.xfer_scatterv.rtypecount,
+			       coll[0].cmd.xfer_scatterv.stypecounts[0],
 	                       coll[0].cmd.xfer_scatterv.sndbuf,
 			       coll[0].cmd.xfer_scatterv.rtype,
 			       coll[0].cmd.xfer_scatterv.rtypecount,
@@ -1419,10 +1398,17 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_scatterv_int.rtype       = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_scatterv_int.rtypecount  = msg_size;
       coll[0].cmd.xfer_scatterv_int.root = root_ep;
+      size_t k;
+      for (k = 0; k < ntasks; k++)
+      {
+        coll[0].cmd.xfer_scatterv_int.stypecounts[k] = msg_size;
+        coll[0].cmd.xfer_scatterv_int.sdispls[k]  = k * msg_size;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_scatterv_int.stype,
-			       coll[0].cmd.xfer_scatterv_int.rtypecount,
+			       coll[0].cmd.xfer_scatterv_int.stypecounts[0],
 	                       coll[0].cmd.xfer_scatterv_int.sndbuf,
 			       coll[0].cmd.xfer_scatterv_int.rtype,
 			       coll[0].cmd.xfer_scatterv_int.rtypecount,
@@ -1452,6 +1438,14 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_gatherv.stypecount  = msg_size;
       coll[0].cmd.xfer_gatherv.rtype       = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_gatherv.root = root_ep;
+
+      size_t k = 0;
+      for (k = 0; k < ntasks; k++)
+      {
+        coll[0].cmd.xfer_gatherv.rtypecounts[k] = msg_size;
+        coll[0].cmd.xfer_gatherv.rdispls[k]  = k * msg_size;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_gatherv.stype,
@@ -1468,6 +1462,14 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_gatherv_int.stypecount  = msg_size;
       coll[0].cmd.xfer_gatherv_int.rtype       = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_gatherv.root = root_ep;
+
+      size_t k = 0;
+      for (k = 0; k < ntasks; k++)
+      {
+        coll[0].cmd.xfer_gatherv_int.rtypecounts[k] = msg_size;
+        coll[0].cmd.xfer_gatherv_int.rdispls[k]  = k * msg_size;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_gatherv_int.stype,
@@ -1502,6 +1504,16 @@ void fill_coll(pami_client_t client,
     {
       coll[0].cmd.xfer_alltoallv.stype         = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_alltoallv.rtype         = PAMI_TYPE_BYTE;
+	  
+      size_t j;
+      for (j = 0; j < ntasks; j++)
+      {
+        coll[0].cmd.xfer_alltoallv.stypecounts[j] = 
+          coll[0].cmd.xfer_alltoallv.rtypecounts[j] = msg_size;
+        coll[0].cmd.xfer_alltoallv.sdispls[j] = 
+          coll[0].cmd.xfer_alltoallv.rdispls[j] = msg_size * j;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_alltoallv.stype,
@@ -1516,6 +1528,16 @@ void fill_coll(pami_client_t client,
     {
       coll[0].cmd.xfer_alltoallv_int.stype     = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_alltoallv_int.rtype     = PAMI_TYPE_BYTE;
+
+      size_t j;
+      for (j = 0; j < ntasks; j++)
+      {
+        coll[0].cmd.xfer_alltoallv_int.stypecounts[j] = 
+          coll[0].cmd.xfer_alltoallv_int.rtypecounts[j] = msg_size;
+        coll[0].cmd.xfer_alltoallv_int.sdispls[j] = 
+          coll[0].cmd.xfer_alltoallv_int.rdispls[j] = msg_size * j;
+      }
+
       *result = check_metadata(*coll_metadata,
 		               coll[0],
 		               coll[0].cmd.xfer_alltoallv_int.stype,
