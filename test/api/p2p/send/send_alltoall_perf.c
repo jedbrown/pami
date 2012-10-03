@@ -28,7 +28,7 @@
 
 /*#define DO_FENCE*/
 
-volatile unsigned   _recv_active;
+volatile unsigned   _recv_active[2];
 char               *_recvbuffer;
 
 static void shuffle(pami_endpoint_t *array, size_t n)
@@ -99,7 +99,7 @@ void alltoall(pami_client_t    client,
 {
   unsigned i;
   volatile unsigned send_active = num_endpoints;
-  _recv_active += num_endpoints;
+  _recv_active[dispatch] += num_endpoints;
 
   pami_send_t parameters = {};
   memset(&parameters, 0, sizeof(parameters));
@@ -125,7 +125,7 @@ void alltoall(pami_client_t    client,
     parameters.send.data.iov_base   = &sendbuffer[t*chunksize];
     PAMI_Send (context, &parameters);
   }
-  while (_recv_active > 0 || send_active > 0) PAMI_Context_advance (context, 100);
+  while (_recv_active[dispatch] > 0 || send_active > 0) PAMI_Context_advance (context, 100);
 }
 
 int main (int argc, char ** argv)
@@ -136,17 +136,23 @@ int main (int argc, char ** argv)
   PAMI_Client_create (clientname, &client, NULL, 0);
   PAMI_Context_createv (client, NULL, 0, &context, 1);
 
-  size_t                          dispatch = 1;
   pami_dispatch_callback_function fn;
   fn.p2p = alltoall_dispatch;
   pami_dispatch_hint_t options={};
   memset(&options, 0, sizeof(options));
+  size_t dispatch = 0;
   pami_result_t        result = PAMI_Dispatch_set (context,
                                                    dispatch,
                                                    fn,
-                                                   (void *)&_recv_active,
+                                                   (void *)&_recv_active[0],
                                                    options);
-  if (result != PAMI_SUCCESS)
+  dispatch        = 1;
+  pami_result_t        result1 = PAMI_Dispatch_set (context,
+                                                    dispatch,
+                                                    fn,
+                                                    (void *)&_recv_active[1],
+                                                    options);
+  if (result != PAMI_SUCCESS || result1 != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable register pami dispatch. result = %d\n", result);
     return 1;
@@ -196,20 +202,25 @@ int main (int argc, char ** argv)
   srand(my_taskid);
   shuffle(endpoints, num_endpoints);
 
+  /* First Alltoall */
+  dispatch = 0;
   alltoall (client, context, dispatch,
             sendheader, headersize,
             sendbuffer, chunksize,
             endpoints, num_endpoints);
-
-  double t = PAMI_Wtime(client);
-  alltoall (client, context, dispatch,
-            sendheader, headersize,
-            sendbuffer, chunksize,
-            endpoints, num_endpoints);
+  
+  /* Second Alltoall */
+  double t  = PAMI_Wtime(client);
+  int niter = 1;
+  for(i=1; i <= niter; i++)
+    alltoall (client, context, i%2,
+              sendheader, headersize,
+              sendbuffer, chunksize,
+              endpoints, num_endpoints);
   t = PAMI_Wtime(client) - t;
 
   if(my_taskid == 0)
-    fprintf(stderr, "Time=%f Tasks=%ld\n", t, num_tasks);
+    fprintf(stderr, "Time=%f s/alltoall iter=%d Tasks=%ld\n", t/niter, niter,num_tasks);
 
 #ifdef DO_FENCE
   volatile unsigned fence_flag = 1;
