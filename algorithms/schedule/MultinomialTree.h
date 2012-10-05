@@ -354,7 +354,8 @@ namespace CCMI
          * \param[INOUT] topology : the union of all sources
          */
         pami_result_t getDstUnionTopology (PAMI::Topology  *topology,
-                                           pami_endpoint_t *dst_eps)
+                                           pami_endpoint_t *dst_eps,
+                                           unsigned num_eps)
         {
           CCMI_assert(dst_eps != NULL);
           unsigned ntotal_dst = 0;
@@ -368,6 +369,9 @@ namespace CCMI
                                                        (_sendph == NOT_RECV_PHASE && phase != _recvph) ||
                                                        phase == _sendph)) || phase == _auxsendph)
                 {
+                  // one destination per radix per phase
+                  if((_radix+ntotal_dst)>num_eps)
+                      return PAMI_ENOMEM;
                   NEXT_NODES(CHILD, phase, dst_eps + ntotal_dst, ndst);
                 }
               ntotal_dst += ndst;

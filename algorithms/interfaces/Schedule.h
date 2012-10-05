@@ -126,7 +126,8 @@ namespace CCMI
        */
       virtual pami_result_t
       getDstUnionTopology (PAMI::Topology *topology,
-                           pami_endpoint_t *dst_eps=NULL)=0;
+                           pami_endpoint_t *dst_eps=NULL,
+                           unsigned num_eps=0)=0;
 
       /**
        * \brief Get the last reduce phase

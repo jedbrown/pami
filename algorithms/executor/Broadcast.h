@@ -27,10 +27,17 @@
 #include "algorithms/connmgr/ConnectionManager.h"
 #include "algorithms/interfaces/NativeInterface.h"
 
-#define BCAST_MAX_PARALLEL 64
+#include "util/ccmi_debug.h"
+#include "util/trace.h"
 
-//#define TRACE_ADAPTOR(x) fprintf x
-//#define TRACE_MSG(x) fprintf x
+#ifdef CCMI_TRACE_ALL
+  #define DO_TRACE_ENTEREXIT 1
+  #define DO_TRACE_DEBUG     1
+#else
+  #define DO_TRACE_ENTEREXIT 0
+  #define DO_TRACE_DEBUG     0
+#endif
+
 
 namespace CCMI
 {
@@ -41,7 +48,7 @@ namespace CCMI
      * link. With rectangular schedule it will lead to a one color
      * broadcast. Also implements pipelining.
      */
-    template<class T, typename T_Coll_header = CollHeaderData>
+    template<class T, typename T_Coll_header = CollHeaderData, unsigned T_BCAST_MAX_PARALLEL=64>
     class BroadcastExec : public Interfaces::Executor
     {
     protected:
@@ -53,13 +60,16 @@ namespace CCMI
       pami_multicast_t                 _msend;
       PAMI::PipeWorkQueue              _pwq;
 
-      pami_endpoint_t         _dst_eps [BCAST_MAX_PARALLEL];
+      pami_endpoint_t        *_dst_eps;
+      pami_endpoint_t        *_dst_eps_allocated;
+      pami_endpoint_t         _dst_eps_storage[T_BCAST_MAX_PARALLEL];
       pami_endpoint_t         _src_eps;
       pami_endpoint_t         _self_ep;
       pami_endpoint_t         _root_ep;
       PAMI::Topology          _dsttopology;
       PAMI::Topology          _srctopology;
       PAMI::Topology          _selftopology;
+      unsigned                _num_dst_eps;
 
       //Private method
       void             sendNext ();
@@ -67,12 +77,21 @@ namespace CCMI
     public:
       BroadcastExec () :
       Interfaces::Executor (),
-      _comm_schedule(NULL)
+      _comm_schedule(NULL),
+      _dst_eps(_dst_eps_storage),
+      _dst_eps_allocated(NULL),
+      _num_dst_eps(T_BCAST_MAX_PARALLEL)
       //_comm(-1)
       {
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec()\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
+        TRACE_FN_EXIT();
       }
-
+      ~BroadcastExec ()
+      {
+        if(_dst_eps_allocated) free(_dst_eps_allocated);
+      }
+      
       BroadcastExec (Interfaces::NativeInterface  * mf,
                      T                            * connmgr,
                      unsigned                       comm):
@@ -81,11 +100,15 @@ namespace CCMI
       _native(mf),
       _connmgr(connmgr),
       _postReceives (false),
+      _dst_eps(_dst_eps_storage),
+      _dst_eps_allocated(NULL),
       _self_ep(mf->endpoint()),
       _dsttopology(),
-      _selftopology(&_self_ep,1,PAMI::tag_eplist())
+      _selftopology(&_self_ep,1,PAMI::tag_eplist()),
+      _num_dst_eps(T_BCAST_MAX_PARALLEL)
       {
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec(...)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         //_root              =  (unsigned) - 1;
         //_buflen            =  0;
         pami_quad_t *info   =  (pami_quad_t*)((void*) & _mdata);
@@ -99,6 +122,7 @@ namespace CCMI
         _mdata._comm       =  comm;
         _mdata._count = -1; // not used on broadcast
         _mdata._phase = 0;
+        TRACE_FN_EXIT();
       }
 
       void setPostReceives ()
@@ -114,23 +138,36 @@ namespace CCMI
 
       void setSchedule (Interfaces::Schedule *ct, unsigned color)
       {
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setSchedule()\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         //_color = color;
         _comm_schedule = ct;
         int nph, phase;
         _comm_schedule->init (_mdata._root, BROADCAST_OP, phase, nph);
         CCMI_assert(_comm_schedule != NULL);
-        _comm_schedule->getDstUnionTopology (&_dsttopology, _dst_eps);
-        CCMI_assert(_dsttopology.size() <= BCAST_MAX_PARALLEL);
+        // ENOMEM means there wasn't enough room in our ep list, so re-malloc and try again
+        while(_comm_schedule->getDstUnionTopology (&_dsttopology, _dst_eps, _num_dst_eps) == PAMI_ENOMEM)
+        {
+          TRACE_FORMAT( "<%p>ENOMEM %u", this, _num_dst_eps);
+          if(_dst_eps_allocated) free(_dst_eps_allocated);
+          _num_dst_eps *=2;
+          _dst_eps = _dst_eps_allocated = (pami_endpoint_t*)malloc(_num_dst_eps*sizeof(*_dst_eps));
+          CCMI_assert(_dst_eps);
+        }
+        // Rectangle protocols do not use the _dst_eps list and will not return ENOMEM so the _dst_eps/_num_dst_eps may
+        // safely be left 'too small' and this assert is not appropriate.   
+        // CCMI_assert(_dsttopology.size() <= (size_t)_num_dst_eps);
         if(_connmgr)
           _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
 
-#if 1
-        pami_endpoint_t srcranks[BCAST_MAX_PARALLEL];
+#if 0 // this was a sanity check using an ep array, we assume only one src
+        pami_endpoint_t srcranks[64];
         _comm_schedule->getSrcUnionTopology (&_srctopology, srcranks);   
         CCMI_assert (_srctopology.size() <= 1);
-        _comm_schedule->getSrcUnionTopology (&_srctopology, &_src_eps); 
 #endif
+        _comm_schedule->getSrcUnionTopology (&_srctopology, &_src_eps); 
+        CCMI_assert (_srctopology.size() <= 1);
+        TRACE_FN_EXIT();
       }
 
       void setConnectionID (unsigned cid)
@@ -141,14 +178,17 @@ namespace CCMI
 
       void setRoot(unsigned root)
       {
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setRoot() root %u\n", this, root));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> root %u", this, root);
         _mdata._root = root;
         _root_ep     = root;
+        TRACE_FN_EXIT();
       }
 
       void  setBuffers (char *src, char *dst, int bytes, int stride, TypeCode *stype, TypeCode *rtype)
       {
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() src %p, dst %p, len %d/%d, _pwq %p\n", this, src, dst, bytes,stride, &_pwq));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p> src %p, dst %p, len %d, _pwq %p", this, src, dst, len, &_pwq);
         _msend.bytes = bytes;
 
         //Setup pipework queue. This depends on setRoot so it better be correct
@@ -162,8 +202,9 @@ namespace CCMI
         {
           _pwq.configure (dst, buflen, 0, rtype, stype);
         }
-        TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::setBuffers() _pwq %p, bytes available %zu/%zu\n", this, &_pwq,
-                       _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce()));
+        TRACE_FORMAT( "<%p> _pwq %p, bytes available %zu/%zu", this, &_pwq,
+                       _pwq.bytesAvailableToConsume(), _pwq.bytesAvailableToProduce());
+        TRACE_FN_EXIT();
       }
 
       void setCollHeader(const T_Coll_header &hdr)
@@ -194,7 +235,12 @@ namespace CCMI
 
       void postReceives ()
       {
-        if(_native->endpoint() == _mdata._root) return;
+        TRACE_FN_ENTER();
+        if(_native->endpoint() == _mdata._root) 
+        {  
+          TRACE_FN_EXIT();
+          return;
+        }
 
         pami_multicast_t mrecv;
         //memcpy (&mrecv, &_msend, sizeof(pami_multicast_t));
@@ -202,8 +248,8 @@ namespace CCMI
         mrecv.msgcount = _msend.msgcount;
         mrecv.connection_id = _msend.connection_id;
 
-        TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::postReceives ndest %zu, bytes %zu, rank %u, root %u\n",
-                   this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_srctopology.index2Endpoint(0)));
+        TRACE_FORMAT( "<%p> ndest %zu, bytes %zu, rank %u, root %u",
+                   this, _dsttopology.size(), _msend.bytes, _selftopology.index2Endpoint(0),_srctopology.index2Endpoint(0));
         mrecv.src_participants   = (pami_topology_t *) & _srctopology; 
         mrecv.dst_participants   = (pami_topology_t *) & _selftopology;
 
@@ -223,14 +269,17 @@ namespace CCMI
         mrecv.bytes  = _msend.bytes;
 
         _native->multicast(&mrecv);
+        TRACE_FN_EXIT();
       }
       static void notifyRecvDone( pami_context_t   context,
                                   void           * cookie,
                                   pami_result_t    result )
       {
+        TRACE_FN_ENTER();
         TRACE_MSG ((stderr, "<%p>Executor::BroadcastExec::notifyRecvDone()\n", cookie));
         BroadcastExec<T, T_Coll_header> *exec =  (BroadcastExec<T, T_Coll_header> *) cookie;
         exec->sendNext();
+        TRACE_FN_EXIT();
       }
 
 
@@ -241,26 +290,30 @@ namespace CCMI
 ///
 /// \brief start sending broadcast data. Only active on the root node
 ///
-template <class T, typename T_Coll_header>
-inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::start ()
+template <class T, typename T_Coll_header, unsigned T_BCAST_MAX_PARALLEL>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header,T_BCAST_MAX_PARALLEL>::start ()
 {
-  TRACE_ADAPTOR((stderr, "<%p>Executor::BroadcastExec::start() count %zu\n", this, _msend.bytes));
+  TRACE_FN_ENTER();
+  TRACE_FORMAT( "<%p> count %zu", this, _msend.bytes);
 
   if(_native->endpoint() == _mdata._root || _postReceives)
   {
     sendNext ();
   }
+  TRACE_FN_EXIT();
 }
 
-template <class T, typename T_Coll_header>
-inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
+template <class T, typename T_Coll_header, unsigned T_BCAST_MAX_PARALLEL>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header,T_BCAST_MAX_PARALLEL>::sendNext ()
 {
+  TRACE_FN_ENTER();
   //CCMI_assert (_dsttopology.size() != 0); //We have nothing to send
   if(_dsttopology.size() == 0)
   {
-    TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %zu, ndsts %zu bytes available to consume %zu\n",
-               this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+    TRACE_FORMAT( "<%p> bytes %zu, ndsts %zu bytes available to consume %zu",
+               this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume());
     //_cb_done(NULL, _clientdata, PAMI_SUCCESS);
+    TRACE_FN_EXIT();
     return;
   }
 
@@ -272,15 +325,15 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
 
   for(unsigned i = 0; i < _dsttopology.size(); ++i)
   {
-    sprintf(tbuf, " me: 0x%x dstrank[%d] = %d/%d ", _native->endpoint(),i, _dst_eps[i], _dsttopology.index2Endpoint(i));
+    sprintf(tbuf, " me: 0x%x dstrank[%d] = %d ", _native->endpoint(),i, _dsttopology.index2Endpoint(i));
     strcat (sbuf, tbuf);
   }
 
   fprintf (stderr, " %s\n", sbuf);
 #endif
 
-  TRACE_MSG((stderr, "<%p>Executor::BroadcastExec::sendNext() bytes %zu, ndsts %zu bytes available to consume %zu\n",
-             this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume()));
+  TRACE_FORMAT( "<%p> bytes %zu, ndsts %zu bytes available to consume %zu",
+             this, _msend.bytes, _dsttopology.size(), _pwq.bytesAvailableToConsume());
 
   //Sending message header to setup receive of an async message
   //  _mdata._comm  = _comm;
@@ -290,22 +343,24 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::sendNext ()
   //_msend.bytes  = _msend.bytes;
 
   _native->multicast(&_msend);
+  TRACE_FN_EXIT();
 }
 
-template <class T, typename T_Coll_header>
-inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::notifyRecv
+template <class T, typename T_Coll_header, unsigned T_BCAST_MAX_PARALLEL>
+inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header,T_BCAST_MAX_PARALLEL>::notifyRecv
 (unsigned             src,
  const pami_quad_t   & info,
  PAMI::PipeWorkQueue ** pwq,
  pami_callback_t      * cb_done)
 {
-  TRACE_MSG((stderr, "<%p> Executor::BroadcastExec::notifyRecv() from %d, dsttopology.size %zu\n", this, src, _dsttopology.size()));
+  TRACE_FN_ENTER();
+  TRACE_FORMAT( "<%p> from %d, dsttopology.size %zu", this, src, _dsttopology.size());
 
   *pwq = &_pwq;
 
   if(_dsttopology.size() > 0)
   {
-    TRACE_ADAPTOR((stderr, "<%p> Executor::BroadcastExec::notifyRecv() dsttopology.size %zu\n", this, _dsttopology.size()));
+    TRACE_FORMAT( "<%p>  dsttopology.size %zu", this, _dsttopology.size());
     /// \todo this sendNext() should have worked but MPI platform didn't support it (yet).
     //    cb_done->function = NULL;  //There is a send here that will notify completion
     //    sendNext ();
@@ -314,10 +369,11 @@ inline void  CCMI::Executor::BroadcastExec<T, T_Coll_header>::notifyRecv
   }
   else
   {
-    TRACE_ADAPTOR((stderr, "<%p> Executor::BroadcastExec::notifyRecv() Nothing to send, receive completion indicates completion\n", this));
+    TRACE_FORMAT( "<%p>  Nothing to send, receive completion indicates completion", this);
     cb_done->function   = _cb_done;
     cb_done->clientdata = _clientdata;
   }
+  TRACE_FN_EXIT();
 }
 
 #endif

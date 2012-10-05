@@ -344,6 +344,25 @@ namespace CCMI
       }
 
       ///
+      /// \brief get number of children, if rooted, of right neighbors list
+      ///
+      unsigned getRListNpes(unsigned uphase)
+      {
+        TRACE_FN_ENTER();
+        // vector<int>::iterator iter;
+        // for_each (_partners.begin(), _partners.end(), print_partners);
+        int phase = (int)uphase;
+        unsigned nrpes = 0;
+
+        if (phase >= _rstartph)
+        {
+          nrpes = (phase < _nphs - 1) ? _nports : _partners.size() - (phase - _rstartph) * _nports;
+        }
+        TRACE_FORMAT("phase %u, nrpes %u, _nphs %u, _nports %u, _partners.size %zu , _rstartph %u",phase, nrpes, _nphs, _nports, _partners.size(), _rstartph);
+        TRACE_FN_EXIT();
+        return nrpes;
+      }
+      ///
       /// \brief get children, if rooted, or right neighbors list
       ///
       void getRList (unsigned uphase, unsigned *rpes, unsigned &nrpes, unsigned *rlens = NULL)
@@ -465,7 +484,8 @@ namespace CCMI
       }
 
       pami_result_t getDstUnionTopology (PAMI::Topology *topology,
-                                         pami_endpoint_t *dst_eps)
+                                         pami_endpoint_t *dst_eps,
+                                         unsigned num_eps)
       {
         TRACE_FN_ENTER();
         CCMI_assert(dst_eps != NULL);
@@ -476,6 +496,9 @@ namespace CCMI
         {
           unsigned ndst = 0;
           TRACE_FORMAT("<%p>_lstartph %u, _mynphs %u, phase %u", this,_lstartph, _mynphs, phase);
+          // Check how many destinations this phase and total num destinations doesnt' exceed max
+          if((getRListNpes(phase)+ntotal_dst)>num_eps)
+            return PAMI_ENOMEM;
           getRList(phase, dst_eps + ntotal_dst, ndst);
           ntotal_dst += ndst;
           TRACE_FORMAT("<%p> ntotal_dst %u, ndst %u", this,ntotal_dst, ndst);
@@ -737,6 +760,23 @@ namespace CCMI
       }
 
       ///
+      /// \brief get number of children, if rooted, of right neighbors list
+      ///
+      unsigned getRListNpes(unsigned uphase)
+      {
+        int phase = (int)uphase;
+        TRACE_FN_ENTER();
+        unsigned nrpes = 0;
+
+        if (_myrank == _root)
+        {
+          nrpes = (phase < _nphs) ? _nports : _nranks - phase * _nports;
+        }
+        TRACE_FORMAT("phase %u, nrpes %u, _nphs %u, _nports %u,  _rstartph %u",phase, nrpes, _nphs, _nports,  _rstartph);
+        TRACE_FN_EXIT();
+        return nrpes;
+      }
+      ///
       /// \brief get children, if rooted, or right neighbors list
       ///
       void getRList (unsigned uphase, unsigned *rpes, unsigned &nrpes,
@@ -838,7 +878,8 @@ namespace CCMI
       }
 
       pami_result_t getDstUnionTopology (PAMI::Topology *topology,
-                                         pami_endpoint_t *dst_eps)
+                                         pami_endpoint_t *dst_eps,
+                                         unsigned num_eps)
       {
         TRACE_FN_ENTER();
         CCMI_assert(dst_eps != NULL);
@@ -848,6 +889,9 @@ namespace CCMI
         for (int phase = _lstartph; phase < _lstartph + _mynphs; phase++)
         {
           unsigned ndst = 0;
+          // Check how many destinations this phase and total num destinations doesnt' exceed max
+          if((getRListNpes(phase)+ntotal_dst)>num_eps)
+            return PAMI_ENOMEM;
           getRList(phase, dst_eps + ntotal_dst, ndst);
           ntotal_dst += ndst;
 
@@ -952,6 +996,7 @@ namespace CCMI
 
       using GenericTreeSchedule < P, 0, P + 1 >::getLList;
       using GenericTreeSchedule < P, 0, P + 1 >::getRList;
+      using GenericTreeSchedule < P, 0, P + 1 >::getRListNpes;
 
       ///
       /// \brief Get both left and right neighbors
@@ -1021,6 +1066,7 @@ namespace CCMI
 
       using GenericTreeSchedule < P, 1, P + 1 >::getLList;
       using GenericTreeSchedule < P, 1, P + 1 >::getRList;
+      using GenericTreeSchedule < P, 1, P + 1 >::getRListNpes;
 
       ///
       /// \brief Get both left and right neighbors
@@ -1075,6 +1121,7 @@ namespace CCMI
 
       using GenericTreeSchedule < P, 1, P + 1 >::getLList;
       using GenericTreeSchedule < P, 1, P + 1 >::getRList;
+      using GenericTreeSchedule < P, 1, P + 1 >::getRListNpes;
       using GenericTreeSchedule < P, 1, P + 1 >::init;
 
       void init(int root, int op, int &startphase, int &nphases)
@@ -1141,6 +1188,7 @@ namespace CCMI
 
       using GenericTreeSchedule < P, 1, P + 1 >::getLList;
       using GenericTreeSchedule < P, 1, P + 1 >::getRList;
+      using GenericTreeSchedule < P, 1, P + 1 >::getRListNpes;
 
       void getList (unsigned uphase, unsigned *lpes, unsigned &nlpes,
                     unsigned *rpes, unsigned &nrpes, size_t *loffs = NULL,
@@ -1191,6 +1239,7 @@ namespace CCMI
 
       using GenericTreeSchedule < P, 1, P + 1 >::getLList;
       using GenericTreeSchedule < P, 1, P + 1 >::getRList;
+      using GenericTreeSchedule < P, 1, P + 1 >::getRListNpes;
       using GenericTreeSchedule < P, 1, P + 1 >::init;
 
       void init(int root, int op, int &startphase, int &nphases)

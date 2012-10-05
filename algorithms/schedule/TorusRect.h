@@ -155,7 +155,7 @@ namespace CCMI
  
       virtual void init(int root, int op, int &start, int &nphases);
       virtual pami_result_t getSrcUnionTopology(PAMI::Topology *topo, pami_endpoint_t *src_eps=NULL);
-      virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps=NULL);
+      virtual pami_result_t getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps=NULL,unsigned num_eps=0);
       virtual void getSrcTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *src_eps=NULL);
       virtual void getDstTopology(unsigned phase, PAMI::Topology *topology, pami_endpoint_t *dst_eps=NULL);
 
@@ -585,9 +585,10 @@ CCMI::Schedule::TorusRect::setupLocal(int     & raxis,
 
 
 inline pami_result_t
-CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps)
+CCMI::Schedule::TorusRect::getDstUnionTopology(PAMI::Topology *topology,pami_endpoint_t *dst_eps,unsigned num_eps)
 {
   (void)dst_eps;
+  (void)num_eps;
   TRACE_FN_ENTER();
   unsigned char torus_link[PAMI_MAX_DIMS] = {0};
 

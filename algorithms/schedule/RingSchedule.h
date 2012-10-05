@@ -451,12 +451,17 @@ namespace CCMI
        * \param[INOUT] topology : the union of all sources
        */
       virtual pami_result_t getDstUnionTopology (PAMI::Topology  *topology,
-                                                 pami_endpoint_t *dst_eps)
+                                                 pami_endpoint_t *dst_eps,
+                                                 unsigned num_eps)
       {
         TRACE_FN_ENTER();
         CCMI_assert(dst_eps != NULL);
 
         unsigned nranks = 0, ntotal_ranks = 0;
+
+        // One destination per phase
+        if(_nphases>num_eps)
+          return PAMI_ENOMEM;
 
         for (unsigned p = _startPhase; p < _startPhase + _nphases; p++)
         {
