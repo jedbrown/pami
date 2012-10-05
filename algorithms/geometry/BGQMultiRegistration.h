@@ -40,7 +40,6 @@
 #include "algorithms/connmgr/ColorConnMgr.h"
 #include "algorithms/connmgr/ColorMapConnMgr.h"
 #include "algorithms/protocols/broadcast/BcastMultiColorCompositeT.h"
-#include "algorithms/schedule/MCRect.h"
 #include "algorithms/schedule/TorusRect.h"
 #include "common/NativeInterface.h"
 #include "algorithms/protocols/allgather/AllgatherOnBroadcastT.h"
