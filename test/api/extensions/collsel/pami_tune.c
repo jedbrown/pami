@@ -19,10 +19,10 @@
  * \user parameter proces to the the PAMI collsel extension
  */
 
-#include <stdio.h>
 #include <pami.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <getopt.h>
 #include <string.h>
 
 
@@ -223,7 +223,7 @@ int process_file(const char *filename, advisor_params_t *params, int *msg_full_f
   }
   char line[10000];
  
-  //process collectives
+  /* process collectives */
   if(fgets(line, 10000, fr)!=NULL)
   {
     char * pch;
@@ -235,7 +235,7 @@ int process_file(const char *filename, advisor_params_t *params, int *msg_full_f
     }
   }
   
-  //process geo sizes
+  /* process geo sizes */
   if(fgets(line, 10000, fr)!=NULL)
   {
     char * pch;
@@ -248,7 +248,7 @@ int process_file(const char *filename, advisor_params_t *params, int *msg_full_f
     }
   }
 
-  //process msg sizes
+  /* process msg sizes */
   if(fgets(line, 10000, fr)!=NULL)
   {
     char * pch;
@@ -261,19 +261,19 @@ int process_file(const char *filename, advisor_params_t *params, int *msg_full_f
     }
   }
 
-  //process iteration
+  /* process iteration */
   if(fgets(line, 10000, fr)!=NULL)
   {
     sscanf(line, "%d", &params->iter);
   }
 
-  //process verify
+  /* process verify */
   if(fgets(line, 10000, fr)!=NULL)
   {
     sscanf(line, "%d", &params->verify);
   }
 
-  //process verbose
+  /* process verbose */
   if(fgets(line, 10000, fr)!=NULL)
   {
     sscanf(line, "%d", &params->verbose);
@@ -346,7 +346,7 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
      }
    }
 
-   //full test, clean up single tests
+   /* full test, clean up single tests */
    if(geo_full_flag && msg_full_flag)
    {
      if(params->geometry_sizes)free(params->geometry_sizes);
@@ -358,7 +358,7 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
      params->message_sizes[0] = 0;
      params->num_message_sizes = 1;
    } 
-   //wrong paramters
+   /* wrong paramters */
    else if((!geo_full_flag && msg_full_flag) || (geo_full_flag && !msg_full_flag))
    {
      init_advisor_params(params);
@@ -366,7 +366,7 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
    }
    else 
    {
-     //wrong parameters
+     /* wrong parameters */
      if(!params->collectives || !params->geometry_sizes || !params->message_sizes)
      {
        init_advisor_params(params);
@@ -440,16 +440,16 @@ int main(int argc, char ** argv)
     return 1;
   }
 
-  //do a bcast on 16 np 1000 bytes
-  //params.collectives = (pami_xfer_type_t *)malloc(sizeof(pami_xfer_type_t));
-  //params.collectives[0] = PAMI_XFER_BROADCAST;
-  //params.num_collectives = 1;
-  //params.geometry_sizes = (size_t *)malloc(sizeof(size_t));
-  //params.geometry_sizes[0] = 10;
-  //params.num_geometry_sizes = 1;
-  //params.message_sizes = (size_t *)malloc(sizeof(size_t));
-  //params.message_sizes[0] = 1000;
-  //params.num_message_sizes = 1;
+  /*do a bcast on 16 np 1000 bytes*/
+  /*params.collectives = (pami_xfer_type_t *)malloc(sizeof(pami_xfer_type_t));*/
+  /*params.collectives[0] = PAMI_XFER_BROADCAST;*/
+  /*params.num_collectives = 1;*/
+  /*params.geometry_sizes = (size_t *)malloc(sizeof(size_t));*/
+  /*params.geometry_sizes[0] = 10;*/
+  /*params.num_geometry_sizes = 1;*/
+  /*params.message_sizes = (size_t *)malloc(sizeof(size_t));*/
+  /*params.message_sizes[0] = 1000;*/
+  /*params.num_message_sizes = 1;*/
   pami_extension_collsel_table_generate pamix_collsel_table_generate = 
     (pami_extension_collsel_table_generate) PAMI_Extension_symbol (extension, "Collsel_table_generate_fn");
   status = pamix_collsel_table_generate (advisor, NULL, &params, 1);
