@@ -25,6 +25,8 @@
 #include <assert.h>
 #include <sys/time.h>
 
+#define CACHE_WARMUP_ITERS 100
+
 int cutoff[PAMI_XFER_COUNT];
 
 namespace PAMI{
@@ -1136,10 +1138,17 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       err = posix_memalign(&buf, 128, msg_size);
       assert(err == 0);
       _g_buffer = (char *)buf;
+      coll[0].cmd.xfer_ambroadcast.sndbuf = (char*)buf;
+      user_header_t *header = NULL;
+      err = posix_memalign((void**)&header, 128, sizeof(user_header_t));
+      header->cookie = 100;
+      coll[0].cmd.xfer_ambroadcast.user_header = header;
+      validation_t *v = NULL;
+      err = posix_memalign((void **)&v, 128, sizeof(validation_t));
+      coll[0].cookie = v;
 
       void *validation = NULL;
       err = posix_memalign((void **)&validation, 128, (ntasks * sizeof(validation_t)));
-      validation = (char*)validation ;
       _g_val_buffer  = (validation_t *)validation;
 
       break;
@@ -1589,15 +1598,14 @@ void fill_coll(pami_client_t client,
     }
     case PAMI_XFER_AMBROADCAST:
     {
-      user_header_t header;
-      header.cookie = 100;
+
     
-      validation_t v;
-      v.root   = task;
-      v.cookie = (void *)&am_total_count;
+      am_total_count = 0;
+
+      validation_t *v = (validation_t*)coll[0].cookie;
+      v->root   = task;
+      v->cookie = (void *)&am_total_count;
       coll[0].cb_done = cb_ambcast_done;
-      coll[0].cookie  = &v;
-      coll[0].cmd.xfer_ambroadcast.user_header  = &header;
       coll[0].cmd.xfer_ambroadcast.headerlen    = sizeof(user_header_t);
       coll[0].cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_ambroadcast.stypecount   = 0;
@@ -1787,6 +1795,10 @@ void release_coll(pami_xfer_t *coll,
     }
     case PAMI_XFER_AMBROADCAST:
     {
+      free(coll[0].cmd.xfer_ambroadcast.sndbuf);
+      free(coll[0].cmd.xfer_ambroadcast.user_header);
+      free(coll[0].cookie);
+      free(_g_val_buffer);
       break;
     }
     case PAMI_XFER_AMSCATTER:
@@ -2417,29 +2429,86 @@ void measure_collective(pami_context_t   context,
   // colls[1] is barrier to synch nodes
   // colls[2] is reduce for timing
   volatile unsigned  poll_flag[3] = {0};
-
+  volatile unsigned *nAMCollecive =  NULL;
+  
   double t0, total = 0;
   int i, iters;
   int rc_check;
 
+  pami_xfer_type_t xfer_type = bench->xfer;
   iters = bench->iters; 
   if (bench->bytes >= cutoff[bench->xfer])
-    iters = MIN(20, iters/100+1);
+  {
+    iters = MIN(640, iters);
+    iters /= (bench->bytes/cutoff[bench->xfer]);
+  }
 
-  colls[0].cookie    = (void*) &poll_flag[0];
+  if(xfer_type != PAMI_XFER_AMBROADCAST)
+  {
+    colls[0].cookie    = (void*) &poll_flag[0];
+  }
   colls[1].cb_done   = cb_done;
   colls[1].cookie    = (void*) &poll_flag[1];
  
   if (bench->data_check)
     init_buffs(colls[0].cmd, bench);
 
-  blocking_coll(context, &colls[1], &poll_flag[1]);
-  t0 = timer();
-  for (i = 0; i < bench->iters; i++)
+  pami_result_t result;
+  if(xfer_type == PAMI_XFER_AMBROADCAST)
+    nAMCollecive = (unsigned *)((validation_t*)colls[0].cookie)->cookie;
+  for (i = 0; i < MIN(iters, CACHE_WARMUP_ITERS); i++)
   {
-    blocking_coll(context, &colls[0], &poll_flag[0]);
+    if(xfer_type != PAMI_XFER_AMBROADCAST)
+    {
+      blocking_coll(context, &colls[0], &poll_flag[0]);
+    }
+    else
+    {
+      if(bench->isRoot)
+      {
+        result = PAMI_Collective(context, &colls[0]);
+        if (result != PAMI_SUCCESS)
+        {
+          fprintf (stderr, "Error. Unable to issue collective. result = %d\n", result);
+          return;
+        }
+      }
+      while((int)*nAMCollecive <= i)
+        result = PAMI_Context_advance(context, 1);
+    }
   }
-  total = timer() - t0;
+
+  blocking_coll(context, &colls[1], &poll_flag[1]);
+  if(xfer_type == PAMI_XFER_AMBROADCAST)
+    *nAMCollecive = 0;
+  if(xfer_type != PAMI_XFER_AMBROADCAST)/* Have the if outside time loop for accuracy */
+  {
+    t0 = timer();
+    for (i = 0; i < iters; i++)
+    {
+      blocking_coll(context, &colls[0], &poll_flag[0]);
+    }
+    total = timer() - t0;
+  }
+  else
+  {
+    t0 = timer();
+    for (i = 0; i < iters; i++)
+    {
+      if(bench->isRoot)
+      {
+        result = PAMI_Collective(context, &colls[0]);
+        if (result != PAMI_SUCCESS)
+        {
+          fprintf (stderr, "Error. Unable to issue collective. result = %d\n", result);
+          return;
+        }
+      }
+      while((int)*nAMCollecive <= i)
+        result = PAMI_Context_advance(context, 1);
+    }
+    total = timer() - t0;
+  }
   blocking_coll(context, &colls[1], &poll_flag[1]);
 
   if (bench->data_check)
@@ -2458,7 +2527,7 @@ void measure_collective(pami_context_t   context,
         fprintf(stderr, "collective passed data check\n");
     }
   }
-  total /= (double) bench->iters;
+  total /= (double) iters;
 
   colls[2].cb_done                    = cb_done;
   colls[2].cookie                     = (void*) &poll_flag[2];

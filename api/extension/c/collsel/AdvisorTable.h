@@ -255,7 +255,7 @@ inline pami_result_t AdvisorTable::generate(char             *filename,
         size_t num_algo = col_num_algo[0] + col_num_algo[1];
 
         // Loop on message size
-        for(k=0; k<_params.num_message_sizes; k++)
+        for(k=0; k<_params.num_message_sizes && _params.message_sizes[k] <= msg_thresh; k++)
         {
           size_t msg_size = MIN(_params.message_sizes[k], msg_thresh);
 

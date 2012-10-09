@@ -120,6 +120,21 @@ void process_collective(char *ovalue, advisor_params_t *params)
 {
   size_t num_coll = params->num_collectives;
   int i;
+
+  if(!strcasecmp(ovalue, "all"))
+  {
+    pami_xfer_type_t *temp = NULL;
+    temp = (pami_xfer_type_t *)malloc(sizeof(pami_xfer_type_t)*PAMI_XFER_COUNT);
+    if(temp != NULL)
+    {
+       params->collectives     = temp;
+       params->num_collectives = PAMI_XFER_COUNT;
+       for(i=0; i<PAMI_XFER_COUNT; i++)
+         params->collectives[i] = i;
+    }
+    return;
+  }
+
   for(i=0; i<PAMI_XFER_COUNT; i++)
   {
     if(!strcmp(ovalue, xfer_array_str[i]))
@@ -148,6 +163,7 @@ void process_collective(char *ovalue, advisor_params_t *params)
     }
   }
 }
+
 
 void process_msg_sizes(int m_size, advisor_params_t *params, int *msg_full_flag)
 {
@@ -309,8 +325,6 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
      switch (c)
      {
        case 'o':
-	 if((strlen(optarg)> MAX_OP_STR) || (strlen(optarg)< MIN_OP_STR))
-	   break;
 	 strcpy(ovalue, optarg);
 	 process_collective(ovalue, params);
          break;
@@ -351,18 +365,24 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
    {
      if(params->geometry_sizes)free(params->geometry_sizes);
      if(params->message_sizes)free(params->message_sizes);
+     /* This is malloced in AdvisorTable.h if num_geo/msg_sizes = 0 not 1
      params->geometry_sizes = (size_t *)malloc(sizeof(size_t));
      params->geometry_sizes[0] = 0;
-     params->num_geometry_sizes = 1;
      params->message_sizes= (size_t *)malloc(sizeof(size_t));
-     params->message_sizes[0] = 0;
-     params->num_message_sizes = 1;
+     params->message_sizes[0] = 0;*/
+     params->num_geometry_sizes = 0;
+     params->num_message_sizes = 0;
    } 
    /* wrong paramters */
-   else if((!geo_full_flag && msg_full_flag) || (geo_full_flag && !msg_full_flag))
+   else if((!geo_full_flag && msg_full_flag))
    {
-     init_advisor_params(params);
-     return 1;
+     if(params->message_sizes)free(params->message_sizes);
+     params->num_message_sizes = 0;
+   }
+   else if((geo_full_flag && !msg_full_flag))
+   {
+     if(params->geometry_sizes)free(params->geometry_sizes);
+     params->num_geometry_sizes = 0;
    }
    else 
    {
