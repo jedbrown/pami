@@ -167,6 +167,7 @@ int main (int argc, char ** argv)
   size_t num_tasks = configuration.value.intval;
 
   int i,chunksize = 128;
+  int niter = 1;
   for ( i=1 ; i < argc ; ++i )
   {
     if ( argv[i][0] != '-' )
@@ -175,6 +176,9 @@ int main (int argc, char ** argv)
     {
         case 'm':
           chunksize = atoi(argv[++i]);
+          break;
+        case 'i':
+          niter = atoi(argv[++i]);
           break;
         default:
           fprintf(stderr, "Unrecognized argument %s\n", argv[i]);fflush(stderr);
@@ -211,7 +215,6 @@ int main (int argc, char ** argv)
   
   /* Second Alltoall */
   double t  = PAMI_Wtime(client);
-  int niter = 1;
   for(i=1; i <= niter; i++)
     alltoall (client, context, i%2,
               sendheader, headersize,
