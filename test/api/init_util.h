@@ -324,7 +324,9 @@ unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
 unsigned gMax_datatype_sz= 32; /* Assumed max datatype size */
 unsigned gMax_byte_count = COUNT;
-unsigned gMin_byte_count = 1;
+unsigned gMin_byte_count = 0;
+unsigned gTestMpiInPlace = 1;
+unsigned gAllowNullSendBuffer = 1;
 unsigned gBuffer_offset  = OFFSET;
 unsigned gNiterlat       = NITERLAT;
 size_t   gNum_contexts   = 1;
@@ -388,6 +390,18 @@ void setup_env()
 
   /* Override byte COUNT with single count */
   if (sCountOnly) gMin_byte_count = gMax_byte_count = atoi(sCountOnly);
+
+  /* \note Test environment variable" TEST_ALLOW_NULL_SEND_BUFFER=0|1 to allow a NULL send buffer on count == 0 */
+  char* sAllowNullSendBuffer = getenv("TEST_ALLOW_NULL_SEND_BUFFER");
+
+  /* Override flag to allow a null send buffer (on COUNT==0) */
+  if (sAllowNullSendBuffer) gAllowNullSendBuffer = atoi(sAllowNullSendBuffer);
+
+  /* \note Test environment variable" TEST_MPI_IN_PLACE=0|1 to test send buffer = receive buffer */
+  char* sTestMpiInPlace = getenv("TEST_MPI_IN_PLACE");
+
+  /* Override flag to test MPI_IN_PLACE */
+  if (sTestMpiInPlace) gTestMpiInPlace = atoi(sTestMpiInPlace);
 
   /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");

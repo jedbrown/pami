@@ -194,7 +194,7 @@ int main(int argc, char*argv[])
             if (task_id == task_zero)
               printf("Running Allreduce: %s, %s\n", dt_array_str[dt], op_array_str[op]);
 
-            for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
+            for (i = gMin_byte_count/get_type_size(dt_array[dt]); i <= gMax_byte_count/get_type_size(dt_array[dt]); i = i ? i*2 : 1)
             {
               size_t sz=get_type_size(dt_array[dt]);
               size_t  dataSent = i * sz;
@@ -236,6 +236,7 @@ int main(int argc, char*argv[])
               }
 
               /* Do one 'in-place' collective and validate it */
+	      if(gTestMpiInPlace)
               {
                 allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
                 allreduce.cmd.xfer_allreduce.rcvbuf    = sbuf;
@@ -252,7 +253,7 @@ int main(int argc, char*argv[])
               }
 
               /* Iterate (and time) with separate buffers, not in-place */
-              allreduce.cmd.xfer_allreduce.sndbuf    = sbuf;
+              allreduce.cmd.xfer_allreduce.sndbuf    = i==0 && gAllowNullSendBuffer ?NULL:sbuf;
               allreduce.cmd.xfer_allreduce.rcvbuf    = rbuf;
               reduce_initialize_sndbuf (sbuf, i, op, dt, task_id, num_tasks);
               memset(rbuf, 0xFF, dataSent);
