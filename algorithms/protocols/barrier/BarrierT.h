@@ -39,11 +39,6 @@
 #endif
 
 
-#undef TRACE_ERR
-#ifndef TRACE_ERR
-#define TRACE_ERR(x)
-#endif
-
 extern void registerunexpbarrier(pami_context_t context,
                                  unsigned       comm,
                                  pami_quad_t   &info,
@@ -93,11 +88,11 @@ public:
         // Use the cached barrier or generate a new one if the cached barrier doesn't exist
         TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
-        TRACE_ERR((stderr,"Generating Barrier with key=%d, ctxt_id=%ld\n", T_Key, this->_context_id));
+        TRACE_FORMAT( "Generating Barrier with key=%d, ctxt_id=%ld", T_Key, this->_context_id);
         Executor::Composite *composite = (Executor::Composite *) g->getKey(this->_context_id,
                                          T_Key);
 
-        TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u\n",this,composite, geometry, T_Key));
+        TRACE_FORMAT( "<%p>generate composite %p geometry %p, T_Key %u",this,composite, geometry, T_Key);
         if (!composite)
         {
             composite = CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, PAMI_XFER_BARRIER>::generate(geometry, cmd);
@@ -105,14 +100,14 @@ public:
             g->setKey(this->_context_id,
                       T_Key,
                       (void*)composite);
-            TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u\n",this,composite, geometry, T_Key));
+            TRACE_FORMAT( "<%p>generate composite %p geometry %p, T_Key %u",this,composite, geometry, T_Key);
         }
 
         pami_xfer_t *xfer = (pami_xfer_t *)cmd;
         composite->setDoneCallback(xfer->cb_done, xfer->cookie);
         pami_metadata_t mdata;
         this->metadata(&mdata);
-        TRACE_ERR((stderr,"<%p>generate composite %p geometry %p, T_Key %u, name %s\n",this,composite, geometry, T_Key, mdata.name));
+        TRACE_FORMAT( "<%p>generate composite %p geometry %p, T_Key %u, name %s",this,composite, geometry, T_Key, mdata.name);
         TRACE_FN_EXIT();
         return composite;
     }

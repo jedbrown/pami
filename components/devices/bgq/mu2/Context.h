@@ -48,7 +48,9 @@
 #include "components/devices/bgq/mu2/CounterPool.h"
 
 #include "util/trace.h"
+#undef  DO_TRACE_ENTEREXIT
 #define DO_TRACE_ENTEREXIT 0
+#undef  DO_TRACE_DEBUG
 #define DO_TRACE_DEBUG     0
 
 extern PAMI::Device::MU::Global __MUGlobal;
@@ -534,6 +536,7 @@ namespace PAMI
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::clearConnection()
           inline void clearConnection_impl (size_t task, size_t offset)
           {
+            TRACE_FN_ENTER();
             size_t index = task * _id_count + offset;
 
             if (unlikely(_enable_eager_connection_memory_optimization))
@@ -548,30 +551,36 @@ namespace PAMI
               TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_array[index], (void *) NULL);
               _connection_array[index] = NULL;
             }
+            TRACE_FN_EXIT();
           }
               
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::getConnection()
           inline void * getConnection_impl (size_t task, size_t offset)
           {
+            TRACE_FN_ENTER();
             size_t index = task * _id_count + offset;
 
             if (unlikely(_enable_eager_connection_memory_optimization))
             {
               PAMI_assert_debugf(_connection_map.find(index) != _connection_map.end(), "Error. _connection[%zu] was not previously set.\n", index);
               TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection_map[index]);
+              TRACE_FN_EXIT();
               return _connection_map[index];
             }
             else
             {
               PAMI_assert_debugf(_connection_array[index] != NULL, "Error. _connection[%zu] was not previously set.\n", index);
               TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p", task, offset, index, _connection_array[index]);
+              TRACE_FN_EXIT();
               return _connection_array[index];
             }
+            TRACE_FN_EXIT();
           }
 
           /// \see PAMI::Device::Interface::PacketDevice::Deterministic::setConnection()
           inline void setConnection_impl (void * value, size_t task, size_t offset)
           {
+            TRACE_FN_ENTER();
             size_t index = task * _id_count + offset;
 
             if (unlikely(_enable_eager_connection_memory_optimization))
@@ -586,10 +595,12 @@ namespace PAMI
               TRACE_FORMAT("(%zu,%zu) .. _connection[%zu] = %p -> %p", task, offset, index, _connection_array[index], value);
               _connection_array[index] = value;
             }
+            TRACE_FN_EXIT();
           }
 
           inline pami_result_t destroy ()
           {
+            TRACE_FN_ENTER();
             // Set up a local barrier (needed below).
             bool   master;
             size_t numLocalTasks;
@@ -628,14 +639,39 @@ namespace PAMI
                                          classRouteId );
               PAMI_assert(rc == 0);
               TRACE_FORMAT("MU Context: enter global barrier on class route %u\n", classRouteId);
+if(1)
+{
+              TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                           commworld_barrier.classRouteId,commworld_barrier.state,
+                           commworld_barrier.controlRegPtr,commworld_barrier.statusRegPtr);
               rc = MUSPI_GIBarrierEnterAndWait ( &commworld_barrier );
+              TRACE_FORMAT("After barrier id %zu, state %#.8lX, %p/%p",
+                           commworld_barrier.classRouteId,commworld_barrier.state,
+                           commworld_barrier.controlRegPtr,commworld_barrier.statusRegPtr);
               PAMI_assert(rc == 0);
               TRACE_FORMAT("MU Context: exit global barier, client=%zu\n",_id_client);
-            }
+}
+else
+{
+          TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                       commworld_barrier.classRouteId,commworld_barrier.state,
+                       commworld_barrier.controlRegPtr,commworld_barrier.statusRegPtr);
+          MUSPI_GIBarrierEnter (&commworld_barrier);
+          TRACE_FORMAT("After Enter barrier id %zu, state %#.8lX, %p/%p",
+                       commworld_barrier.classRouteId,commworld_barrier.state,
+                       commworld_barrier.controlRegPtr,commworld_barrier.statusRegPtr);
+  #define xMUMULTISYNC_TIMEOUT 1000000
+          int rc = MUSPI_GIBarrierPollWithTimeout  (&commworld_barrier, xMUMULTISYNC_TIMEOUT);
+          TRACE_FORMAT("After poll (rc %d) barrier id %zu, state %#.8lX, %p/%p",rc, 
+                       commworld_barrier.classRouteId,commworld_barrier.state,
+                       commworld_barrier.controlRegPtr,commworld_barrier.statusRegPtr);
+}
+          }
             TRACE_FORMAT("MU Context: Entering local barrier in context destroy, client=%zu\n",_id_client);
             barrier.enter();
             TRACE_FORMAT("MU Context: Exiting  local barrier in context destroy, client=%zu\n",_id_client);
 
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
 

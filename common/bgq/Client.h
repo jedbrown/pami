@@ -33,11 +33,6 @@
   #include "components/devices/bgq/commthread/CommThreadFactory.h"
 #endif // USE_COMMTHREADS
 
-#undef TRACE_ERR
-#ifndef TRACE_ERR
-  #define TRACE_ERR(x) //fprintf x
-#endif
-
 #include "util/trace.h"
 #undef  DO_TRACE_ENTEREXIT
 #define DO_TRACE_ENTEREXIT 0
@@ -61,6 +56,7 @@ namespace PAMI
     _world_geometry((BGQGeometry*)_world_geometry_storage),
     _mm ()
     {
+      TRACE_FN_ENTER();
       pami_result_t rc;
 
       // Set the client name string.
@@ -74,7 +70,7 @@ namespace PAMI
       rc = __pamiRM.allocateClient( _name,
                                     &_clientid );
 
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client() %s, allocate rc=%d\n", Kernel_ProcessorID(), this, _clientid, _name, rc));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> %s, allocate rc=%d", Kernel_ProcessorID(),this, _clientid, _name, rc);
 
       if( rc == PAMI_SUCCESS )
       {
@@ -91,14 +87,13 @@ namespace PAMI
 
         // If the glocal is a coordinate topology, use it internally for efficiency (but we still need the range)
         PAMI::Topology* coord = &__global.topology_global;
-
         if(coord->type() !=  PAMI_COORD_TOPOLOGY) coord = NULL;
 
         // Also pass the local topo for efficiency instead of recreating it internally
-        new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1,
-                                                 &_world_range,
-                                                 coord,
-                                                 &__global.topology_local,
+        new(_world_geometry_storage) BGQGeometry(_client, NULL, &__global.mapping, 0, 1, 
+                                                 &_world_range, 
+                                                 coord, 
+                                                 &__global.topology_local, 
                                                  &_geometry_map, 0, 1);
 
         // This must return immediately (must not enqueue non-blocking ops).
@@ -110,6 +105,7 @@ namespace PAMI
       }
       else
         result = rc;
+      TRACE_FN_EXIT();
     }
 
     inline ~Client ()
@@ -121,7 +117,8 @@ namespace PAMI
                                         pami_configuration_t   configuration[],
                                         size_t                 num_configs)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::generate_impl\n", Kernel_ProcessorID(), client));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p>",Kernel_ProcessorID(), client);
       pami_result_t result;
 
       // If a client with this name is not already initialized...
@@ -132,24 +129,26 @@ namespace PAMI
       memset ((void *)clientp, 0x00, sizeof(PAMI::Client));
       new (clientp) PAMI::Client (name, result);
       *client = clientp;
+      TRACE_FN_EXIT();
       return result;
     }
 
     static void destroy_impl (pami_client_t client)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::destroy_impl\n", Kernel_ProcessorID(), client));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p>", Kernel_ProcessorID(),client);
       PAMI::Client *clt = (PAMI::Client *)client;
 
       // Deallocate this client
       pami_result_t rc;
       rc = __pamiRM.deallocateClient( clt->getClientId() );
-
       if( rc == PAMI_SUCCESS )
       {
         // ensure contexts are destroyed first???
         clt->~Client();
         __global.heap_mm->free((void *)client);
       }
+      TRACE_FN_EXIT();
     }
 
     inline size_t maxContexts_impl ()
@@ -176,24 +175,27 @@ namespace PAMI
                                              pami_context_t       * context,
                                              size_t                ncontexts)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::createContext_impl, ncontexts %zu\n", Kernel_ProcessorID(), this, _clientid, ncontexts));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> ncontexts %zu", Kernel_ProcessorID(),this, _clientid, ncontexts);
       size_t n = ncontexts;
 
       if(_ncontexts != 0)
       {
+        TRACE_FN_EXIT();
         return PAMI_ERROR;
       }
 
       if(ncontexts > maxContexts_impl())
       {
-        TRACE_ERR((stderr, "createContext_impl(), error, ncontexts (%zu) is greater than max_contexts (%zu)\n", ncontexts, maxContexts_impl()));
+        TRACE_FORMAT( " error, ncontexts (%zu) is greater than max_contexts (%zu)", ncontexts, maxContexts_impl());
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
       pami_result_t rc;
       rc = __global.heap_mm->memalign((void **)&_contexts, 16, sizeof(*_contexts) * n);
       PAMI_assertf(rc == PAMI_SUCCESS, "alloc failed for _contexts[%zu], errno=%d\n", n, errno);
-      TRACE_ERR((stderr, "(%8.8u)BGQ::Client::createContext mm available %zu\n", Kernel_ProcessorID(), _mm.available()));
+      TRACE_FORMAT( "(%8.8u) mm available %zu", Kernel_ProcessorID(),_mm.available());
 
       _platdevs.generate(_clientid, n, _mm); // _mm is the client-scoped shared memory manager
 
@@ -205,17 +207,15 @@ namespace PAMI
       size_t bytes = 135 * 1024;
 
       char *env = getenv("PAMI_CONTEXT_SHMEMSIZE");
-
       if(env)
       {
         char *s = NULL;
         bytes = strtoull(env, &s, 0);
-
         if(*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
         else if(*s == 'k' || *s == 'K') bytes *= 1024;
       }
 
-      TRACE_ERR((stderr, "(%8.8u)BGQ::Client::createContext mm bytes %zu\n", Kernel_ProcessorID(), bytes));
+      TRACE_FORMAT( "(%8.8u) mm bytes %zu", Kernel_ProcessorID(),bytes);
       char key[PAMI::Memory::MMKEYSIZE];
       sprintf(key, "/pami-clt%zd-ctx-mm", _clientid);
       rc = _xmm.init(__global.shared_mm, bytes * n, 0, 0, 0, key);
@@ -238,8 +238,8 @@ namespace PAMI
       }
 
       _ncontexts = (size_t)n;
-      TRACE_ERR((stderr, "(%8.8u)%s ncontexts %zu exit\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, _ncontexts));
-
+      TRACE_FORMAT( "(%8.8u) ncontexts %zu exit", Kernel_ProcessorID(), _ncontexts);
+      TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
 
@@ -251,6 +251,8 @@ namespace PAMI
     }
     inline pami_result_t destroyContext_impl (pami_context_t *context, size_t ncontexts)
     {
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> ncontexts %zu", Kernel_ProcessorID(),this, _clientid, ncontexts);
       PAMI_assertf(ncontexts == _ncontexts, "destroyContext(%p,%zu) called without all contexts (expected %zu contexts)", context, ncontexts, _ncontexts);
       // for (i = 0.._ncontexts) PAMI_assertf(context[i] == &_contexts[i], "...");
 #ifdef USE_COMMTHREADS
@@ -276,6 +278,7 @@ namespace PAMI
       __global.heap_mm->free(_contexts);
       _contexts = NULL;
       _ncontexts = 0;
+      TRACE_FN_EXIT();
       return res;
     }
 
@@ -387,12 +390,14 @@ namespace PAMI
 
     static void _geom_newopt_start(pami_context_t context, void *cookie, pami_result_t err)
     {
-      TRACE_ERR((stderr, "(%8.8u)BGQ::Client::_geom_newopt_start cookie %p, context %p, error %u\n", Kernel_ProcessorID(), cookie, context, err));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
       PAMI_assertf(context, "Geometry create barrier callback with NULL context");
 
       if(err != PAMI_SUCCESS)
       {
         _geom_newopt_finish(context, cookie, err);
+        TRACE_FN_EXIT();
         return;
       }
 
@@ -407,13 +412,14 @@ namespace PAMI
       if(rc != PAMI_SUCCESS)
       {
         _geom_newopt_finish(context, cookie, rc);
-        return;
       }
+      TRACE_FN_EXIT();
     }
 
     static void _geom_opt_finish(pami_context_t context, void *cookie, pami_result_t err)
     {
-      TRACE_ERR((stderr, "(%8.8u)BGQ::Client::_geom_opt_finish cookie %p, context %p, error %u\n", Kernel_ProcessorID(), cookie, context, err));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
       BGQGeometry *gp = (BGQGeometry *)cookie;
 
       if(context)   // HACK! until no one calls completion with NULL context!
@@ -434,11 +440,13 @@ namespace PAMI
 
       // non-fatal errors - do not destroy geometry (caller might have different plans)
       gp->rmCompletion(context, err);
+      TRACE_FN_EXIT();
     }
 
     static void _geom_newopt_finish(pami_context_t context, void *cookie, pami_result_t err)
     {
-      TRACE_ERR((stderr, "(%8.8u)BGQ::Client::_geom_newopt_finish cookie %p, context %p, error %u\n", Kernel_ProcessorID(), cookie, context, err));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u) cookie %p, context %p, error %u", Kernel_ProcessorID(),cookie, context, err);
       Geometry::GeometryOptimizer<BGQGeometry> *go = (Geometry::GeometryOptimizer<BGQGeometry> *) cookie;
       BGQGeometry *gp = go->geometry();
 
@@ -450,6 +458,7 @@ namespace PAMI
         // inside _geom_opt_finish().
         // trivial diff, right now.
         __global.heap_mm->free(go);
+        TRACE_FN_EXIT();
         return;
       }
 
@@ -461,6 +470,7 @@ namespace PAMI
       // have done? Right now, nothing does proper cleanup...
       // gp->~BGQGeometry(); ???
       __global.heap_mm->free(go);
+      TRACE_FN_EXIT();
     }
 
     inline pami_result_t geometry_create_taskrange_impl(pami_geometry_t       * geometry,
@@ -476,7 +486,7 @@ namespace PAMI
                                                         void                 * cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_taskrange_impl  geometry %p/%p\n", Kernel_ProcessorID(), this, _clientid, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
 
       /// \todo EP geometry support:
       size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset) ? _ncontexts : 1;
@@ -486,6 +496,7 @@ namespace PAMI
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
@@ -510,11 +521,11 @@ namespace PAMI
                                        start_off,
                                        nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, start_off, nctxt, _ncontexts, new_geometry));
+        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p",Kernel_ProcessorID(), start_off, nctxt,_ncontexts, new_geometry);
 
         for(size_t n = start_off; n < nctxt; n++)
         {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, &_contexts[n], new_geometry));
+          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(),&_contexts[n], new_geometry);
           _contexts[n].analyze(n, new_geometry, 0);
         }
 
@@ -539,7 +550,7 @@ namespace PAMI
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
       }
 
-      TRACE_ERR((stderr, "(%8.8u)%s exit geometry %p/%p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(), geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -556,7 +567,7 @@ namespace PAMI
                                                        void                  *cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_topology_impl geometry %p/%p\n", Kernel_ProcessorID(), this, _clientid, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
 
       /// \todo EP geometry support:
       //size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset)?_ncontexts:1;
@@ -568,6 +579,7 @@ namespace PAMI
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
@@ -591,11 +603,11 @@ namespace PAMI
                                        start_off,
                                        nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, start_off, nctxt, _ncontexts, new_geometry));
+        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p", Kernel_ProcessorID(), start_off, nctxt,_ncontexts, new_geometry);
 
         for(size_t n = start_off; n < nctxt; n++)
         {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, &_contexts[n], new_geometry));
+          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(), &_contexts[n], new_geometry);
           _contexts[n].analyze(n, new_geometry, 0);
         }
 
@@ -620,7 +632,7 @@ namespace PAMI
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
       }
 
-      TRACE_ERR((stderr, "(%8.8u)%s exit geometry %p/%p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(),geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -639,7 +651,7 @@ namespace PAMI
                                                        void                 * cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_create_tasklist_impl geometry %p/%p\n", Kernel_ProcessorID(), this, _clientid, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p/%p", Kernel_ProcessorID(),this, _clientid, geometry, *geometry);
 
       /// \todo EP geometry support:
       size_t         nctxt     = (PAMI_ALL_CONTEXTS == context_offset) ? _ncontexts : 1;
@@ -649,6 +661,7 @@ namespace PAMI
       // simple for now: only PAMI_GEOMETRY_OPTIMIZE
       if(num_configs != 0 && (num_configs > 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE))
       {
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
@@ -673,12 +686,12 @@ namespace PAMI
                                        start_off,
                                        nctxt);
 
-        TRACE_ERR((stderr, "(%8.8u)%s analyze %zu - %zu/%zu geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, start_off, nctxt, _ncontexts, new_geometry));
+        TRACE_FORMAT( "(%8.8u) analyze %zu - %zu/%zu geometry %p", Kernel_ProcessorID(),start_off, nctxt, _ncontexts, new_geometry);
 
 /// \todo        for(size_t n=start_off; n<nctxt; n++)
         for(size_t n = start_off; n < nctxt; n++)
         {
-          TRACE_ERR((stderr, "(%8.8u)%s analyze %p geometry %p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, &_contexts[n], new_geometry));
+          TRACE_FORMAT( "(%8.8u) analyze %p geometry %p", Kernel_ProcessorID(),&_contexts[n], new_geometry);
           _contexts[n].analyze(n, new_geometry, 0);
         }
 
@@ -703,7 +716,7 @@ namespace PAMI
         bargeom->default_barrier(fn, cookie, ctxt->getId(), context);
       }
 
-      TRACE_ERR((stderr, "(%8.8u)%s exit geometry %p/%p\n", Kernel_ProcessorID(), __PRETTY_FUNCTION__, geometry, *geometry));
+      TRACE_FORMAT( "(%8.8u) exit geometry %p/%p", Kernel_ProcessorID(), geometry, *geometry);
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
@@ -728,11 +741,12 @@ namespace PAMI
                                              pami_configuration_t configuration[],
                                              size_t num_configs)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_query_impl\n", Kernel_ProcessorID(), this, _clientid));
-
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
       // for now, this must be very simple...
       if(num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
       {
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
@@ -744,6 +758,7 @@ namespace PAMI
       int b1 = (v1 != PAMI_CR_CKEY_FAIL ? (int)((uintptr_t)v1 & 0x0ff) : 0);
       int b2 = (v2 != PAMI_CR_CKEY_FAIL ? (int)((uintptr_t)v2 & 0x0ff) : 0);
       configuration[0].value.intval = b1 | (b2 << 8);
+      TRACE_FN_EXIT();
       return PAMI_SUCCESS;
     }
 
@@ -754,11 +769,12 @@ namespace PAMI
                                               pami_event_function fn,
                                               void *cookie)
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_update_impl\n", Kernel_ProcessorID(), this, _clientid));
-
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
       // for now, this must be very simple...
       if(num_configs != 1 || configuration[0].name != PAMI_GEOMETRY_OPTIMIZE)
       {
+        TRACE_FN_EXIT();
         return PAMI_INVAL;
       }
 
@@ -801,6 +817,7 @@ namespace PAMI
         }
       }
 
+      TRACE_FN_EXIT();
       return rc;
     }
 
@@ -839,7 +856,7 @@ namespace PAMI
                                                 void                *cookie)
     {
       TRACE_FN_ENTER();
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::geometry_destroy_impl(geometry %p)\n", Kernel_ProcessorID(), this, _clientid, (BGQGeometry *)geometry));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> geometry %p ", Kernel_ProcessorID(),this, _clientid, (BGQGeometry *)geometry);
       /// \todo #warning must free up geometry resources, etc.
       BGQGeometry *gp = (BGQGeometry *)geometry;
       TRACE_FORMAT("<%p> geometry %p ", this, gp);
@@ -856,8 +873,10 @@ namespace PAMI
 
     inline pami_geometry_t mapidtogeometry_impl (int comm)
     {
+      TRACE_FN_ENTER();
       pami_geometry_t g = _geometry_map[comm];
-      TRACE_ERR((stderr, "(%8.8u)<%p>%s\n", Kernel_ProcessorID(), g, __PRETTY_FUNCTION__));
+      TRACE_FORMAT( "(%8.8u)<%p>%s", Kernel_ProcessorID(),g, __PRETTY_FUNCTION__);
+      TRACE_FN_EXIT();
       return g;
     }
 
@@ -911,7 +930,8 @@ namespace PAMI
     ////////////////////////////////////////////////////////////////////////////
     inline void initializeMemoryManager ()
     {
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::initializeMemoryManager\n", Kernel_ProcessorID(), this, _clientid));
+      TRACE_FN_ENTER();
+      TRACE_FORMAT( "(%8.8u)<%p:%zu>", Kernel_ProcessorID(),this, _clientid);
       char   shmemfile[PAMI::Memory::MMKEYSIZE];
 #if 0
       size_t num_ctx = __MUGlobal.getMuRM().getPerProcessMaxPamiResources();
@@ -920,19 +940,16 @@ namespace PAMI
       size_t num_ctx = 64;
 #endif
       size_t bytes = 0;
-
       if(__global.useshmem())
       {
-        bytes = (64 * 1024) * num_ctx; // 64k for each context in the client
+        bytes = (64*1024) * num_ctx; // 64k for each context in the client
       }
 
       char *env = getenv("PAMI_CLIENT_SHMEMSIZE");
-
       if(env)
       {
         char *s = NULL;
         bytes = strtoull(env, &s, 0);
-
         if(*s == 'm' || *s == 'M') bytes *= 1024 * 1024;
         else if(*s == 'k' || *s == 'K') bytes *= 1024;
       }
@@ -947,6 +964,7 @@ namespace PAMI
       rc = _mm.init(__global.shared_mm, bytes, 1, 1, 0, shmemfile);
       PAMI_assert_alwaysf(rc == PAMI_SUCCESS, "Failed to create \"%s\" mm for %zd bytes",
                           shmemfile, bytes);
+      TRACE_FN_EXIT();
       return;
     }
 
@@ -956,24 +974,22 @@ namespace PAMI
                        pami_context_t        context,
                        pami_attribute_name_t optimize)
     {
+      TRACE_FN_ENTER();
       //Assume algorithm 0 always works
       pami_algorithm_t  alg   = PAMI_ALGORITHM_NULL;
       pami_metadata_t   mdata;
       memset(&mdata, 0, sizeof(mdata));
       new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
-                                    &alg,
+                                    NULL,
+                                    NULL,
+                                    0,
+                                    &alg, /* making an assumption here about short working now */
                                     &mdata,
-                                    1,
-                                    NULL,
-                                    NULL,
-                                    0);
-      TRACE_ERR((stderr, "(%8.8u)<%p>BGQ::Client::start_barrier() algorithm %s\n", Kernel_ProcessorID(), this, mdata.name));
-
-      Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t, Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
-
+                                    1);
+      TRACE_FORMAT( "(%8.8u)<%p> algorithm %s", Kernel_ProcessorID(),this, mdata.name);
+      Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
 
       pami_event_function done_fn = _geom_newopt_finish;
-
       if(optimize == PAMI_GEOMETRY_OPTIMIZE)
         done_fn = _geom_newopt_start;
 
@@ -993,7 +1009,7 @@ namespace PAMI
         _contexts[i].registerWithOptimizer(go);
       }
 
-      TRACE_ERR((stderr, "(%8.8u)<%p:%zu>BGQ::Client::start_barrier() context %p  %s\n", Kernel_ProcessorID(), this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE ? "Optimized" : " "));
+      TRACE_FORMAT( "(%8.8u)<%p:%zu> context %p  %s", Kernel_ProcessorID(),this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" ");
 
       if(bargeom)
         if(bargeom->size() == 1)
@@ -1004,6 +1020,7 @@ namespace PAMI
         Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start(context, (void *)go, PAMI_SUCCESS);
       else
         new_geometry->ue_barrier(Geometry::GeometryOptimizer<BGQGeometry>::optimizer_start, (void *)go, context_id, context);
+      TRACE_FN_EXIT();
     }
 
   }; // end class PAMI::Client

@@ -81,10 +81,16 @@ namespace PAMI
           //Initialize comm world
           int rc = 0;
           __MUGlobal.getMuRM().getGITable(&_inited);
+          TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                       _giBarrier[cw_classroute].classRouteId,_giBarrier[cw_classroute].state,
+                       _giBarrier[cw_classroute].controlRegPtr,_giBarrier[cw_classroute].statusRegPtr);
           rc = MUSPI_GIBarrierInit ( &_giBarrier[cw_classroute], cw_classroute );
+          TRACE_FORMAT("After init, barrier id %zu, state %#.8lX, %p/%p",
+                       _giBarrier[cw_classroute].classRouteId,_giBarrier[cw_classroute].state,
+                       _giBarrier[cw_classroute].controlRegPtr,_giBarrier[cw_classroute].statusRegPtr);
           PAMI_assert (rc == 0);
           _inited[cw_classroute] = 1;
-
+          TRACE_FORMAT("classroute %zu",cw_classroute);
           new (&_work) PAMI::Device::Generic::GenericThread(advance, &_completionmsg);
           _completionmsg.context = context;
           TRACE_FN_EXIT();
@@ -100,27 +106,38 @@ namespace PAMI
           size_t classroute = 0;
           PAMI_assert(devinfo);
           classroute = (size_t)devinfo - 1;
+          TRACE_FORMAT("classroute %zu",classroute);
+          TRACE_FORMAT("cbdone %p/%p",msync->cb_done.function, msync->cb_done.clientdata);
 
-	        if (!_inited[classroute])
+          if(!_inited[classroute])
           {
-            TRACE_FORMAT( "<%p> %p connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
+            TRACE_FORMAT( "<%p>Not inited %p connection id %u, devinfo %p", this, msync, msync->connection_id, devinfo);
             int rc = 0;
+            TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                         _giBarrier[classroute].classRouteId,_giBarrier[classroute].state,
+                         _giBarrier[classroute].controlRegPtr,_giBarrier[classroute].statusRegPtr);
             rc = MUSPI_GIBarrierInit ( &_giBarrier[classroute], classroute );
+            TRACE_FORMAT("After init barrier id %zu, state %#.8lX, %p/%p",
+                         _giBarrier[classroute].classRouteId,_giBarrier[classroute].state,
+                         _giBarrier[classroute].controlRegPtr,_giBarrier[classroute].statusRegPtr);
             PAMI_assert (rc == 0);
             _inited[classroute] = 1;
-            //fprintf (stderr, "Initialize class route %ld\n", classroute);
+            //fprintf (, "Initialize class route %ld\n", classroute);
           }
 
 #if    MU_BLOCKING_BARRIER
           MUSPI_GIBarrierEnterAndWait (&_giBarrier[classroute]);
-          if (msync->cb_done.function)
+          if(msync->cb_done.function)
             msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
 #elif  POST_TO_MUCONTEXT
           MUSPI_GIBarrierEnter (&_giBarrier[classroute]);
           int rc = MUSPI_GIBarrierPollWithTimeout  (&_giBarrier[classroute], MUMULTISYNC_TIMEOUT);
-          if (rc==0 && msync->cb_done.function)
+          if(rc==0)
           {
-            msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            TRACE_FORMAT("Success - cbdone %p/%p",msync->cb_done.function, msync->cb_done.clientdata);
+            if(msync->cb_done.function)
+              msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
           //Post message to MU channel 0
@@ -128,12 +145,25 @@ namespace PAMI
           _completionmsg.cookie  = msync->cb_done.clientdata;
           _completionmsg.barrier = &_giBarrier[classroute];       
           _mucontext.injectionGroup.channel[0].post(&_completionmsg);
+          TRACE_FORMAT("%p",&_completionmsg);
 #else	  
+          TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                       _giBarrier[classroute].classRouteId,_giBarrier[classroute].state,
+                       _giBarrier[classroute].controlRegPtr,_giBarrier[classroute].statusRegPtr);
           MUSPI_GIBarrierEnter (&_giBarrier[classroute]);
+          TRACE_FORMAT("After Enter barrier id %zu, state %#.8lX, %p/%p",
+                       _giBarrier[classroute].classRouteId,_giBarrier[classroute].state,
+                       _giBarrier[classroute].controlRegPtr,_giBarrier[classroute].statusRegPtr);
           int rc = MUSPI_GIBarrierPollWithTimeout  (&_giBarrier[classroute], MUMULTISYNC_TIMEOUT);
-          if (rc==0 && msync->cb_done.function)
+          TRACE_FORMAT("After poll (rc %d) barrier id %zu, state %#.8lX, %p/%p",rc, 
+                       _giBarrier[classroute].classRouteId,_giBarrier[classroute].state,
+                       _giBarrier[classroute].controlRegPtr,_giBarrier[classroute].statusRegPtr);
+          if(rc==0)
           {
-            msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            TRACE_FORMAT("Success - cbdone %p/%p",msync->cb_done.function, msync->cb_done.clientdata);
+            if(msync->cb_done.function)
+              msync->cb_done.function(_context, msync->cb_done.clientdata, PAMI_SUCCESS);
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
           }
           //Create a work object and post work to generic device
@@ -143,6 +173,7 @@ namespace PAMI
 
           PAMI::Device::Generic::GenericThread *work = (PAMI::Device::Generic::GenericThread *)&_work;
           _gdev.postThread(work);
+          TRACE_FORMAT("posted %p",&_completionmsg);
 #endif
 
           TRACE_FN_EXIT();
@@ -163,11 +194,25 @@ namespace PAMI
         static pami_result_t advance (pami_context_t     context,
                                       void             * cookie)
         {
+          static int trace = 1;
           CompletionMsg *msg = (CompletionMsg *) cookie;    
           bool flag = msg->CompletionMsg::advance();    
-          if (flag)
+          if(flag)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("PAMI_SUCCESS %p",msg);
+            trace = 1;
+            TRACE_FN_EXIT();
             return PAMI_SUCCESS;
+          }
 
+          if(trace)
+          {
+            TRACE_FN_ENTER();
+            TRACE_FORMAT("PAMI_EAGAIN %p",msg);
+            trace = 0;
+            TRACE_FN_EXIT();
+          }
           return PAMI_EAGAIN;
         }
 
@@ -183,15 +228,38 @@ namespace PAMI
 
       inline bool  MUMultisyncModel::CompletionMsg::advance ()
       {
-        int rc = MUSPI_GIBarrierPoll (barrier);
-
-        if (rc == 0)
+        static int trace = 1;
+        if(--trace == 0)
         {
-          if (cb_done)
+          TRACE_FN_ENTER();
+          TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                       barrier->classRouteId,barrier->state,
+                       barrier->controlRegPtr,barrier->statusRegPtr);
+        }
+        int rc = MUSPI_GIBarrierPoll (barrier);
+        if(rc == 0)
+        {
+          if(trace) TRACE_FN_ENTER();
+          TRACE_FORMAT("%p",this);
+          TRACE_FORMAT("After poll rc=0 barrier id %zu, state %#.8lX, %p/%p",
+                       barrier->classRouteId,barrier->state,
+                       barrier->controlRegPtr,barrier->statusRegPtr);
+          trace = 1;
+          TRACE_FORMAT("cbdone %p/%p",cb_done,cookie);
+          if(cb_done)
             cb_done(context, cookie, PAMI_SUCCESS);
+          TRACE_FN_EXIT();
           return true;
         }
-
+        if(trace == 0)
+        {
+          TRACE_FORMAT("After poll, %p rc = %d",this,rc);
+          TRACE_FORMAT("barrier id %zu, state %#.8lX, %p/%p",
+                       barrier->classRouteId,barrier->state,
+                       barrier->controlRegPtr,barrier->statusRegPtr);
+          trace=10000000;
+          TRACE_FN_EXIT();
+        }
         return false;
       }
 

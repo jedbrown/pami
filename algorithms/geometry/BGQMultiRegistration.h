@@ -1201,7 +1201,7 @@ namespace PAMI
           for (size_t i = 0; i < 64; ++i)
             if ((result & (0x1 << i)) != 0)
             {
-              //fprintf (stderr, "Calling configure with class route %ld, in 0x%lx", i, result);
+              //fprintf (, "Calling configure with class route %ld, in 0x%lx", i, result);
               pami_result_t rc = _axial_mu_dput_ni->getMsyncModel().configureClassRoute(i, (PAMI::Topology *)geometry->getTopology(PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX));
               if (rc == PAMI_SUCCESS)
                 geometry->setKey (context_id, PAMI::Geometry::CKEY_RECTANGLE_CLASSROUTEID, (void*)(i+1));
@@ -1237,7 +1237,7 @@ namespace PAMI
 
         TRACE_FORMAT("<%p>topology: size() %zu, isLocal() %u/%zu, isGlobal #u/%zu, is rectangle %u", this, topology->size(),  topology->isLocalToMe(), local_sub_topology->size(), master_sub_topology->size(),rectangle_topo);
 
-        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        //DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(, "<%p>PAMI::CollRegistration::BGQMultiregistration::analyze_impl() topology[%u] = %u", this, i, topology->index2Endpoint(i)););
 
         if (phase == 0)
         {

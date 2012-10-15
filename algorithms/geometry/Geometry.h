@@ -31,14 +31,6 @@
 #include <map>
 #include <list>
 
-#define DO_DEBUGg(x) //x
-
-#undef TRACE_ERR
-#define TRACE_ERR(x) //fprintf x
-
-#undef TRACE_ERR2
-#define TRACE_ERR2(x) //fprintf x
-
 #include "algorithms/geometry/UnexpBarrierQueueElement.h"
 #include "components/atomic/native/NativeCounter.h"
 #include "components/memory/MemoryAllocator.h"
@@ -63,7 +55,7 @@ namespace PAMI
       rc = __global.heap_mm->memalign((void**)&array[0],0,nrows*ncols*sizeof(void*));
       PAMI_assertf(array[0] && (rc == PAMI_SUCCESS), "Unable to allocate KVS row\n");
       memset(array[0], 0, nrows*ncols*sizeof(void*));
-      for (i = 0; i < nrows; i++)
+      for(i = 0; i < nrows; i++)
         array[i]   = array[0] + i * ncols;
       return array;
     }
@@ -80,7 +72,7 @@ namespace PAMI
     {
       (void)ctxt;(void)result;
       CCMI::Adaptor::CollectiveProtocolFactory *cf =
-        (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
+      (CCMI::Adaptor::CollectiveProtocolFactory *) factory;
       cf->clearCache();
     }
 
@@ -92,10 +84,10 @@ namespace PAMI
                          CheckpointCb resume,
                          CheckpointCb restart,
                          void *data):
-        _checkpoint_fn(ckpt),
-        _resume_fn(resume),
-        _restart_fn(restart),
-        _cookie(data)
+      _checkpoint_fn(ckpt),
+      _resume_fn(resume),
+      _restart_fn(restart),
+      _cookie(data)
       {
       };
       CheckpointCb  _checkpoint_fn;
@@ -155,7 +147,8 @@ namespace PAMI
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
-        TRACE_ERR((stderr, "<%p>Common(ranklist)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
         buildSpecialTopologies();
@@ -164,11 +157,11 @@ namespace PAMI
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
-          {
-            _allreduce[n][0] = _allreduce[n][1] = NULL;
-            _allreduce_async_mode[n]      = 1;
-            _allreduce_iteration[n]       = 0;
-          }
+        {
+          _allreduce[n][0] = _allreduce[n][1] = NULL;
+          _allreduce_async_mode[n]      = 1;
+          _allreduce_iteration[n]       = 0;
+        }
 
         _cb_done = (pami_callback_t)
         {
@@ -224,6 +217,7 @@ namespace PAMI
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
+        TRACE_FN_EXIT();
       }
 
       /**
@@ -254,7 +248,8 @@ namespace PAMI
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN)
       {
-        TRACE_ERR((stderr, "<%p>Common(endpointlist)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, PAMI::tag_eplist());
 
@@ -270,36 +265,37 @@ namespace PAMI
             if(offset < _ctxt_offset) _ctxt_offset = offset;
           }
 
-#if 0
-        fprintf(stderr, "EP DEFAULT Topology sz=%d:\n", _topos[DEFAULT_TOPOLOGY_INDEX].size());
-        for(int i=0; i< _topos[DEFAULT_TOPOLOGY_INDEX].size(); i++)
-          {
-            pami_endpoint_t ep    = _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(i);
-            pami_task_t     task;
-            size_t          offset;
-            PAMI_ENDPOINT_INFO(ep, task, offset);
-            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
-          }
+#if DO_TRACE_DEBUG
+        TRACE_FORMAT( "LOCAL_TOPOLOGY_INDEX size %zu, found lowest context %zu",topo_size, _ctxt_offset);
+        TRACE_FORMAT( "EP DEFAULT Topology sz=%zu:", _topos[DEFAULT_TOPOLOGY_INDEX].size());
+        for(size_t i=0; i< _topos[DEFAULT_TOPOLOGY_INDEX].size(); i++)
+        {
+          pami_endpoint_t ep    = _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(i);
+          pami_task_t     task;
+          size_t          offset;
+          PAMI_ENDPOINT_INFO(ep, task, offset);
+          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+        }
 
-        fprintf(stderr, "EP LOCAL Topology sz=%d:\n", _topos[LOCAL_TOPOLOGY_INDEX].size());
-        for(int i=0; i< _topos[LOCAL_TOPOLOGY_INDEX].size(); i++)
-          {
-            pami_endpoint_t ep    = _topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(i);
-            pami_task_t     task;
-            size_t          offset;
-            PAMI_ENDPOINT_INFO(ep, task, offset);
-            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
-          }
+        TRACE_FORMAT( "EP LOCAL Topology sz=%zu", _topos[LOCAL_TOPOLOGY_INDEX].size());
+        for(size_t i=0; i< _topos[LOCAL_TOPOLOGY_INDEX].size(); i++)
+        {
+          pami_endpoint_t ep    = _topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(i);
+          pami_task_t     task;
+          size_t          offset;
+          PAMI_ENDPOINT_INFO(ep, task, offset);
+          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+        }
 
-        fprintf(stderr, "EP MASTER Topology: sz=%d\n", _topos[MASTER_TOPOLOGY_INDEX].size());
-        for(int i=0; i< _topos[MASTER_TOPOLOGY_INDEX].size(); i++)
-          {
-            pami_endpoint_t ep    = _topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(i);
-            pami_task_t     task;
-            size_t          offset;
-            PAMI_ENDPOINT_INFO(ep, task, offset);
-            fprintf(stderr, "   --->(ep=%d task=%d offset=%ld)\n", ep, task, offset);
-          }
+        TRACE_FORMAT( "EP MASTER Topology: sz=%zu", _topos[MASTER_TOPOLOGY_INDEX].size());
+        for(size_t i=0; i< _topos[MASTER_TOPOLOGY_INDEX].size(); i++)
+        {
+          pami_endpoint_t ep    = _topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(i);
+          pami_task_t     task;
+          size_t          offset;
+          PAMI_ENDPOINT_INFO(ep, task, offset);
+          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+        }
 #endif
 
 
@@ -308,14 +304,14 @@ namespace PAMI
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
-          {
-            _allreduce[n][0] = _allreduce[n][1] = NULL;
-            _allreduce_async_mode[n]      = 1;
-            _allreduce_iteration[n]       = 0;
-          }
+        {
+          _allreduce[n][0] = _allreduce[n][1] = NULL;
+          _allreduce_async_mode[n]      = 1;
+          _allreduce_iteration[n]       = 0;
+        }
 
         _cb_done = (pami_callback_t)
-          {
+        {
           NULL, NULL
         };
 
@@ -359,6 +355,7 @@ namespace PAMI
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
+        TRACE_FN_EXIT();
       }
 
       inline Common (pami_client_t          client,
@@ -389,7 +386,8 @@ namespace PAMI
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
-        TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         pami_result_t rc;
         if (numranges == 1)
         {
@@ -400,18 +398,18 @@ namespace PAMI
           pami_task_t nranks = 0;
           int i, j, k;
 
-          for (i = 0; i < numranges; i++)
+          for(i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
           _ranks_malloc = true;
           rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
-          for (k = 0, i = 0; i < numranges; i++)
+          for(k = 0, i = 0; i < numranges; i++)
           {
             int size = rangelist[i].hi - rangelist[i].lo + 1;
 
-            for (j = 0; j < size; j++, k++)
+            for(j = 0; j < size; j++, k++)
               _ranks[k] = rangelist[i].lo + j;
           }
 
@@ -420,8 +418,8 @@ namespace PAMI
 
         buildSpecialTopologies();
 
-        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
-            (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
+        if((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
+           (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
         {
           pami_result_t rc = PAMI_SUCCESS;
           rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
@@ -432,11 +430,11 @@ namespace PAMI
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
-          {
-            _allreduce[n][0] = _allreduce[n][1] = NULL;
-            _allreduce_async_mode[n]      = 1;
-            _allreduce_iteration[n]       = 0;
-          }
+        {
+          _allreduce[n][0] = _allreduce[n][1] = NULL;
+          _allreduce_async_mode[n]      = 1;
+          _allreduce_iteration[n]       = 0;
+        }
 
         _cb_done = (pami_callback_t)
         {
@@ -490,6 +488,7 @@ namespace PAMI
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
+        TRACE_FN_EXIT();
       }
 
       inline Common (pami_client_t   client,
@@ -517,11 +516,12 @@ namespace PAMI
       _cb_result(PAMI_EAGAIN),
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
-        TRACE_ERR((stderr, "<%p>Common(topology)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
 
         _topos[DEFAULT_TOPOLOGY_INDEX] = *topology;
 
-        if (_topos[DEFAULT_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
+        if(_topos[DEFAULT_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY)
         {
           _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&_ranks);
         }
@@ -532,11 +532,11 @@ namespace PAMI
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
-          {
-            _allreduce[n][0] = _allreduce[n][1] = NULL;
-            _allreduce_async_mode[n]      = 1;
-            _allreduce_iteration[n]       = 0;
-          }
+        {
+          _allreduce[n][0] = _allreduce[n][1] = NULL;
+          _allreduce_async_mode[n]      = 1;
+          _allreduce_iteration[n]       = 0;
+        }
 
         _cb_done = (pami_callback_t)
         {
@@ -586,6 +586,7 @@ namespace PAMI
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
+        TRACE_FN_EXIT();
       }
 
 
@@ -600,11 +601,11 @@ namespace PAMI
                      GeometryMap           *geometry_map,
                      size_t                 context_offset,
                      size_t                 ncontexts):
-                     Geometry<Common>(parent,
-                                      mapping,
-                                      comm,
-                                      numranges,
-                                      rangelist),
+      Geometry<Common>(parent,
+                       mapping,
+                       comm,
+                       numranges,
+                       rangelist),
       _generation_id(0),
       _ue_barrier(NULL),
       _default_barrier(NULL),
@@ -619,7 +620,8 @@ namespace PAMI
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
-        TRACE_ERR((stderr, "<%p>Common(ranges)\n", this));
+        TRACE_FN_ENTER();
+        TRACE_FORMAT( "<%p>", this);
         pami_result_t rc;
         if (numranges == 1)
         {
@@ -630,18 +632,18 @@ namespace PAMI
           pami_task_t nranks = 0;
           int i, j, k;
 
-          for (i = 0; i < numranges; i++)
+          for(i = 0; i < numranges; i++)
             nranks += (rangelist[i].hi - rangelist[i].lo + 1);
 
           _ranks_malloc = true;
           rc = __global.heap_mm->memalign((void **)&_ranks, 0, nranks * sizeof(pami_task_t));
           PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ranks");
 
-          for (k = 0, i = 0; i < numranges; i++)
+          for(k = 0, i = 0; i < numranges; i++)
           {
             int size = rangelist[i].hi - rangelist[i].lo + 1;
 
-            for (j = 0; j < size; j++, k++)
+            for(j = 0; j < size; j++, k++)
               _ranks[k] = rangelist[i].lo + j;
           }
 
@@ -650,8 +652,8 @@ namespace PAMI
 
         buildSpecialTopologies(coord,local);
 
-        if ((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
-            (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
+        if((_topos[LIST_TOPOLOGY_INDEX].type() == PAMI_LIST_TOPOLOGY) &&
+           (_ranks_malloc == false)) /* Don't overwrite our original _ranks */
         {
           pami_result_t rc = PAMI_SUCCESS;
           rc = _topos[LIST_TOPOLOGY_INDEX].rankList(&_ranks);
@@ -662,11 +664,11 @@ namespace PAMI
         (*_geometry_map)[_commid] = this;
 
         for(size_t n=0; n<MAX_CONTEXTS; n++)
-          {
-            _allreduce[n][0] = _allreduce[n][1] = NULL;
-            _allreduce_async_mode[n]      = 1;
-            _allreduce_iteration[n]       = 0;
-          }
+        {
+          _allreduce[n][0] = _allreduce[n][1] = NULL;
+          _allreduce_async_mode[n]      = 1;
+          _allreduce_iteration[n]       = 0;
+        }
 
         _cb_done = (pami_callback_t)
         {
@@ -720,6 +722,7 @@ namespace PAMI
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
         }
+        TRACE_FN_EXIT();
       }
 
       bool isValidChild(pami_geometry_t g)
@@ -742,11 +745,9 @@ namespace PAMI
 
       void                             buildSpecialTopologies(PAMI::Topology* coord=NULL, PAMI::Topology* local=NULL)
       {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("Default type %X, coord %p, local %p",_topos[DEFAULT_TOPOLOGY_INDEX].type(),coord,local);
         // build local and global topos
-        DO_DEBUGg(pami_task_t *list = NULL);
-        DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() DEFAULT_TOPOLOGY rankList %p\n", _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&list), list)));
-        DO_DEBUGg(for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() DEFAULT_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(j), _topos[DEFAULT_TOPOLOGY_INDEX].size())));
-
         /* for efficiancy/BGQ-torus reasons, we might want to build master/local topologies from a coordinate
            topology and not from the input/default topology... determine which to use */
         topologyIndex_t BASE_INDEX = DEFAULT_TOPOLOGY_INDEX; /* assume we use the input/default topology */
@@ -761,20 +762,27 @@ namespace PAMI
           {
             _topos[COORDINATE_TOPOLOGY_INDEX] = _topos[DEFAULT_TOPOLOGY_INDEX];  // first copy it
             if(_topos[COORDINATE_TOPOLOGY_INDEX].type() !=  PAMI_COORD_TOPOLOGY) // convert it?
-            {  
-                // Attempt to create a coordinate topo (result may be EMPTY)
-                _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
+            {
+              // Attempt to create a coordinate topo (result may be EMPTY)
+              _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
+              TRACE_FORMAT("Default type %X, Coord type %X",_topos[DEFAULT_TOPOLOGY_INDEX].type(),_topos[COORDINATE_TOPOLOGY_INDEX].type());
 
-                // Was it successful?
-                if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
-                {  
-                    BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; 
-                }
+              // Was it successful?
+              if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
+              {
+                BASE_INDEX = COORDINATE_TOPOLOGY_INDEX; 
+              }
+              else
+                new(&_topos[COORDINATE_TOPOLOGY_INDEX]) PAMI::Topology(); // Empty is better than questionable topology leftover in this entry
+
             }
           }
         }
+        else
+          new(&_topos[COORDINATE_TOPOLOGY_INDEX]) PAMI::Topology(); // Initialize to an empty topology
 
         /* Use whatever topology we picked above as the basis for Nth masters and local */
+        TRACE_FORMAT("Base index for Nth master and local %u",BASE_INDEX);
         _topos[BASE_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
 
         /* Copy or create the local topo */
@@ -784,18 +792,15 @@ namespace PAMI
         // Find master participant on the tree/cau network
         _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
 
-        TRACE_ERR((stderr, "buildSpecialTopologies() COORD created\n"));
-        DO_DEBUGg(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORD_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
-        DO_DEBUGg(for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() MASTER_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j), _topos[MASTER_TOPOLOGY_INDEX].size())));
-        DO_DEBUGg(for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() LOCAL_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(j), _topos[LOCAL_TOPOLOGY_INDEX].size())));
-
-
-        DO_DEBUGg(TRACE_ERR((stderr,"(%u)buildSpecialTopologies() COORDINATE_TOPOLOGY rankList %p\n", _topos[COORDINATE_TOPOLOGY_INDEX].rankList(&list), list)));
-        DO_DEBUGg(for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_ERR((stderr, "buildSpecialTopologies() COORDINATE_TOPOLOGY[%u]=%zu, size %zu\n", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size())));
-
+#if DO_TRACE_DEBUG
+        for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j)    TRACE_FORMAT( "   DEFAULT_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(j),    _topos[DEFAULT_TOPOLOGY_INDEX].size());
+        for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j)     TRACE_FORMAT( "    MASTER_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j),     _topos[MASTER_TOPOLOGY_INDEX].size());
+        for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j)      TRACE_FORMAT( "     LOCAL_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(j),      _topos[LOCAL_TOPOLOGY_INDEX].size());
+        for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_FORMAT( "COORDINATE_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size());
+#endif
         // If we already have a rank list, set the special topology, otherwise
         // leave it EMPTY unless needed because it will require a new rank list allocation
-        if (_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
+        if(_topos[DEFAULT_TOPOLOGY_INDEX].type() != PAMI_LIST_TOPOLOGY)
           new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology();
         else // Default is a list topology, use the same ranklist storage
         {
@@ -804,6 +809,7 @@ namespace PAMI
           _topos[DEFAULT_TOPOLOGY_INDEX].rankList(&ranks);
           new(&_topos[LIST_TOPOLOGY_INDEX]) PAMI::Topology(ranks, nranks);
         }
+        TRACE_FN_EXIT();
       }
 
       inline pami_topology_t*          getTopology_impl(topologyIndex_t topo_num)
@@ -839,14 +845,14 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
         int sz = _cleanupFcns.size();
-        for (int i=0; i<sz; i++)
+        for(int i=0; i<sz; i++)
         {
           pami_event_function  fn = _cleanupFcns.front();  _cleanupFcns.pop_front();
           void                *cd = _cleanupDatas.front(); _cleanupDatas.pop_front();
-          if (fn) fn(NULL, cd, PAMI_SUCCESS);
+          if(fn) fn(NULL, cd, PAMI_SUCCESS);
         }
 
-        if (_ranks_malloc) __global.heap_mm->free(_ranks);
+        if(_ranks_malloc) __global.heap_mm->free(_ranks);
 
         _ranks = NULL;
         _ranks_malloc = false;
@@ -880,7 +886,7 @@ namespace PAMI
       {
         _allreduce[context_id][_allreduce_iteration[context_id]] = c;
 
-        if (c) incrementAllreduceIteration_impl(context_id);
+        if(c) incrementAllreduceIteration_impl(context_id);
       }
       inline void                      setAllreduceComposite_impl(size_t         context_id,
                                                                   COMPOSITE_TYPE c,
@@ -899,7 +905,7 @@ namespace PAMI
       {
         UnexpBarrierQueueElement *ueb = NULL;
 
-        while ((ueb = (UnexpBarrierQueueElement *)ueb_queue->findAndDelete(_commid)) != NULL)
+        while((ueb = (UnexpBarrierQueueElement *)ueb_queue->findAndDelete(_commid)) != NULL)
         {
           CCMI::Executor::Composite *c = (CCMI::Executor::Composite *) getKey(ueb->getContextId(),
                                                                               (ckeys_t)ueb->getAlgorithm());
@@ -937,27 +943,31 @@ namespace PAMI
 
         if(unlikely(iter == _dispatch[context_id].end()))
         {
-          return (DispatchInfo *)NULL;
+          return(DispatchInfo *)NULL;
         }
 
         return &iter->second;
       }
 
-      inline void  * getKey_impl(size_t context_id, ckeys_t key) {
+      inline void  * getKey_impl(size_t context_id, ckeys_t key)
+      {
+        TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
         void * value = _kvcstore[key][context_id];
-        TRACE_ERR((stderr, "<%p>Common::getCKey(k=%d, val=%p, ctxt=%ld)\n",
-                   this, key, value,context_id));
+        TRACE_FORMAT( "<%p>(k=%d, val=%p, ctxt=%ld)",this, key, value,context_id);
+        TRACE_FN_EXIT();
         return value;
       }
 
       inline void                      setKey_impl(size_t context_id, ckeys_t key, void*value)
       {
+        TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
-        TRACE_ERR((stderr, "<%p>Common::setCKey(k=%d, v=%p,ctxt=%ld)\n", this, key, value,context_id));
+        TRACE_FORMAT( "<%p>(k=%d, v=%p,ctxt=%ld)", this, key, value,context_id);
         _kvcstore[key][context_id] = value;
+        TRACE_FN_EXIT();
       }
 
       inline pami_result_t             addCollective_impl(pami_xfer_type_t  colltype,
@@ -965,6 +975,7 @@ namespace PAMI
                                                           pami_context_t    context,
                                                           size_t            context_id)
       {
+        TRACE_FN_ENTER();
         (void)context;
         uint32_t hash = factory->nameHash(_generation_id++, (pami_geometry_t)this);
         Algorithm<Geometry<Common> >*elem = &_algoTable[colltype][hash][context_id];
@@ -975,11 +986,12 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          fprintf(stderr,"addCollective %s\n",m.name);
-          fprintf(stderr,"num algorithms %zu\n",_algoTable[colltype].size());
+          TRACE_FORMAT("%s",m.name);
+          TRACE_FORMAT("num algorithms %zu",_algoTable[colltype].size());
         }
 #endif
         //PAMI_assert_debug(_algoTable[colltype][hash].count(0) > 0); // There must be a context 0 entry.
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -988,8 +1000,13 @@ namespace PAMI
                                                          pami_context_t    context,
                                                          size_t            context_id)
       {
+        TRACE_FN_ENTER();
         (void)context;
-        if(!factory) return PAMI_SUCCESS;
+        if(!factory)
+        {
+          TRACE_FN_EXIT();
+          return PAMI_SUCCESS;
+        }
         resetCleanupCallback(resetFactoryCache, factory);
         uint32_t hash = factory->nameHash(-1, (pami_geometry_t)this);
         _algoTable[colltype][hash].erase(context_id);
@@ -999,10 +1016,11 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          fprintf(stderr,"rmCollective %s\n",m.name);
-          fprintf(stderr,"num algorithms %zu\n",_algoTable[colltype].size());
+          TRACE_FORMAT("%s",m.name);
+          TRACE_FORMAT("num algorithms %zu",_algoTable[colltype].size());
         }
 #endif
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1011,6 +1029,7 @@ namespace PAMI
                                                               pami_context_t    context,
                                                               size_t            context_id)
       {
+        TRACE_FN_ENTER();
         (void)context;
         resetCleanupCallback(resetFactoryCache, factory);
         uint32_t hash = factory->nameHash(-1, (pami_geometry_t)this);
@@ -1021,10 +1040,11 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          fprintf(stderr,"rmCollectiveCheck %s\n",m.name);
-          fprintf(stderr,"num algorithms %zu\n",_algoTableCheck[colltype].size());
+          TRACE_FORMAT("%s",m.name);
+          TRACE_FORMAT("num algorithms %zu",_algoTableCheck[colltype].size());
         }
 #endif
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1033,6 +1053,7 @@ namespace PAMI
                                                                pami_context_t    context,
                                                                size_t                                     context_id)
       {
+        TRACE_FN_ENTER();
         (void)context;
         uint32_t hash = factory->nameHash(_generation_id++, (pami_geometry_t)this);
         Algorithm<Geometry<Common> >*elem = &_algoTableCheck[colltype][hash][context_id];
@@ -1043,11 +1064,12 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          fprintf(stderr,"addCollectiveCheck %s\n",m.name);
-          fprintf(stderr,"num algorithms %zu\n",_algoTableCheck[colltype].size());
+          TRACE_FORMAT("%s",m.name);
+          TRACE_FORMAT("num algorithms %zu",_algoTableCheck[colltype].size());
         }
 #endif
         //PAMI_assert_debug(_algoTableCheck[colltype][hash].count(0) > 0);  // There must be a context 0 entry.
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1084,6 +1106,7 @@ namespace PAMI
                                                              pami_metadata_t   *mdata1,
                                                              size_t             num1)
       {
+        TRACE_FN_ENTER();
         HashMap *m = &_algoTable[colltype];
         HashMap::iterator iter;
         size_t i;
@@ -1103,6 +1126,11 @@ namespace PAMI
         AlgoList::iterator alist_iter;
         AlgoList          *al = &v0;
         for(i=0,alist_iter=al->begin();alist_iter!=al->end() && i<num0;alist_iter++,i++)
+        {
+          ContextMap *cm = (*alist_iter);
+          if(algs0)
+            algs0[i] = (pami_algorithm_t) cm;
+          if(mdata0)
           {
             ContextMap *cm = (*alist_iter);
             if(algs0)
@@ -1114,8 +1142,14 @@ namespace PAMI
                 TRACE_ERR((stderr,"sorted algorithms_info() %zu out of %zu/%zu %s\n",i,al->size(),num0,mdata0[i].name));
               }
           }
+        }
         al = &v1;
         for(i=0,alist_iter=al->begin();alist_iter!=al->end() && i<num1;alist_iter++,i++)
+        {
+          ContextMap *cm = (*alist_iter);
+          if(algs1)
+            algs1[i] = (pami_algorithm_t) cm;
+          if(mdata1)
           {
             ContextMap *cm = (*alist_iter);
             if(algs1)
@@ -1127,6 +1161,8 @@ namespace PAMI
                 TRACE_ERR((stderr,"sorted algorithms_info(check) %zu out of %zu/%zu %s\n",i,al->size(),num1,mdata1[i].name));
               }
           }
+        }
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1150,9 +1186,9 @@ namespace PAMI
       }
 
       pami_result_t setDefaultBarrier_impl(Factory *f,
-                                      size_t   ctxt_id)
+                                           size_t   ctxt_id)
       {
-        if (_default_barrier[ctxt_id]._factory == (Factory*)NULL)
+        if(_default_barrier[ctxt_id]._factory == (Factory*)NULL)
         {
           _default_barrier[ctxt_id]._factory  = f;
           _default_barrier[ctxt_id]._geometry = this;
@@ -1166,12 +1202,14 @@ namespace PAMI
                                                        size_t                  ctxt_id,
                                                        pami_context_t          context)
       {
+        TRACE_FN_ENTER();
         (void)context;
-        TRACE_ERR((stderr, "<%p>Common::ue_barrier()\n", this));
+        TRACE_FORMAT( "<%p>", this);
         PAMI_assert (_ue_barrier[ctxt_id]._factory != NULL);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie = cookie;
+        TRACE_FN_EXIT();
         return _ue_barrier[ctxt_id].generate(&cmd);
       }
 
@@ -1184,18 +1222,21 @@ namespace PAMI
       pami_result_t setUEBarrier_impl(Factory *f,
                                       size_t   ctxt_id)
       {
-        if (_ue_barrier[ctxt_id]._factory == (Factory*)NULL)
+        TRACE_FN_ENTER();
+        if(_ue_barrier[ctxt_id]._factory == (Factory*)NULL)
         {
           _ue_barrier[ctxt_id]._factory  = f;
           _ue_barrier[ctxt_id]._geometry = this;
-          TRACE_ERR((stderr, "<%p>Common::set(ctxt_id=%zu) ue_barrier() %p, %p/%p, %p\n",
-                     this,ctxt_id,
-                     &_ue_barrier[ctxt_id],
-                     f,
-                     _ue_barrier[ctxt_id]._factory,
-                     _ue_barrier[ctxt_id]._geometry));
+          TRACE_FORMAT( "<%p>(ctxt_id=%zu) ue_barrier() %p, %p/%p, %p",
+                        this,ctxt_id,
+                        &_ue_barrier[ctxt_id],
+                        f,
+                        _ue_barrier[ctxt_id]._factory,
+                        _ue_barrier[ctxt_id]._geometry);
+          TRACE_FN_EXIT();
           return PAMI_SUCCESS;
         }
+        TRACE_FN_EXIT();
         return PAMI_EAGAIN;  // can't set again unless you reset first.
       }
 
@@ -1213,19 +1254,19 @@ namespace PAMI
       {
         CleanupFunctions::iterator itFcn  = _cleanupFcns.begin();
         CleanupDatas::iterator     itData = _cleanupDatas.begin();
-        for (; (itFcn != _cleanupFcns.end()) && (itData != _cleanupDatas.end()); itFcn++,itData++)
-          {
-            pami_event_function  fn = *itFcn;
-            void                *cd = *itData;
+        for(; (itFcn != _cleanupFcns.end()) && (itData != _cleanupDatas.end()); itFcn++,itData++)
+        {
+          pami_event_function  fn = *itFcn;
+          void                *cd = *itData;
 
-            if((cd == data) && (fn == fcn))
-            {
-              if (fn) fn(NULL, cd, PAMI_SUCCESS);
-              _cleanupFcns.erase(itFcn);
-              _cleanupDatas.erase(itData);
-              return;
-            }
+          if((cd == data) && (fn == fcn))
+          {
+            if(fn) fn(NULL, cd, PAMI_SUCCESS);
+            _cleanupFcns.erase(itFcn);
+            _cleanupDatas.erase(itData);
+            return;
           }
+        }
       }
       void setCkptCallback(CheckpointCb ckptfcn, CheckpointCb resumefcn,
                            CheckpointCb restartfcn, void *data)
@@ -1241,15 +1282,15 @@ namespace PAMI
         CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered checkpoint callbacks */
-        for (; itFcn != _ckptFcns.end(); itFcn++)
-          {
-            CheckpointCb cb   = itFcn->_checkpoint_fn;
-            void        *data = itFcn->_cookie;
+        for(; itFcn != _ckptFcns.end(); itFcn++)
+        {
+          CheckpointCb cb   = itFcn->_checkpoint_fn;
+          void        *data = itFcn->_cookie;
 
-            bool rc = (*cb)(data);
-            if (!rc)
-              return false;
-          }
+          bool rc = (*cb)(data);
+          if(!rc)
+            return false;
+        }
 
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Checkpoint() exits\n", this, _commid);
         _checkpointed = true;
@@ -1264,15 +1305,15 @@ namespace PAMI
         CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered restart callbacks */
-        for (; itFcn != _ckptFcns.end(); itFcn++)
-          {
-            CheckpointCb cb   = itFcn->_restart_fn;
-            void        *data = itFcn->_cookie;
+        for(; itFcn != _ckptFcns.end(); itFcn++)
+        {
+          CheckpointCb cb   = itFcn->_restart_fn;
+          void        *data = itFcn->_cookie;
 
-            bool rc = (*cb)(data);
-            if (!rc)
-              return false;
-          }
+          bool rc = (*cb)(data);
+          if(!rc)
+            return false;
+        }
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Restart() exits\n", this, _commid);
         _checkpointed = false;
         return true;
@@ -1285,15 +1326,15 @@ namespace PAMI
         CheckpointFunctions::iterator itFcn = _ckptFcns.begin();
 
         /* invoke all registered resume callbacks */
-        for (; itFcn != _ckptFcns.end(); itFcn++)
-          {
-            CheckpointCb cb   = itFcn->_resume_fn;
-            void        *data = itFcn->_cookie;
+        for(; itFcn != _ckptFcns.end(); itFcn++)
+        {
+          CheckpointCb cb   = itFcn->_resume_fn;
+          void        *data = itFcn->_cookie;
 
-            bool rc = (*cb)(data);
-            if (!rc)
-              return false;
-          }
+          bool rc = (*cb)(data);
+          if(!rc)
+            return false;
+        }
         ITRC(IT_INITTERM, "LapiGeometry 0x%p _commid=%u: Resume() exits\n", this, _commid);
         _checkpointed = false;
         return true;
@@ -1385,11 +1426,11 @@ namespace PAMI
       ///
       inline void                      rmCompletion(pami_context_t ctx, pami_result_t result)
       {
-        if (result != PAMI_SUCCESS) _cb_result = result;
+        if(result != PAMI_SUCCESS) _cb_result = result;
 
-        if (_comp.fetch_and_dec() == 1)
+        if(_comp.fetch_and_dec() == 1)
         {
-          if (_cb_done.function)
+          if(_cb_done.function)
           {
             _cb_done.function(ctx, _cb_done.clientdata, _cb_result);
           }
@@ -1400,8 +1441,6 @@ namespace PAMI
   };  // namespace Geometry
 }; // namespace PAMI
 
-#undef TRACE_ERR
-#undef TRACE_ERR2
 #undef  DO_TRACE_ENTEREXIT
 #undef  DO_TRACE_DEBUG
 

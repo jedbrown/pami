@@ -325,7 +325,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
         DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("DEBUG t_master[%2.2u]=%#X, size %zu", j, t_master->index2Endpoint(j), t_master->size()));
         DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("DEBUG t_local[%2.2u]=%zu, size %zu", j, (size_t)t_local->index2Endpoint(j), t_local->size()));
-        DO_DEBUG(for (unsigned j = 0; j < t_local_master->size(); ++j) TRACE_FORMAT("DEBUG t_local_master[%2.2u]=%zu, size %zu", j, (size_t)t_local_master->index2Endpoint(j), t_local_master->size()));
+//        DO_DEBUG(for (unsigned j = 0; j < t_local_master->size(); ++j) TRACE_FORMAT("DEBUG t_local_master[%2.2u]=%zu, size %zu", j, (size_t)t_local_master->index2Endpoint(j), t_local_master->size()));
 
         _cb_done                     = fn;
         _clientdata                  = cookie;
@@ -358,6 +358,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
           _active_native               =  _native_l;
           _activeDeviceInfo            = _deviceInfoL;
           _active_minfo                = &_minfo_l0;
+          TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
         }
 
         // If we have more than one master, but we are the only local process
@@ -370,6 +371,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
           _active_native               =  _native_g;
           _activeDeviceInfo            = _deviceInfoG;
           _active_minfo                = &_minfo_g;
+          TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
         }
 
         // We have a mix of both local nodes and master nodes
@@ -381,17 +383,20 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         if (t_master->size() > 1 && t_local->size() > 1)
         {
           bool participant = mInterfaceG && t_master->isEndpointMember(mInterfaceG->endpoint());
+          TRACE_FORMAT( "participant %u, mInterfaceG %p t_master->isEndpointMember(%X) %d",participant, mInterfaceG,mInterfaceG? mInterfaceG->endpoint():-1,mInterfaceG? t_master->isEndpointMember(mInterfaceG->endpoint()):-1 );
           if (participant)
           {
             _minfo_l0.cb_done.function   = local_done_fn;
             _minfo_l0.cb_done.clientdata = this;
             _minfo_g.cb_done.function    = global_done_fn;
             _minfo_g.cb_done.clientdata  = this;
+            TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
           }
           else
           {
             _minfo_l0.cb_done.function   = global_done_fn;
             _minfo_l0.cb_done.clientdata = this;
+            TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
           }
 
           _minfo_l1.cb_done.function   = NULL; //fn;
@@ -399,6 +404,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
           _active_native               =  _native_l;
           _activeDeviceInfo            = _deviceInfoL;
           _active_minfo                = &_minfo_l0;
+          TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
         }
 
         if (_minfo_g.cb_done.function == NULL)
@@ -409,7 +415,7 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
 
         if (_minfo_l1.cb_done.function == NULL)
           _l1_reset_cb = true;
-        TRACE_FORMAT( "g %u, l0 %u, l1 %u",_g_reset_cb, _l0_reset_cb, _l1_reset_cb);
+        TRACE_FORMAT( "g %p, l0 %p, l1 %p",_minfo_g.cb_done.function ,_minfo_l0.cb_done.function ,_minfo_l1.cb_done.function );
         TRACE_FN_EXIT();
       }
 

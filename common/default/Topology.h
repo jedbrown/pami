@@ -48,10 +48,14 @@ static pami_network __dummy_net; // never really used
 
 #define IS_LOCAL_PEER(rank)	mapping->isPeer(mapping->task(), rank)
 
-namespace PAMI {
-  class tag_eplist{};
+namespace PAMI
+{
+  class tag_eplist
+  {
+  };
 
-  class Topology : public Interface::Topology<PAMI::Topology> {
+  class Topology : public Interface::Topology<PAMI::Topology>
+  {
     static PAMI::Mapping *mapping;
     static pami_coord_t my_coords;
 
@@ -80,12 +84,14 @@ namespace PAMI {
     }rectseg;
 
     /// \brief how a topology represents each type
-    union topology_u {
+    union topology_u
+    {
       pami_task_t _rank;   ///< PAMI_SINGLE_TOPOLOGY - the rank
 
-      struct {            ///< PAMI_RANGE_TOPOLOGY
+      struct            ///< PAMI_RANGE_TOPOLOGY
+      {
         pami_task_t _first;///< first rank in range
-        pami_task_t _last;	///< last rank in range
+        pami_task_t _last;  ///< last rank in range
       } _rankrange;
 
       pami_task_t *_ranklist;  ///< PAMI_LIST_TOPOLOGY - the rank array
@@ -141,10 +147,13 @@ namespace PAMI {
     /// \return	boolean indicate locality of two coords
     ///
     bool __isLocalCoord(const pami_coord_t *c0,
-                        const pami_coord_t *c1) {
+                        const pami_coord_t *c1)
+    {
       unsigned x;
-      for (x = 0; x < mapping->torusDims(); ++x) {
-        if (c0->net_coord(x) != c1->net_coord(x)) {
+      for(x = 0; x < mapping->torusDims(); ++x)
+      {
+        if(c0->net_coord(x) != c1->net_coord(x))
+        {
           return false;
         }
       }
@@ -158,11 +167,14 @@ namespace PAMI {
     /// \return	boolean indicating if the coordinate lies in this
     ///		topology, according to significant dimensions.
     ///
-    bool __isMemberCoord(const pami_coord_t *c0, unsigned ndims) {
+    bool __isMemberCoord(const pami_coord_t *c0, unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
-        if (c0->net_coord(x) < topo_lldim(x) ||
-            c0->net_coord(x) > topo_urdim(x)) {
+      for(x = 0; x < ndims; ++x)
+      {
+        if(c0->net_coord(x) < topo_lldim(x) ||
+           c0->net_coord(x) > topo_urdim(x))
+        {
           return false;
         }
       }
@@ -174,10 +186,13 @@ namespace PAMI {
     /// \param[out] _new	place to construct new topology
     /// \return	nothing, but _new may be PAMI_EMPTY_TOPOLOGY
     ///
-    void __subTopologyLocalToMe(PAMI::Topology *_new) {
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
-        if (__isMemberCoord(MY_COORDS,
-                            mapping->torusDims())) {
+    void __subTopologyLocalToMe(PAMI::Topology *_new)
+    {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
+        if(__isMemberCoord(MY_COORDS,
+                           mapping->torusDims()))
+        {
           _new->__type = PAMI_COORD_TOPOLOGY;
           _new->topo_llcoord = *MY_COORDS;
           _new->topo_urcoord = *MY_COORDS;
@@ -185,7 +200,8 @@ namespace PAMI {
           memset(_new->topo_istorus, 0, mapping->torusDims());
           size_t s = 1;
           unsigned x;
-          for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
+          for(x = mapping->torusDims(); x < mapping->globalDims(); ++x)
+          {
             _new->topo_lldim(x) = topo_lldim(x);
             _new->topo_urdim(x) = topo_urdim(x);
             _new->topo_hastorus(x) = topo_hastorus(x);
@@ -195,97 +211,119 @@ namespace PAMI {
           _new->__free_ranklist =false;
           return;
         }
-      } else {
-      if (__type == PAMI_AXIAL_TOPOLOGY) {
-        if (__isMemberCoord(MY_COORDS,
-                            mapping->torusDims())) {
-          _new->__type = PAMI_AXIAL_TOPOLOGY;
-          // this isn't quite right.. am I even in the axial? Are all local
-          // processes always on the axis?
-          _new->topo_axial_llcoord = *MY_COORDS; // topo_axial_center;
-          _new->topo_axial_urcoord = *MY_COORDS; // topo_axial_center;
-          // might be able to get better torus info from mapping
-          memset(_new->topo_axial_istorus, 0, mapping->torusDims());
-          size_t s = 0;
-          unsigned x;
-          for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
-            _new->topo_axial_lldim(x) = topo_axial_lldim(x);
-            _new->topo_axial_urdim(x) = topo_axial_urdim(x);
-            _new->topo_axial_hastorus(x) = topo_axial_hastorus(x);
-            if(!s) s = 1;
-            s *= (topo_urdim(x) - topo_lldim(x) + 1);
+      }
+      else
+      {
+        if(__type == PAMI_AXIAL_TOPOLOGY)
+        {
+          if(__isMemberCoord(MY_COORDS,
+                             mapping->torusDims()))
+          {
+            _new->__type = PAMI_AXIAL_TOPOLOGY;
+            // this isn't quite right.. am I even in the axial? Are all local
+            // processes always on the axis?
+            _new->topo_axial_llcoord = *MY_COORDS; // topo_axial_center;
+            _new->topo_axial_urcoord = *MY_COORDS; // topo_axial_center;
+            // might be able to get better torus info from mapping
+            memset(_new->topo_axial_istorus, 0, mapping->torusDims());
+            size_t s = 0;
+            unsigned x;
+            for(x = mapping->torusDims(); x < mapping->globalDims(); ++x)
+            {
+              _new->topo_axial_lldim(x) = topo_axial_lldim(x);
+              _new->topo_axial_urdim(x) = topo_axial_urdim(x);
+              _new->topo_axial_hastorus(x) = topo_axial_hastorus(x);
+              if(!s) s = 1;
+              s *= (topo_urdim(x) - topo_lldim(x) + 1);
+            }
+            if(!s) _new->__type = PAMI_EMPTY_TOPOLOGY;
+            _new->__size = s;
+            _new->__free_ranklist =false;
+            return;
           }
-          if(!s) _new->__type = PAMI_EMPTY_TOPOLOGY;
-          _new->__size = s;
-          _new->__free_ranklist =false;
-          return;
         }
-      } 
-      else 
-        // the hard way...
-        if (__type == PAMI_SINGLE_TOPOLOGY) {
-          if (IS_LOCAL_PEER(topo_rank)) {
+        else
+          // the hard way...
+          if(__type == PAMI_SINGLE_TOPOLOGY)
+        {
+          if(IS_LOCAL_PEER(topo_rank))
+          {
             *_new = *this;
             return;
           }
-        } else {
+        }
+        else
+        {
           size_t s = 0;
           size_t z;
           mapping->nodePeers(z);
           pami_task_t *rl=NULL;
-	  pami_result_t rc;
+          pami_result_t rc;
 
           //if endpoint list topology; here we generate the list of endpoints
           pami_endpoint_t *epl=NULL;
 
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, z * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", z);
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, z * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", z);
           pami_task_t *rp = rl;
-          if (__type == PAMI_RANGE_TOPOLOGY) {
+          if(__type == PAMI_RANGE_TOPOLOGY)
+          {
             pami_task_t r;
-            for (r = topo_first; r <= topo_last; ++r) {
-              if (IS_LOCAL_PEER(r)) {
+            for(r = topo_first; r <= topo_last; ++r)
+            {
+              if(IS_LOCAL_PEER(r))
+              {
                 ++s;
                 *rp++ = r;
               }
             }
-          } else if (__type == PAMI_LIST_TOPOLOGY) {
+          }
+          else if(__type == PAMI_LIST_TOPOLOGY)
+          {
             unsigned i;
-            for (i = 0; i < __size; ++i) {
-              if (IS_LOCAL_PEER(topo_list(i))) {
+            for(i = 0; i < __size; ++i)
+            {
+              if(IS_LOCAL_PEER(topo_list(i)))
+              {
                 ++s;
                 *rp++ = topo_list(i);
               }
             }
           }
-          else if( __type == PAMI_EPLIST_TOPOLOGY) {
+          else if( __type == PAMI_EPLIST_TOPOLOGY)
+          {
             // for endpoint list topologies; it uses the locality of the
             // tasks of the endpoints;
             z = 0;
             //first count how many endpoints
-            for (size_t i = 0; i < __size; ++i) {
+            for(size_t i = 0; i < __size; ++i)
+            {
               pami_task_t    task; size_t          offset;
               PAMI_ENDPOINT_INFO(topo_eplist(i),task,offset);
-              if (IS_LOCAL_PEER(task)) {
+              if(IS_LOCAL_PEER(task))
+              {
                 ++z;
               }
             }
             //alloc space for the new ep list
             rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-                                           (void **)&epl, 0, z * sizeof(*epl));
+                                                               (void **)&epl, 0, z * sizeof(*epl));
             pami_endpoint_t *epl_iter=epl;
             PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", z);
             //pami_endpoint_t *ep_iter = epl;
-            for (size_t i = 0; i < __size; ++i) {
+            for(size_t i = 0; i < __size; ++i)
+            {
               pami_task_t    task; size_t          offset;
               PAMI_ENDPOINT_INFO(topo_eplist(i),task,offset);
-              if (IS_LOCAL_PEER(task)) {
+              if(IS_LOCAL_PEER(task))
+              {
                 *epl_iter++ = topo_eplist(i);
               }
             }
           }//end build endpoints
-          if(epl != NULL){
+          if(epl != NULL)
+          {
             //build endpoints topology
             _new->__type = PAMI_EPLIST_TOPOLOGY;
             _new->__size          = z;
@@ -295,7 +333,8 @@ namespace PAMI {
             _new->__all_contexts  = false;
             return;
           }
-          if (s) {
+          if(s)
+          {
             // convert "rl" to range if possible.
             // ...or even coords?
             _new->__type = PAMI_LIST_TOPOLOGY;
@@ -306,7 +345,9 @@ namespace PAMI {
             _new->__offset = this->__offset;             //endpoints per task
             _new->__all_contexts = this->__all_contexts;
             return;
-          } else {
+          }
+          else
+          {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
           }
         }
@@ -326,28 +367,34 @@ namespace PAMI {
     /// \param[in] n	which local rank to select
     /// \return	nothing, but _new may be PAMI_EMPTY_TOPOLOGY
     ///
-    void __subTopologyNthGlobal(PAMI::Topology *_new, int n) {
+    void __subTopologyNthGlobal(PAMI::Topology *_new, int n)
+    {
       // What order do we sequence multiple "local" dimensions???
       *_new = *this;
       size_t s = __sizeRange(&topo_llcoord,
                              &topo_urcoord,
                              mapping->torusDims());
       unsigned x;
-      for (x = mapping->torusDims(); x < mapping->globalDims(); ++x) {
+      for(x = mapping->torusDims(); x < mapping->globalDims(); ++x)
+      {
         unsigned ll = topo_lldim(x);
         unsigned ur = topo_urdim(x);
         int nn = ur - ll + 1;
-        if (likely(n < nn)) {
+        if(likely(n < nn))
+        {
           _new->topo_lldim(x) =
-            _new->topo_urdim(x) = ll + n;
+          _new->topo_urdim(x) = ll + n;
           n = 0;
-        } else {
+        }
+        else
+        {
           _new->topo_lldim(x) =
-            _new->topo_urdim(x) = ll + n % nn;
+          _new->topo_urdim(x) = ll + n % nn;
           n /= nn;
         }
       }
-      if (n == 0) { // no overflow on num local nodes...
+      if(n == 0) // no overflow on num local nodes...
+      {
         _new->__size = s;
         _new->__free_ranklist =false;
         return;
@@ -365,21 +412,26 @@ namespace PAMI {
     /// \param[out] _new	Storage for new topology
     /// \param[in] fmt	Coords to collapse/preserve
     ///
-    void __subTopologyReduceDims(PAMI::Topology *_new, pami_coord_t *fmt) {
+    void __subTopologyReduceDims(PAMI::Topology *_new, pami_coord_t *fmt)
+    {
       *_new = *this;
       size_t s = 1;
       unsigned x;
-      for (x = 0; x < mapping->globalDims(); ++x) {
-        if (fmt->net_coord(x) == (size_t)-1) {
+      for(x = 0; x < mapping->globalDims(); ++x)
+      {
+        if(fmt->net_coord(x) == (size_t)-1)
+        {
           _new->topo_lldim(x) = topo_lldim(x);
           _new->topo_urdim(x) = topo_urdim(x);
           _new->topo_hastorus(x) = topo_hastorus(x);
           s *= (topo_urdim(x) - topo_lldim(x) + 1);
-        } else {
+        }
+        else
+        {
           PAMI_assert_debugf(fmt->net_coord(x) >= topo_lldim(x) &&
-                            fmt->net_coord(x) <= topo_urdim(x), "selected coordinate is out of range\n");
+                             fmt->net_coord(x) <= topo_urdim(x), "selected coordinate is out of range\n");
           _new->topo_lldim(x) =
-            _new->topo_urdim(x) = fmt->net_coord(x);
+          _new->topo_urdim(x) = fmt->net_coord(x);
           _new->topo_hastorus(x) = 0;
         }
       }
@@ -393,17 +445,20 @@ namespace PAMI {
     /// \param[in,out] c0	coordinate to "increment"
     /// \return	boolean indicating overflow (end of count)
     ///
-    bool __nextCoord(pami_coord_t *c0, unsigned ndims) {
+    bool __nextCoord(pami_coord_t *c0, unsigned ndims)
+    {
       unsigned x;
-      for (x = ndims; x > 0;) {
+      for(x = ndims; x > 0;)
+      {
         --x;
         c0->net_coord(x) += 1;
-        if (c0->net_coord(x) <= topo_urdim(x)) {
+        if(c0->net_coord(x) <= topo_urdim(x))
+        {
           return true;
         }
         c0->net_coord(x) = topo_lldim(x);
       }
-      return false;	// wrapped all dims - end of iteration
+      return false; // wrapped all dims - end of iteration
     }
 
     /// \brief initialize a coordinate range to a coord
@@ -413,9 +468,11 @@ namespace PAMI {
     /// \param[in] c0	initial coordinate
     ///
     static void __initRange(pami_coord_t *ll, pami_coord_t *ur,
-                            pami_coord_t *c0, unsigned ndims) {
+                            pami_coord_t *c0, unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
+      for(x = 0; x < ndims; ++x)
+      {
         ur->net_coord(x) = ll->net_coord(x) = c0->net_coord(x);
       }
       ll->network = ur->network = PAMI_N_TORUS_NETWORK;
@@ -429,10 +486,12 @@ namespace PAMI {
     /// \return	size of rectangular segment
     ///
     static size_t __sizeRange(pami_coord_t *ll, pami_coord_t *ur,
-                              unsigned ndims) {
+                              unsigned ndims)
+    {
       size_t s = 1;
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
+      for(x = 0; x < ndims; ++x)
+      {
         unsigned n = ur->net_coord(x) - ll->net_coord(x) + 1;
         s *= n;
       }
@@ -446,12 +505,17 @@ namespace PAMI {
     /// \param[in] c0	coord to be included
     ///
     static void __bumpRange(pami_coord_t *ll, pami_coord_t *ur,
-                            pami_coord_t *c0, unsigned ndims) {
+                            pami_coord_t *c0, unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
-        if (c0->net_coord(x) < ll->net_coord(x)) {
+      for(x = 0; x < ndims; ++x)
+      {
+        if(c0->net_coord(x) < ll->net_coord(x))
+        {
           ll->net_coord(x) = c0->net_coord(x);
-        } else if (c0->net_coord(x) > ur->net_coord(x)) {
+        }
+        else if(c0->net_coord(x) > ur->net_coord(x))
+        {
           ur->net_coord(x) = c0->net_coord(x);
         }
       }
@@ -465,7 +529,8 @@ namespace PAMI {
       c->network = PAMI_DEFAULT_NETWORK;
       c->u.no_network = 0;
     }
-    bool __analyzeCoordsRange() {
+    bool __analyzeCoordsRange()
+    {
       pami_result_t rc;
       pami_coord_t ll, ur;
       pami_coord_t c0;
@@ -473,12 +538,14 @@ namespace PAMI {
       pami_task_t r = topo_first;
       rc = RANK2COORDS(r, &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
-      for (r += 1; r <= topo_last; ++r) {
+      for(r += 1; r <= topo_last; ++r)
+      {
         RANK2COORDS(r, &c0);
         __bumpRange(&ll, &ur, &c0, mapping->globalDims());
       }
       size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
-      if (s == __size) {
+      if(s == __size)
+      {
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
@@ -493,7 +560,8 @@ namespace PAMI {
     /// Assumes that rank list contains no duplicates.
     ///
     /// \return 'true' means "this" was altered!
-    bool __analyzeCoordsList() {
+    bool __analyzeCoordsList()
+    {
       pami_result_t rc;
       pami_coord_t ll, ur;
       pami_coord_t c0;
@@ -501,17 +569,20 @@ namespace PAMI {
       unsigned i = 0;
       rc = RANK2COORDS(topo_list(i), &c0);
       __initRange(&ll, &ur, &c0, mapping->globalDims());
-      for (i += 1; i < __size; ++i) {
+      for(i += 1; i < __size; ++i)
+      {
         RANK2COORDS(topo_list(i), &c0);
         __bumpRange(&ll, &ur, &c0, mapping->globalDims());
       }
       size_t s = __sizeRange(&ll, &ur, mapping->globalDims());
-      if (s == __size) {
-	// LIST -> COORDS, drop ranklist and turn off flag
-	if (__free_ranklist) {
-            PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
-	    __free_ranklist = false;
-	}
+      if(s == __size)
+      {
+        // LIST -> COORDS, drop ranklist and turn off flag
+        if(__free_ranklist)
+        {
+          PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+          __free_ranklist = false;
+        }
         __type = PAMI_COORD_TOPOLOGY;
         topo_llcoord = ll;
         topo_urcoord = ur;
@@ -526,23 +597,30 @@ namespace PAMI {
     /// Assumes that rank list contains no duplicates.
     ///
     /// \return 'true' means "this" was altered!
-    bool __analyzeRangeList() {
+    bool __analyzeRangeList()
+    {
       pami_task_t min, max;
       unsigned i = 0;
       min = max = topo_list(i);
-      for (i += 1; i < __size; ++i) {
-        if (topo_list(i) < min) {
+      for(i += 1; i < __size; ++i)
+      {
+        if(topo_list(i) < min)
+        {
           min = topo_list(i);
-        } else if (topo_list(i) > max) {
+        }
+        else if(topo_list(i) > max)
+        {
           max = topo_list(i);
         }
       }
-      if (__size == max - min + 1) {
-	// LIST -> RANGE, drop ranklist and turn off flag
-	if (__free_ranklist) {
-              PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
-	    __free_ranklist = false;
-	}
+      if(__size == max - min + 1)
+      {
+        // LIST -> RANGE, drop ranklist and turn off flag
+        if(__free_ranklist)
+        {
+          PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+          __free_ranklist = false;
+        }
         __type = PAMI_RANGE_TOPOLOGY;
         topo_first = min;
         topo_last = max;
@@ -561,10 +639,13 @@ namespace PAMI {
     /// \return	boolean indicating [c0] < [c1]
     ///
     static bool __coordLT(pami_coord_t *c0, pami_coord_t *c1,
-                          unsigned ndims) {
+                          unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
-        if (c0->net_coord(x) >= c1->net_coord(x)) {
+      for(x = 0; x < ndims; ++x)
+      {
+        if(c0->net_coord(x) >= c1->net_coord(x))
+        {
           return false;
         }
       }
@@ -584,9 +665,11 @@ namespace PAMI {
     ///
     static void __coordMAX(pami_coord_t *_new,
                            pami_coord_t *c0, pami_coord_t *c1,
-                           unsigned ndims) {
+                           unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
+      for(x = 0; x < ndims; ++x)
+      {
         _new->net_coord(x) = (c0->net_coord(x) > c1->net_coord(x) ?
                               c0->net_coord(x) : c1->net_coord(x));
       }
@@ -605,39 +688,45 @@ namespace PAMI {
     ///
     static void __coordMIN(pami_coord_t *_new,
                            pami_coord_t *c0, pami_coord_t *c1,
-                           unsigned ndims) {
+                           unsigned ndims)
+    {
       unsigned x;
-      for (x = 0; x < ndims; ++x) {
+      for(x = 0; x < ndims; ++x)
+      {
         _new->net_coord(x) = (c0->net_coord(x) < c1->net_coord(x) ?
                               c0->net_coord(x) : c1->net_coord(x));
       }
     }
 
   public:
-    static void static_init(PAMI::Mapping *map) {
+    static void static_init(PAMI::Mapping *map)
+    {
       COMPILE_TIME_ASSERT(sizeof(Topology) <= sizeof(pami_topology_t));
       mapping = map;
       RANK2COORDS(mapping->task(), &my_coords);
     }
 
     // hack on top of hack on top of hack.
-    void finalize() {
+    void finalize()
+    {
       if(__free_ranklist)
       {
-          PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+        PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
         topo_ranklist=NULL;
         __free_ranklist = false;
       }
     }
 
 
-    ~Topology() {
-	finalize();
+    ~Topology()
+    {
+      finalize();
     }
 
     /// \brief default constructor (PAMI_EMPTY_TOPOLOGY)
     ///
-    Topology() {
+    Topology()
+    {
       __type = PAMI_EMPTY_TOPOLOGY;
       __size = 0;
       __free_ranklist = false;
@@ -654,14 +743,18 @@ namespace PAMI {
     /// \param[in] tl	optional, torus links flags
     ///
     Topology(pami_coord_t *ll, pami_coord_t *ur,
-             unsigned char *tl = NULL) {
+             unsigned char *tl = NULL)
+    {
       __type = PAMI_COORD_TOPOLOGY;
       topo_llcoord = *ll;
       topo_urcoord = *ur;
       topo_llcoord.network = topo_urcoord.network = PAMI_N_TORUS_NETWORK;
-      if (tl) {
+      if(tl)
+      {
         memcpy(topo_istorus, tl, mapping->globalDims());
-      } else {
+      }
+      else
+      {
         set_istorus(topo_llcoord,topo_urcoord,topo_istorus);  
       }
       __size = __sizeRange(ll, ur, mapping->globalDims());
@@ -681,38 +774,42 @@ namespace PAMI {
     ///
     Topology(pami_coord_t *ll, pami_coord_t *ur, pami_coord_t *ref,
              unsigned char *tl = NULL)
+    {
+      int i;
+      PAMI_assert(mapping->globalDims() <= PAMI_MAX_DIMS);
+
+      __size = 1;
+
+      __type = PAMI_AXIAL_TOPOLOGY;
+      topo_axial_center  = *ref;
+      topo_axial_llcoord = *ll;
+      topo_axial_urcoord = *ur;
+
+      topo_axial_llcoord.network = topo_axial_urcoord.network = PAMI_N_TORUS_NETWORK;
+
+      if(tl)
       {
-        int i;
-        PAMI_assert(mapping->globalDims() <= PAMI_MAX_DIMS);
-
-        __size = 1;
-
-        __type = PAMI_AXIAL_TOPOLOGY;
-        topo_axial_center  = *ref;
-        topo_axial_llcoord = *ll;
-        topo_axial_urcoord = *ur;
-
-        topo_axial_llcoord.network = topo_axial_urcoord.network = PAMI_N_TORUS_NETWORK;
-
-        if (tl) {
-          memcpy(topo_axial_istorus, tl, mapping->globalDims());
-        } else {
-        set_istorus(topo_axial_llcoord,topo_axial_urcoord,topo_axial_istorus);  
-        }
-
-        for (i = 0; (size_t) i < mapping->globalDims(); i++)
-        {
-          __size += (mapping->torusSize(i) + topo_axial_urdim(i) - topo_axial_lldim(i)) % mapping->torusSize(i);
-        }
-        __free_ranklist =false;
-        __offset = 0;
-        __all_contexts = false;
+        memcpy(topo_axial_istorus, tl, mapping->globalDims());
       }
+      else
+      {
+        set_istorus(topo_axial_llcoord,topo_axial_urcoord,topo_axial_istorus);  
+      }
+
+      for(i = 0; (size_t) i < mapping->globalDims(); i++)
+      {
+        __size += (mapping->torusSize(i) + topo_axial_urdim(i) - topo_axial_lldim(i)) % mapping->torusSize(i);
+      }
+      __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
+    }
     /// \brief single rank constructor (PAMI_SINGLE_TOPOLOGY)
     ///
     /// \param[in] rank	The rank
     ///
-    Topology(pami_task_t rank) {
+    Topology(pami_task_t rank)
+    {
       __type = PAMI_SINGLE_TOPOLOGY;
       __size = 1;
       __topo._rank = rank;
@@ -723,23 +820,6 @@ namespace PAMI {
 
 
 
-    /// \brief rank range constructor (PAMI_RANGE_TOPOLOGY)
-    ///
-    /// \param[in] rank0	first rank in range
-    /// \param[in] rankn	last rank in range
-    ///
-    Topology(pami_task_t rank0, pami_task_t rankn) {
-      __type = PAMI_RANGE_TOPOLOGY;
-      __size = rankn - rank0 + 1;
-      __topo._rankrange._first = rank0;
-      __topo._rankrange._last = rankn;
-      __free_ranklist =false;
-      __offset = 0;
-      __all_contexts = false;
-      // should we do this automatically, or let caller?
-      // (void)__analyzeCoordsRange();
-    }
-
     /// --------------------------------------------------------- ADDED FOR EP
     /// \brief rank range constructor (PAMI_EPRANGE_TOPOLOGY)
     ///
@@ -747,19 +827,22 @@ namespace PAMI {
     /// \param[in] rankn	last rank in range
     /// \param[in] ncontexts	the number of contexts per task
     ///  This topology will consist of nranks*ncontexts endpoints;
-    Topology(pami_task_t rank0, pami_task_t rankn, size_t context_offset, size_t ncontexts) {
+    Topology(pami_task_t rank0, pami_task_t rankn, size_t context_offset, size_t ncontexts)
+    {
       __type = PAMI_RANGE_TOPOLOGY;
       __size = rankn - rank0 + 1;
       __topo._rankrange._first = rank0;
       __topo._rankrange._last = rankn;
       __free_ranklist =false;
 
-      if(context_offset==PAMI_ALL_CONTEXTS){
+      if(context_offset==PAMI_ALL_CONTEXTS)
+      {
         __all_contexts = true;//this is flagging that for all tasks in the topology
                               // we will have __offset contexts
         __offset = ncontexts;
       }
-      else {
+      else
+      {
         __all_contexts = false;
         __offset = context_offset;
       }
@@ -774,19 +857,22 @@ namespace PAMI {
     ///
     /// \todo create destructor to free list, or establish rules
     ///
-    Topology(pami_task_t *ranks, size_t nranks, size_t context_offset=0, size_t ncontexts=1) {
+    Topology(pami_task_t *ranks, size_t nranks, size_t context_offset=0, size_t ncontexts=1)
+    {
       ////    FIXME  toproperly consider PAMI_ALL_CONTEXTS
       __type = PAMI_LIST_TOPOLOGY;
       __size = nranks;
       topo_ranklist = ranks;
       __free_ranklist =false;
 
-      if(context_offset==PAMI_ALL_CONTEXTS){
+      if(context_offset==PAMI_ALL_CONTEXTS)
+      {
         __all_contexts = true;//this is flagging that for all tasks in the topology
                               // we will have __offset contexts
         __offset = ncontexts;
       }
-      else {
+      else
+      {
         __all_contexts = false;
         __offset = context_offset;
       }
@@ -804,7 +890,8 @@ namespace PAMI {
     ///
     /// \todo create destructor to free list, or establish rules
     ///
-    Topology(pami_endpoint_t *eps, size_t neps, tag_eplist tag) {
+    Topology(pami_endpoint_t *eps, size_t neps, tag_eplist tag)
+    {
       (void)tag;
       __type = PAMI_EPLIST_TOPOLOGY;
       __size = neps;
@@ -812,7 +899,7 @@ namespace PAMI {
       __free_ranklist =false;
       __offset = 0;
       __all_contexts = false;
-   }
+    }
 
     /// \brief clone constructor (all)
     ///
@@ -820,22 +907,25 @@ namespace PAMI {
     ///
     /// \param[in] topo   Topology to replicate
     ///
-    Topology(Topology *topo) {
+    Topology(Topology *topo)
+    {
       memcpy(this, topo, sizeof(*topo));
       __free_ranklist = false;
       // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
-      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+      if(topo->__type == PAMI_LIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+                                                           (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
         PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
       }
-      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+      if(topo->__type == PAMI_EPLIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+                                                           (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
         PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
         memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
         __free_ranklist =true;//though it is called ranklist th eeplist use the same flag to free mem
@@ -848,23 +938,26 @@ namespace PAMI {
     /// \param[in] rtopo   Topology to replicate
     ///
     Topology(const Topology &rtopo):
-      Interface::Topology<PAMI::Topology>() {
+    Interface::Topology<PAMI::Topology>()
+    {
       const Topology *topo = &rtopo ;
       memcpy(this, topo, sizeof(*topo));
       __free_ranklist = false;
       // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
-      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+      if(topo->__type == PAMI_LIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+                                                           (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
         PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
       }
-      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+      if(topo->__type == PAMI_EPLIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+                                                           (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
         PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
         memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
         __free_ranklist =true;//though it is called ranklist th eeplist use the same flag to free mem
@@ -876,23 +969,26 @@ namespace PAMI {
     ///
     /// \param[in] rtopo   Topology to replicate
     ///
-    Topology& operator= (const Topology &rtopo) {
+    Topology& operator= (const Topology &rtopo)
+    {
       const Topology *topo = &rtopo ;
       memcpy(this, topo, sizeof(*topo));
       __free_ranklist = false;
       // right now, the only type that allocates additional storage is PAMI_LIST_TOPOLOGY
-      if (topo->__type == PAMI_LIST_TOPOLOGY) {
+      if(topo->__type == PAMI_LIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
+                                                           (void **)&topo_ranklist, 0, __size * sizeof(*topo_ranklist));
         PAMI_assertf(rc == PAMI_SUCCESS, "ranklist[%zd] alloc failed", __size);
         memcpy(topo_ranklist, topo->topo_ranklist, __size * sizeof(*topo_ranklist));
         __free_ranklist =true;
       }
-      if (topo->__type == PAMI_EPLIST_TOPOLOGY) {
+      if(topo->__type == PAMI_EPLIST_TOPOLOGY)
+      {
         pami_result_t rc;
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-          (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
+                                                           (void **)&topo_endplist, 0, __size * sizeof(*topo_endplist));
         PAMI_assertf(rc == PAMI_SUCCESS, "eplist[%zd] alloc failed", __size);
         memcpy(topo_endplist, topo->topo_endplist, __size * sizeof(*topo_endplist));
         __free_ranklist =true;
@@ -902,25 +998,33 @@ namespace PAMI {
 
     /// \brief accessor for size of a Topology object
     /// \return	size of PAMI::Topology
-    static unsigned size_of_impl() { return sizeof(Topology); }
+    static unsigned size_of_impl()
+    {
+      return sizeof(Topology);
+    }
 
     /// \brief number of ranks in topology
     /// \return	number of ranks
-    size_t size_impl() {
+    size_t size_impl()
+    {
       if(__all_contexts) return __size * __offset;
       else return __size;
     }
 
     /// \brief type of topology
     /// \return	topology type
-    pami_topology_type_t type_impl() { return __type; }
+    pami_topology_type_t type_impl()
+    {
+      return __type;
+    }
 
     /// \brief Nth rank in topology
     ///
     /// \param[in] ix	Which rank to select
     /// \return	Nth rank or (size_t)-1 if does not exist
     ///
-    pami_task_t index2Rank_impl(size_t ix) {
+    pami_task_t index2Rank_impl(size_t ix)
+    {
       pami_task_t rank = 0;
       pami_coord_t c0;
       pami_result_t rc;
@@ -929,81 +1033,84 @@ namespace PAMI {
       pami_task_t   task;
       size_t        offset;
 
-      if(__all_contexts && __type != PAMI_EPLIST_TOPOLOGY) {
+      if(__all_contexts && __type != PAMI_EPLIST_TOPOLOGY)
+      {
         ix = ix / __offset;
       }
 
-      if (ix < __size) switch (__type) {
-
-      case PAMI_EPLIST_TOPOLOGY:
-        PAMI_ENDPOINT_INFO(topo_eplist(ix),task,offset);
-        return task;
-        break;
-      case PAMI_SINGLE_TOPOLOGY:
-        return topo_rank;
-        break;
-      case PAMI_RANGE_TOPOLOGY:
-        return topo_range(ix);
-        break;
-      case PAMI_LIST_TOPOLOGY:
-        return topo_list(ix);
-        break;
-
-      case PAMI_AXIAL_TOPOLOGY:
-
-        c0 = topo_axial_center;
-
-
-        for (x = 0; x < mapping->globalDims() && ix > 0; x++)
+      if(ix < __size) switch(__type)
         {
-          unsigned ll = topo_axial_lldim(x);
-          unsigned ur = topo_axial_urdim(x);
-          unsigned nn = ur - topo_axial_center.net_coord(x);
+        
+        case PAMI_EPLIST_TOPOLOGY:
+          PAMI_ENDPOINT_INFO(topo_eplist(ix),task,offset);
+          return task;
+          break;
+        case PAMI_SINGLE_TOPOLOGY:
+          return topo_rank;
+          break;
+        case PAMI_RANGE_TOPOLOGY:
+          return topo_range(ix);
+          break;
+        case PAMI_LIST_TOPOLOGY:
+          return topo_list(ix);
+          break;
 
-          if (ix <= nn)
+        case PAMI_AXIAL_TOPOLOGY:
+
+          c0 = topo_axial_center;
+
+
+          for(x = 0; x < mapping->globalDims() && ix > 0; x++)
           {
-            c0.net_coord(x) += ix;
-            break;
-          }
-          else
-            ix -= nn;
+            unsigned ll = topo_axial_lldim(x);
+            unsigned ur = topo_axial_urdim(x);
+            unsigned nn = ur - topo_axial_center.net_coord(x);
 
-          nn = topo_axial_center.net_coord(x) - ll;
-          if (ix <= nn)
+            if(ix <= nn)
+            {
+              c0.net_coord(x) += ix;
+              break;
+            }
+            else
+              ix -= nn;
+
+            nn = topo_axial_center.net_coord(x) - ll;
+            if(ix <= nn)
+            {
+              c0.net_coord(x) -= ix;
+              break;
+            }
+            else
+              ix -= nn;
+          }
+
+          rc = COORDS2RANK(&c0, &rank);
+          return rank;
+          break;
+
+        case PAMI_COORD_TOPOLOGY:
+          // probably not used?
+          // assume last dim is least-significant
+          c0 = topo_llcoord;
+
+          for(x = mapping->globalDims(); x > 0 && ix > 0;)
           {
-            c0.net_coord(x) -= ix;
-            break;
+            --x;
+            unsigned ll = topo_lldim(x);
+            unsigned ur = topo_urdim(x);
+            unsigned nn = ur - ll + 1;
+            c0.net_coord(x) = ll + ix % nn;
+            ix /= nn;
           }
-          else
-            ix -= nn;
+
+          rc = COORDS2RANK(&c0, &rank);
+          return rank;
+          break;
+        case PAMI_EMPTY_TOPOLOGY:
+        default:
+          break;
         }
-
-        rc = COORDS2RANK(&c0, &rank);
-        return rank;
-        break;
-
-      case PAMI_COORD_TOPOLOGY:
-        // probably not used?
-        // assume last dim is least-significant
-        c0 = topo_llcoord;
-
-        for (x = mapping->globalDims(); x > 0 && ix > 0;) {
-          --x;
-          unsigned ll = topo_lldim(x);
-          unsigned ur = topo_urdim(x);
-          unsigned nn = ur - ll + 1;
-          c0.net_coord(x) = ll + ix % nn;
-          ix /= nn;
-        }
-
-        rc = COORDS2RANK(&c0, &rank);
-        return rank;
-        break;
-      case PAMI_EMPTY_TOPOLOGY:
-      default:
-        break;
-      }
-      return (pami_task_t)-1;
+      return(pami_task_t)-1;
     }
     /// \brief Nth permuted index in topology
     ///
@@ -1013,7 +1120,8 @@ namespace PAMI {
     size_t index2PermutedIndex_impl(size_t index)
     {
       // a simple permutation - offset by my own index
-      if(likely(index < __size)) {
+      if(likely(index < __size))
+      {
         index += rank2Index_impl(mapping->task());
         if(index < __size);
         else index -= __size;
@@ -1029,25 +1137,31 @@ namespace PAMI {
     /// \param[in] rank	Which rank to get index for
     /// \return	index of rank (rank(ix) == rank) or (size_t)-1
     ///
-    size_t rank2Index_impl(pami_task_t rank) {
+    size_t rank2Index_impl(pami_task_t rank)
+    {
       size_t x, ix, nn;
       pami_coord_t c0;
       pami_result_t rc;
       no_unused_warning(&c0);
-      switch (__type) {
+      switch(__type)
+      {
       case PAMI_SINGLE_TOPOLOGY:
-        if (topo_rank == rank) {
+        if(topo_rank == rank)
+        {
           return 0;
         }
         break;
       case PAMI_RANGE_TOPOLOGY:
-        if (rank >= topo_first && rank <= topo_last) {
+        if(rank >= topo_first && rank <= topo_last)
+        {
           return rank - topo_first;
         }
         break;
       case PAMI_LIST_TOPOLOGY:
-        for (x = 0; x < __size; ++x) {
-          if (rank == topo_list(x)) {
+        for(x = 0; x < __size; ++x)
+        {
+          if(rank == topo_list(x))
+          {
             return x;
           }
         }
@@ -1057,19 +1171,19 @@ namespace PAMI {
         rc = RANK2COORDS(rank, &c0);
         ix = 0;
         nn = 0;
-        for (x = 0; x < mapping->globalDims(); x++)
+        for(x = 0; x < mapping->globalDims(); x++)
         {
           unsigned ll = topo_axial_lldim(x);
           unsigned ur = topo_axial_urdim(x);
-          if (c0.net_coord(x) == topo_axial_center.net_coord(x))
+          if(c0.net_coord(x) == topo_axial_center.net_coord(x))
             ix += (ur - ll);
           else
           {
-            if (c0.net_coord(x) > topo_axial_center.net_coord(x))
+            if(c0.net_coord(x) > topo_axial_center.net_coord(x))
               ix += c0.net_coord(x) - topo_axial_center.net_coord(x);
             else
               ix += (ur - topo_axial_center.net_coord(x)) +
-                (topo_axial_center.net_coord(x) - c0.net_coord(x));
+                    (topo_axial_center.net_coord(x) - c0.net_coord(x));
             return ix;
           }
         }
@@ -1082,11 +1196,13 @@ namespace PAMI {
         rc = RANK2COORDS(rank, &c0);
         ix = 0;
         nn = 0;
-        for (x = 0; x < mapping->globalDims(); ++x) {
+        for(x = 0; x < mapping->globalDims(); ++x)
+        {
           unsigned ll = topo_lldim(x);
           unsigned ur = topo_urdim(x);
-          if (c0.net_coord(x) < ll || c0.net_coord(x) > ur) {
-            return (size_t)-1;
+          if(c0.net_coord(x) < ll || c0.net_coord(x) > ur)
+          {
+            return(size_t)-1;
           }
           nn = ur - ll + 1;
           ix *= nn;
@@ -1098,7 +1214,7 @@ namespace PAMI {
       default:
         break;
       }
-      return (size_t)-1;
+      return(size_t)-1;
     }
 
     /// \brief return range
@@ -1107,8 +1223,10 @@ namespace PAMI {
     /// \param[out] last	Where to put last rank in range
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a range topology
     ///
-    pami_result_t rankRange_impl(pami_task_t *first, pami_task_t *last) {
-      if (__type != PAMI_RANGE_TOPOLOGY) {
+    pami_result_t rankRange_impl(pami_task_t *first, pami_task_t *last)
+    {
+      if(__type != PAMI_RANGE_TOPOLOGY)
+      {
         return PAMI_UNIMPL;
       }
       *first = topo_first;
@@ -1121,8 +1239,9 @@ namespace PAMI {
     /// \param[out] list	pointer to list stored here
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
     ///
-    pami_result_t rankList_impl(pami_task_t **list) {
-      if (__type == PAMI_LIST_TOPOLOGY)
+    pami_result_t rankList_impl(pami_task_t **list)
+    {
+      if(__type == PAMI_LIST_TOPOLOGY)
       {
         *list = topo_ranklist;
       }
@@ -1150,12 +1269,13 @@ namespace PAMI {
     /// \param[out] list	pointer to list stored here
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a list topology
     ///
-    pami_result_t list_impl(void **list) {
+    pami_result_t list_impl(void **list)
+    {
       if(__type == PAMI_EPLIST_TOPOLOGY)
       {
         *list = (void *)topo_endplist;
       }
-      else if (__type == PAMI_LIST_TOPOLOGY)
+      else if(__type == PAMI_LIST_TOPOLOGY)
       {
         *list = (void *)topo_ranklist;
       }
@@ -1163,7 +1283,7 @@ namespace PAMI {
       {
         *list = (void *)&topo_rank;
       }
-      else 
+      else
       {
         *list = (void *)NULL;
         return PAMI_UNIMPL;
@@ -1184,9 +1304,11 @@ namespace PAMI {
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
     ///
     pami_result_t axial_impl(pami_coord_t **ll, pami_coord_t **ur,
-                            pami_coord_t **ref,
-                            unsigned char **tl) {
-      if (__type != PAMI_AXIAL_TOPOLOGY) {
+                             pami_coord_t **ref,
+                             unsigned char **tl)
+    {
+      if(__type != PAMI_AXIAL_TOPOLOGY)
+      {
         return PAMI_UNIMPL;
       }
       *ll  = &topo_axial_llcoord;
@@ -1209,9 +1331,11 @@ namespace PAMI {
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not an axial topology
     ///
     pami_result_t axial_impl(pami_coord_t *ll, pami_coord_t *ur,
-                            pami_coord_t *ref,
-                            unsigned char *tl) {
-      if (__type != PAMI_AXIAL_TOPOLOGY) {
+                             pami_coord_t *ref,
+                             unsigned char *tl)
+    {
+      if(__type != PAMI_AXIAL_TOPOLOGY)
+      {
         return PAMI_UNIMPL;
       }
       *ll  = topo_axial_llcoord;
@@ -1232,14 +1356,16 @@ namespace PAMI {
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
     ///
     pami_result_t rectSeg_impl(pami_coord_t **ll, pami_coord_t **ur,
-                              unsigned char **tl = NULL)
+                               unsigned char **tl = NULL)
     {
-      if (__type != PAMI_COORD_TOPOLOGY) {
+      if(__type != PAMI_COORD_TOPOLOGY)
+      {
         return PAMI_UNIMPL;
       }
       *ll = &topo_llcoord;
       *ur = &topo_urcoord;
-      if (tl) {
+      if(tl)
+      {
         *tl = topo_istorus;
       }
       return PAMI_SUCCESS;
@@ -1256,13 +1382,16 @@ namespace PAMI {
     /// \return	PAMI_SUCCESS, or PAMI_UNIMPL if not a coord topology
     ///
     pami_result_t rectSeg_impl(pami_coord_t *ll, pami_coord_t *ur,
-                              unsigned char *tl = NULL) {
-      if (__type != PAMI_COORD_TOPOLOGY) {
+                               unsigned char *tl = NULL)
+    {
+      if(__type != PAMI_COORD_TOPOLOGY)
+      {
         return PAMI_UNIMPL;
       }
       *ll = topo_llcoord;
       *ur = topo_urcoord;
-      if (tl) {
+      if(tl)
+      {
         memcpy(tl, topo_istorus, mapping->globalDims());
       }
       return PAMI_SUCCESS;
@@ -1272,17 +1401,24 @@ namespace PAMI {
     ///
     /// \return boolean indicating locality of ranks
     ///
-    bool isLocal_impl() {
+    bool isLocal_impl()
+    {
       pami_result_t rc;
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
         return __isLocalCoord(&topo_llcoord,
                               &topo_urcoord);
-      } else {
+      }
+      else
+      {
         // the hard way...
-        if (__type == PAMI_SINGLE_TOPOLOGY) {
+        if(__type == PAMI_SINGLE_TOPOLOGY)
+        {
           // a rank is always local to itself...
           return true;
-        } else if (__type == PAMI_RANGE_TOPOLOGY) {
+        }
+        else if(__type == PAMI_RANGE_TOPOLOGY)
+        {
           // would it be faster to just compare ranks in vnpeers list?
           // can't do that here since this wants to know if
           // ranks are all local to each other... not self.
@@ -1290,21 +1426,27 @@ namespace PAMI {
           rc = RANK2COORDS(topo_first, &c0);
           PAMI_assert_debugf(rc == PAMI_SUCCESS, "RANK2COORDS failed\n");
           pami_task_t r;
-          for (r = topo_first + 1; r <= topo_last; ++r) {
+          for(r = topo_first + 1; r <= topo_last; ++r)
+          {
             RANK2COORDS(r, &c1);
-            if (!__isLocalCoord(&c0, &c1)) {
+            if(!__isLocalCoord(&c0, &c1))
+            {
               return false;
             }
           }
           return true;
-        } else if (__type == PAMI_LIST_TOPOLOGY) {
+        }
+        else if(__type == PAMI_LIST_TOPOLOGY)
+        {
           pami_coord_t c0, c1;
           rc = RANK2COORDS(topo_list(0), &c0);
           PAMI_assert_debugf(rc == PAMI_SUCCESS, "RANK2COORDS failed\n");
           unsigned i;
-          for (i = 1; i < __size; ++i) {
+          for(i = 1; i < __size; ++i)
+          {
             RANK2COORDS(topo_list(i), &c1);
-            if (!__isLocalCoord(&c0, &c1)) {
+            if(!__isLocalCoord(&c0, &c1))
+            {
               return false;
             }
           }
@@ -1319,29 +1461,42 @@ namespace PAMI {
     ///
     /// \return boolean indicating locality of ranks
     ///
-    bool isLocalToMe_impl() {
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+    bool isLocalToMe_impl()
+    {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
         // does mapping have "me" cached as a pami_coord_t?
         return __isLocalCoord(&topo_llcoord,
                               &topo_urcoord) &&
-          __isLocalCoord(MY_COORDS,
-                         &topo_llcoord);
-      } else {
+        __isLocalCoord(MY_COORDS,
+                       &topo_llcoord);
+      }
+      else
+      {
         // the hard way...
-        if (__type == PAMI_SINGLE_TOPOLOGY) {
+        if(__type == PAMI_SINGLE_TOPOLOGY)
+        {
           return IS_LOCAL_PEER(__topo._rank);
-        } else if (__type == PAMI_RANGE_TOPOLOGY) {
+        }
+        else if(__type == PAMI_RANGE_TOPOLOGY)
+        {
           pami_task_t r;
-          for (r = topo_first; r <= topo_last; ++r) {
-            if (!IS_LOCAL_PEER(r)) {
+          for(r = topo_first; r <= topo_last; ++r)
+          {
+            if(!IS_LOCAL_PEER(r))
+            {
               return false;
             }
           }
           return true;
-        } else if (__type == PAMI_LIST_TOPOLOGY) {
+        }
+        else if(__type == PAMI_LIST_TOPOLOGY)
+        {
           unsigned i;
-          for (i = 0; i < __size; ++i) {
-            if (!IS_LOCAL_PEER(topo_list(i))) {
+          for(i = 0; i < __size; ++i)
+          {
+            if(!IS_LOCAL_PEER(topo_list(i)))
+            {
               return false;
             }
           }
@@ -1356,7 +1511,8 @@ namespace PAMI {
     ///
     /// \return boolean indicating locality of ranks
     ///
-    bool isGlobal_impl() {
+    bool isGlobal_impl()
+    {
       // is this too difficult/expensive? is it needed?
       // Note, this is NOT simply "!isLocal()"...
       PAMI_abortf("Topology::isGlobal not implemented\n");
@@ -1365,7 +1521,10 @@ namespace PAMI {
 
     /// \brief is topology a rectangular segment
     /// \return	boolean indicating rect seg topo
-    bool isRectSeg_impl() { return (__type == PAMI_COORD_TOPOLOGY); }
+    bool isRectSeg_impl()
+    {
+      return(__type == PAMI_COORD_TOPOLOGY);
+    }
 
     /// \brief extract Nth dimensions from coord topology
     ///
@@ -1375,20 +1534,23 @@ namespace PAMI {
     /// \param[out] tl	optional, torus link flag
     ///
     pami_result_t getNthDims_impl(unsigned n, unsigned *c0, unsigned *cn,
-                         unsigned char *tl = NULL) {
-      if(__type == PAMI_COORD_TOPOLOGY) 
+                                  unsigned char *tl = NULL)
+    {
+      if(__type == PAMI_COORD_TOPOLOGY)
       {
         *c0 = topo_lldim(n);
         *cn = topo_urdim(n);
-        if (tl) {
+        if(tl)
+        {
           *tl = topo_hastorus(n);
         }
       }
-      else if(__type == PAMI_COORD_TOPOLOGY) 
+      else if(__type == PAMI_COORD_TOPOLOGY)
       {
         *c0 = topo_axial_lldim(n);
         *cn = topo_axial_urdim(n);
-        if (tl) {
+        if(tl)
+        {
           *tl = topo_axial_hastorus(n);
         }
       }
@@ -1410,7 +1572,7 @@ namespace PAMI {
       /* PAMI_EPLIST_TOPLOGY's *could* be single slice but we're not
          going to try to detect that here.  Only simple, single
          slice contexts will return true. */
-      return (__offset == slice && __type != PAMI_EPLIST_TOPOLOGY);
+      return(__offset == slice && __type != PAMI_EPLIST_TOPOLOGY);
     }
 
     /// \brief is rank in topology
@@ -1418,37 +1580,52 @@ namespace PAMI {
     /// \param[in] rank	Rank to test
     /// \return	boolean indicating rank is in topology
     ///
-    bool isRankMember_impl(pami_task_t rank) {
+    bool isRankMember_impl(pami_task_t rank)
+    {
       pami_result_t rc;
-      if (unlikely(__type == PAMI_COORD_TOPOLOGY || __type == PAMI_AXIAL_TOPOLOGY)) {
+      if(unlikely(__type == PAMI_COORD_TOPOLOGY || __type == PAMI_AXIAL_TOPOLOGY))
+      {
         pami_coord_t c0;
         rc = RANK2COORDS(rank, &c0);
         PAMI_assert_debugf(rc == PAMI_SUCCESS, "RANK2COORDS failed\n");
         return __isMemberCoord(&c0, mapping->globalDims());
-      } else {
-        if (__type == PAMI_SINGLE_TOPOLOGY) {
-          return (rank == __topo._rank);
-        } else if (__type == PAMI_RANGE_TOPOLOGY) {
-          return (rank >= topo_first && rank <= topo_last);
-        } else if (__type == PAMI_LIST_TOPOLOGY) {
+      }
+      else
+      {
+        if(__type == PAMI_SINGLE_TOPOLOGY)
+        {
+          return(rank == __topo._rank);
+        }
+        else if(__type == PAMI_RANGE_TOPOLOGY)
+        {
+          return(rank >= topo_first && rank <= topo_last);
+        }
+        else if(__type == PAMI_LIST_TOPOLOGY)
+        {
           unsigned i;
-          for (i = 0; i < __size; ++i) {
-            if (rank == topo_list(i)) {
+          for(i = 0; i < __size; ++i)
+          {
+            if(rank == topo_list(i))
+            {
               return true;
             }
           }
           return false;
-        } else if(__type == PAMI_EPLIST_TOPOLOGY) 
+        }
+        else if(__type == PAMI_EPLIST_TOPOLOGY)
         { // this is dumb, find a rank in an ep list?
           pami_endpoint_t ep;
-          if(__all_contexts) {
+          if(__all_contexts)
+          {
             ep = PAMI_ENDPOINT_INIT(__client,rank,0);
           }
           else
             ep = PAMI_ENDPOINT_INIT(__client,rank,__offset);
           unsigned i;
-          for (i = 0; i < __size; ++i) {
-            if (ep == topo_eplist(i)) {
+          for(i = 0; i < __size; ++i)
+          {
+            if(ep == topo_eplist(i))
+            {
               return true;
             }
           }
@@ -1463,13 +1640,19 @@ namespace PAMI {
     /// \param[in] c0	Coord to test
     /// \return	boolean indicating coord is a member of topology
     ///
-    bool isCoordMember_impl(pami_coord_t *c0) {
+    bool isCoordMember_impl(pami_coord_t *c0)
+    {
       pami_result_t rc;
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
         return __isMemberCoord(c0, mapping->globalDims());
-      } else if (__type == PAMI_EMPTY_TOPOLOGY) {
+      }
+      else if(__type == PAMI_EMPTY_TOPOLOGY)
+      {
         return false;
-      } else {
+      }
+      else
+      {
         // the hard way...
         pami_task_t rank = 0;
         // PAMI_assert(c0->network == PAMI_N_TORUS_NETWORK);
@@ -1482,7 +1665,8 @@ namespace PAMI {
     ///
     /// \param[out] _new	Where to build topology
     ///
-    void subTopologyLocalToMe_impl(PAMI::Topology *_new) {
+    void subTopologyLocalToMe_impl(PAMI::Topology *_new)
+    {
       __subTopologyLocalToMe(_new);
     }
 
@@ -1493,59 +1677,68 @@ namespace PAMI {
     /// \param[out] _new	Where to build topology
     /// \param[in] n	Which local rank to select on each node
     ///
-    void subTopologyNthGlobal_impl(PAMI::Topology *_new, int n) {
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+    void subTopologyNthGlobal_impl(PAMI::Topology *_new, int n)
+    {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
         __subTopologyNthGlobal(_new, n);
         // may produce empty topology, if "n" is out of range.
       }
-      else if(__type == PAMI_EPLIST_TOPOLOGY) {
+      else if(__type == PAMI_EPLIST_TOPOLOGY)
+      {
         //igtanase:: nth endpoint in each task
         //similar with the existing code for rank list topolgy  below
         _new->__offset       = 0;
         _new->__all_contexts = false;
         size_t s = __size;
-	typedef size_t tb_t[2];
-	pami_endpoint_t *epl;
-	tb_t  *tb, *tb_iter;
-	pami_result_t rc;
+        typedef size_t tb_t[2];
+        pami_endpoint_t *epl;
+        tb_t  *tb, *tb_iter;
+        pami_result_t rc;
 
         PAMI_assert(s != 0);
-	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&epl, 0, s * sizeof(*epl));
-	PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
-	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&tb, 0, s * sizeof(*tb));
-	PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                           (void **)&epl, 0, s * sizeof(*epl));
+        PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                           (void **)&tb, 0, s * sizeof(*tb));
+        PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
 
         tb_iter = tb;
-	memset(tb_iter, 0, s * sizeof(*tb));
+        memset(tb_iter, 0, s * sizeof(*tb));
         size_t k = 0;
         pami_endpoint_t ep_r;
         pami_task_t r;
         size_t         offset;
         PAMI::Interface::Mapping::nodeaddr_t a;
         size_t i, j, l = 0;
-        for (i = 0; i < s; ++i) {
+        for(i = 0; i < s; ++i)
+        {
           ep_r = index2Endpoint(i);
           PAMI_ENDPOINT_INFO(ep_r,r,offset);
           // PAMI_assert(r != -1);
           mapping->task2node(r, a);
-	  for (j = 0; j <= l; ++j) {
-            if (j == l) {
+          for(j = 0; j <= l; ++j)
+          {
+            if(j == l)
+            {
               tb_iter[j][0] = a.global;
               ++l;
             }
-            if (a.global == tb_iter[j][0]) {
-              if (tb_iter[j][1] == (size_t)n) {
+            if(a.global == tb_iter[j][0])
+            {
+              if(tb_iter[j][1] == (size_t)n)
+              {
                 epl[k++] = ep_r;
               }
               ++tb_iter[j][1];
               break;
             }
-	  }
+          }
         }
-	PAMI::Memory::MemoryManager::heap_mm->free(tb);
-        if (k > 0) {
+        PAMI::Memory::MemoryManager::heap_mm->free(tb);
+        if(k > 0)
+        {
           _new->__type = PAMI_EPLIST_TOPOLOGY;
           _new->topo_ranklist = epl;
           _new->__size = k;
@@ -1558,47 +1751,55 @@ namespace PAMI {
         _new->__free_ranklist =false;
         PAMI::Memory::MemoryManager::heap_mm->free(epl);
       }
-      else {
+      else
+      {
         // the hard way... impractical?
         _new->__offset = 0;
         _new->__all_contexts=false;
         size_t s = size();
-	typedef size_t tb_t[2];
-	pami_task_t *rl;
-	tb_t *tb;
-	pami_result_t rc;
-	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
-	rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&tb, 0, s * sizeof(*tb));
-	PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed", s);
-	memset(tb, 0, s * sizeof(tb_t));
+        typedef size_t tb_t[2];
+        pami_task_t *rl;
+        tb_t *tb;
+        pami_result_t rc;
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                           (void **)&rl, 0, s * sizeof(*rl));
+        PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                           (void **)&tb, 0, s * sizeof(*tb));
+        PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed", s);
+        memset(tb, 0, s * sizeof(tb_t));
         size_t k = 0;
         pami_task_t r;
         PAMI::Interface::Mapping::nodeaddr_t a;
         size_t i, j, l = 0;
-        for (i = 0; i < s; ++i) {
+        for(i = 0; i < s; ++i)
+        {
           r = index2Rank(i);
           mapping->task2node(r, a);
-	  for (j = 0; j <= l; ++j) {
-		if (j == l) {
-			tb[j][0] = a.global;
-			++l;
+          for(j = 0; j <= l; ++j)
+          {
+            if(j == l)
+            {
+              tb[j][0] = a.global;
+              ++l;
 //			goto there; // compiler should optimize into this...
-		}
-		if (a.global == tb[j][0]) {
+            }
+            if(a.global == tb[j][0])
+            {
 //there:
-			if (tb[j][1] == (size_t)n) {
-				rl[k++] = r;
-			}
-			++tb[j][1];
-			break;
-		}
-	  }
+              fprintf(stderr,"a.global %zu, a.local %zu, tb[%zu][1] (%zu) == (size_t)n (%u))\n",a.global, a.local, j, tb[j][1], n);
+              if(tb[j][1] == (size_t)n)
+              {
+                rl[k++] = r;
+              }
+              ++tb[j][1];
+              break;
+            }
+          }
         }
-	PAMI::Memory::MemoryManager::heap_mm->free(tb);
-        if (k == 1) {
+        PAMI::Memory::MemoryManager::heap_mm->free(tb);
+        if(k == 1)
+        {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
           _new->__free_ranklist =false;
@@ -1606,7 +1807,8 @@ namespace PAMI {
           PAMI::Memory::MemoryManager::heap_mm->free(rl);
           return;
         }
-        if (k > 1) {
+        if(k > 1)
+        {
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->topo_ranklist = rl;
           _new->__size = k;
@@ -1630,10 +1832,14 @@ namespace PAMI {
     /// \param[out] _new	where to build new topology
     /// \param[in] fmt	how to reduce dimensions
     ///
-    void subTopologyReduceDims_impl(PAMI::Topology *_new, pami_coord_t *fmt) {
-      if (likely(__type == PAMI_COORD_TOPOLOGY)) {
+    void subTopologyReduceDims_impl(PAMI::Topology *_new, pami_coord_t *fmt)
+    {
+      if(likely(__type == PAMI_COORD_TOPOLOGY))
+      {
         __subTopologyReduceDims(_new, fmt);
-      } else {
+      }
+      else
+      {
         // the really hard way... impractical?
         _new->__type = PAMI_EMPTY_TOPOLOGY;
         _new->__size = 0;
@@ -1656,46 +1862,59 @@ namespace PAMI {
     /// \param[out] ranks	array where rank list is placed
     /// \param[out] nranks	actual number of ranks put into array
     ///
-    void getRankList_impl(size_t max, pami_task_t *ranks, size_t *nranks) {
+    void getRankList_impl(size_t max, pami_task_t *ranks, size_t *nranks)
+    {
       pami_result_t rc;
       *nranks = __size; // might exceed "max" - caller detects error.
       PAMI_assert_debugf(max != 0, "getRankList called with no array space\n");
-      if (likely(__type == PAMI_LIST_TOPOLOGY)) {
+      if(likely(__type == PAMI_LIST_TOPOLOGY))
+      {
         unsigned x;
-        for (x = 0; x < __size && x < max; ++x) {
+        for(x = 0; x < __size && x < max; ++x)
+        {
           ranks[x] = topo_list(x);
         }
       }
-      else if (likely(__type == PAMI_EPLIST_TOPOLOGY)) {
+      else if(likely(__type == PAMI_EPLIST_TOPOLOGY))
+      {
         // Expect odd results if __all_contexts or truly an ep list, we're
         // not going to try to eliminate dup ranks here...
         unsigned x;
-        for (x = 0; x < __size && x < max; ++x) {
+        for(x = 0; x < __size && x < max; ++x)
+        {
           ranks[x]=index2Rank_impl(x);
         }
       }
-      else if (__type == PAMI_COORD_TOPOLOGY) {
+      else if(__type == PAMI_COORD_TOPOLOGY)
+      {
         // the hard way...
         pami_coord_t c0;
         pami_task_t rank = 0;
         unsigned x;
         // c0 = llcorner;
         c0.network = PAMI_N_TORUS_NETWORK;
-        for (x = 0; x < mapping->globalDims(); ++x) {
+        for(x = 0; x < mapping->globalDims(); ++x)
+        {
           c0.net_coord(x) = topo_lldim(x);
         }
         x = 0;
-        do {
+        do
+        {
           rc = COORDS2RANK(&c0, &rank);
           ranks[x] = rank;
           ++x;
-        } while (x < max && __nextCoord(&c0, mapping->globalDims()));
-      } else if (__type == PAMI_SINGLE_TOPOLOGY) {
+        } while(x < max && __nextCoord(&c0, mapping->globalDims()));
+      }
+      else if(__type == PAMI_SINGLE_TOPOLOGY)
+      {
         ranks[0] = __topo._rank;
-      } else if (__type == PAMI_RANGE_TOPOLOGY) {
+      }
+      else if(__type == PAMI_RANGE_TOPOLOGY)
+      {
         pami_task_t r;
         unsigned x;
-        for (x = 0, r = topo_first; r <= topo_last && x < max; ++x, ++r) {
+        for(x = 0, r = topo_first; r <= topo_last && x < max; ++x, ++r)
+        {
           ranks[x] = r;
         }
       }
@@ -1714,9 +1933,12 @@ namespace PAMI {
     ///
     /// \return	'true' if topology was changed
     ///
-    bool analyzeTopology_impl() {
-      if (__size == 1 && __type != PAMI_SINGLE_TOPOLOGY) {
-        if (__type == PAMI_LIST_TOPOLOGY) {
+    bool analyzeTopology_impl()
+    {
+      if(__size == 1 && __type != PAMI_SINGLE_TOPOLOGY)
+      {
+        if(__type == PAMI_LIST_TOPOLOGY)
+        {
           // it might not always be desirable to
           // convert a coord to single rank...
           // maybe shouldn't at all...
@@ -1725,20 +1947,28 @@ namespace PAMI {
           __type = PAMI_SINGLE_TOPOLOGY;
           topo_rank = rank;
           return true;
-        } else if (__type == PAMI_RANGE_TOPOLOGY) {
+        }
+        else if(__type == PAMI_RANGE_TOPOLOGY)
+        {
           __type = PAMI_SINGLE_TOPOLOGY;
           topo_rank = topo_first;
           return true;
-        } else if (__type == PAMI_LIST_TOPOLOGY) {
+        }
+        else if(__type == PAMI_LIST_TOPOLOGY)
+        {
           __type = PAMI_SINGLE_TOPOLOGY;
           topo_rank = topo_list(0);
           return true;
         }
-      } else if (__type == PAMI_LIST_TOPOLOGY) {
+      }
+      else if(__type == PAMI_LIST_TOPOLOGY)
+      {
         // Note, might be able to convert to range...
         return __analyzeCoordsList() ||
-          __analyzeRangeList();
-      } else if (__type == PAMI_RANGE_TOPOLOGY) {
+        __analyzeRangeList();
+      }
+      else if(__type == PAMI_RANGE_TOPOLOGY)
+      {
         return __analyzeCoordsRange();
       }
       return false;
@@ -1752,16 +1982,19 @@ namespace PAMI {
     /// \param[in] new_type	Topology type to try and convert into
     /// \return	'true' if topology was changed
     ///
-    bool convertTopology_impl(pami_topology_type_t new_type) {
+    bool convertTopology_impl(pami_topology_type_t new_type)
+    {
       pami_result_t rc;
       pami_coord_t c0;
       pami_task_t rank = 0;
       pami_task_t *rl, *rp;
       pami_task_t min, max;
       // __free_ranklist flag is unchanged unless conversion dictates
-      switch (__type) {
+      switch(__type)
+      {
       case PAMI_SINGLE_TOPOLOGY:
-        switch (new_type) {
+        switch(new_type)
+        {
         case PAMI_COORD_TOPOLOGY:
           pami_coord_t c0;
           rc = RANK2COORDS(topo_rank, &c0);
@@ -1774,14 +2007,14 @@ namespace PAMI {
         case PAMI_RANGE_TOPOLOGY:
           __type = PAMI_RANGE_TOPOLOGY;
           topo_first =
-            topo_last = topo_rank;
+          topo_last = topo_rank;
           return true;
           break;
         case PAMI_LIST_TOPOLOGY:
-	  // SINGLE -> LIST, malloc ranklist and turn on flag
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[1] alloc failed");
+          // SINGLE -> LIST, malloc ranklist and turn on flag
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[1] alloc failed");
           __type = PAMI_LIST_TOPOLOGY;
           *rl = topo_rank;
           topo_ranklist = rl;
@@ -1795,26 +2028,29 @@ namespace PAMI {
         }
         break;
       case PAMI_RANGE_TOPOLOGY:
-        switch (new_type) {
+        switch(new_type)
+        {
         case PAMI_COORD_TOPOLOGY:
           return __analyzeCoordsRange();
           break;
         case PAMI_SINGLE_TOPOLOGY:
-          if (__size == 1) {
+          if(__size == 1)
+          {
             __type = PAMI_SINGLE_TOPOLOGY;
             topo_rank = topo_first;
             return true;
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-	  // RANGE to LIST, malloc ranklist and turn on flag
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, __size * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
+          // RANGE to LIST, malloc ranklist and turn on flag
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, __size * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
           rp = rl;
           __type = PAMI_LIST_TOPOLOGY;
           pami_task_t r;
-          for (r = topo_first; r <= topo_last; ++r) {
+          for(r = topo_first; r <= topo_last; ++r)
+          {
             *rp++ = r;
           }
           topo_ranklist = rl;
@@ -1828,18 +2064,21 @@ namespace PAMI {
         }
         break;
       case PAMI_LIST_TOPOLOGY:
-        switch (new_type) {
+        switch(new_type)
+        {
         case PAMI_COORD_TOPOLOGY:
-	  // LIST -> COORDS, drop ranklist and turn off flag
+          // LIST -> COORDS, drop ranklist and turn off flag
           return __analyzeCoordsList();
           break;
         case PAMI_SINGLE_TOPOLOGY:
-          if (__size == 1) {
-	    // LIST -> SINGLE, drop ranklist and turn off flag
-	    if (__free_ranklist) {
-                  PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
-	        __free_ranklist = false;
-	    }
+          if(__size == 1)
+          {
+            // LIST -> SINGLE, drop ranklist and turn off flag
+            if(__free_ranklist)
+            {
+              PAMI::Memory::MemoryManager::heap_mm->free(topo_ranklist);
+              __free_ranklist = false;
+            }
             __type = PAMI_SINGLE_TOPOLOGY;
             topo_rank = topo_list(0);
             return true;
@@ -1848,7 +2087,7 @@ namespace PAMI {
         case PAMI_LIST_TOPOLOGY:
           break;
         case PAMI_RANGE_TOPOLOGY:
-	  // LIST -> RANGE, drop ranklist and turn off flag
+          // LIST -> RANGE, drop ranklist and turn off flag
           return __analyzeRangeList();
           break;
         default:
@@ -1856,11 +2095,13 @@ namespace PAMI {
         }
         break;
       case PAMI_COORD_TOPOLOGY:
-        switch (new_type) {
+        switch(new_type)
+        {
         case PAMI_COORD_TOPOLOGY:
           break;
         case PAMI_SINGLE_TOPOLOGY:
-          if (__size == 1) {
+          if(__size == 1)
+          {
             rc = COORDS2RANK(&topo_llcoord, &rank);
             __type = PAMI_SINGLE_TOPOLOGY;
             topo_rank = rank;
@@ -1868,16 +2109,17 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-	  // COORD -> LIST, malloc ranklist and turn on flag
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, __size * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
+          // COORD -> LIST, malloc ranklist and turn on flag
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, __size * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", __size);
           rp = rl;
           c0 = topo_llcoord;
-          do {
+          do
+          {
             rc = COORDS2RANK(&c0, &rank);
             *rp++ = rank;
-          } while (__nextCoord(&c0, mapping->globalDims()));
+          } while(__nextCoord(&c0, mapping->globalDims()));
           __type = PAMI_LIST_TOPOLOGY;
           topo_ranklist = rl;
           __free_ranklist =true;
@@ -1887,12 +2129,14 @@ namespace PAMI {
           min = (pami_task_t)-1;
           max = 0;
           c0 = topo_llcoord;
-          do {
+          do
+          {
             rc = COORDS2RANK(&c0, &rank);
-            if (rank < min) min = rank;
-            if (rank > max) max = rank;
-          } while (__nextCoord(&c0, mapping->globalDims()));
-          if (__size == max - min + 1) {
+            if(rank < min) min = rank;
+            if(rank > max) max = rank;
+          } while(__nextCoord(&c0, mapping->globalDims()));
+          if(__size == max - min + 1)
+          {
             __type = PAMI_RANGE_TOPOLOGY;
             topo_first = min;
             topo_last = max;
@@ -1916,15 +2160,18 @@ namespace PAMI {
     /// \param[out] _new	New topology created there
     /// \param[in] other	The other topology
     ///
-    void unionTopology_impl(Topology *_new, Topology *other) {
+    void unionTopology_impl(Topology *_new, Topology *other)
+    {
       (void)_new;(void)other;
       // for now, assume this isn't used/needed.
       PAMI_abortf("Topology::unionTopology not implemented\n");
 #if 0
-      if (likely(__type == other->__type)) {
+      if(likely(__type == other->__type))
+      {
         // size_t s;
         // size_t i, j, k;
-        switch (__type) {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
           // in many cases we must fall-back to rank lists...
           // for now, just always fall-back.
@@ -1940,19 +2187,31 @@ namespace PAMI {
         default:
           break;
         }
-      } else if (__type == PAMI_EMPTY_TOPOLOGY) {
+      }
+      else if(__type == PAMI_EMPTY_TOPOLOGY)
+      {
         *_new = *other;
         return;
-      } else if (other->__type == PAMI_EMPTY_TOPOLOGY) {
+      }
+      else if(other->__type == PAMI_EMPTY_TOPOLOGY)
+      {
         *_new = *this;
         return;
-      } else if (__type == PAMI_SINGLE_TOPOLOGY) {
-      } else if (other->__type == PAMI_SINGLE_TOPOLOGY) {
-      } else {
+      }
+      else if(__type == PAMI_SINGLE_TOPOLOGY)
+      {
+      }
+      else if(other->__type == PAMI_SINGLE_TOPOLOGY)
+      {
+      }
+      else
+      {
         // more complicated scenarios - TBD
-        switch (__type) {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_LIST_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -1963,7 +2222,8 @@ namespace PAMI {
             break;
           }
         case PAMI_LIST_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -1974,7 +2234,8 @@ namespace PAMI {
             break;
           }
         case PAMI_RANGE_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_LIST_TOPOLOGY:
@@ -1999,22 +2260,26 @@ namespace PAMI {
     /// \param[out] _new	New topology created there
     /// \param[in] other	The other topology
     ///
-    void intersectTopology_impl(Topology *_new, Topology *other) {
-      if (likely(__type == other->__type)) {
+    void intersectTopology_impl(Topology *_new, Topology *other)
+    {
+      if(likely(__type == other->__type))
+      {
         size_t s;
         size_t i, j, k;
         pami_task_t *rl;
-	pami_result_t rc;
-        switch (__type) {
+        pami_result_t rc;
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
           // This always results in a rectangle...
           // first, check for disjoint
-          if (__coordLT(&topo_urcoord,
-                        &other->topo_llcoord,
-                        mapping->globalDims()) ||
-              __coordLT(&other->topo_urcoord,
-                        &topo_llcoord,
-                        mapping->globalDims())) {
+          if(__coordLT(&topo_urcoord,
+                       &other->topo_llcoord,
+                       mapping->globalDims()) ||
+             __coordLT(&other->topo_urcoord,
+                       &topo_llcoord,
+                       mapping->globalDims()))
+          {
             break;
           }
           _new->__type = PAMI_COORD_TOPOLOGY;
@@ -2033,7 +2298,8 @@ namespace PAMI {
           return;
           break;
         case PAMI_SINGLE_TOPOLOGY:
-          if (other->topo_rank == topo_rank) {
+          if(other->topo_rank == topo_rank)
+          {
             _new->__type = PAMI_SINGLE_TOPOLOGY;
             _new->__size = 1;
             _new->__free_ranklist =false;
@@ -2043,8 +2309,9 @@ namespace PAMI {
           break;
         case PAMI_RANGE_TOPOLOGY:
           // This always results in a range...
-          if (topo_last < other->topo_first ||
-              other->topo_last < topo_first) {
+          if(topo_last < other->topo_first ||
+             other->topo_last < topo_first)
+          {
             // disjoint ranges
             break;
           }
@@ -2062,18 +2329,22 @@ namespace PAMI {
           // guess at size: smallest topology.
           s = (__size < other->__size ?
                __size : other->__size);
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, s * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
-          for (i = 0; i < __size; ++i) {
-            for (j = 0; j < other->__size; ++j) {
-              if (topo_list(i) == other->topo_list(j)) {
+          for(i = 0; i < __size; ++i)
+          {
+            for(j = 0; j < other->__size; ++j)
+            {
+              if(topo_list(i) == other->topo_list(j))
+              {
                 rl[k++] = topo_list(i);
               }
             }
           }
-          if (k) {
+          if(k)
+          {
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->__size = k;
             _new->__free_ranklist =true;
@@ -2086,28 +2357,38 @@ namespace PAMI {
         default:
           break;
         }
-      } else if (__type == PAMI_SINGLE_TOPOLOGY) {
-        if (other->isRankMember(topo_rank)) {
+      }
+      else if(__type == PAMI_SINGLE_TOPOLOGY)
+      {
+        if(other->isRankMember(topo_rank))
+        {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
           _new->__free_ranklist =false;
           _new->topo_rank = topo_rank;
           return;
         }
-      } else if (other->__type == PAMI_SINGLE_TOPOLOGY) {
-        if (isRankMember(other->topo_rank)) {
+      }
+      else if(other->__type == PAMI_SINGLE_TOPOLOGY)
+      {
+        if(isRankMember(other->topo_rank))
+        {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
           _new->__free_ranklist =false;
           _new->topo_rank = other->topo_rank;
           return;
         }
-      } else if (__type != PAMI_EMPTY_TOPOLOGY &&
-                 other->__type != PAMI_EMPTY_TOPOLOGY) {
+      }
+      else if(__type != PAMI_EMPTY_TOPOLOGY &&
+              other->__type != PAMI_EMPTY_TOPOLOGY)
+      {
         // more complicated scenarios - TBD
-        switch (__type) {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_LIST_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -2119,7 +2400,8 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -2131,7 +2413,8 @@ namespace PAMI {
           }
           break;
         case PAMI_RANGE_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_LIST_TOPOLOGY:
@@ -2159,7 +2442,8 @@ namespace PAMI {
     /// \param[out] _new	New topology created there
     /// \param[in] other	The other topology
     ///
-    void subtractTopology_impl(Topology *_new, Topology *other) {
+    void subtractTopology_impl(Topology *_new, Topology *other)
+    {
       pami_result_t rc;
       pami_coord_t ll, ur, c0;
       pami_task_t rank = 0;
@@ -2168,51 +2452,61 @@ namespace PAMI {
       size_t i, j, k;
       pami_task_t *rl;
       unsigned flag;
-      if (likely(__type == other->__type)) {
-        switch (__type) {
+      if(likely(__type == other->__type))
+      {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
           // This results in coord range in special cases
           // that we don't check for. We just create a
           // list and then try to convert it to coords.
           s = __size;
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, s * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
           c0 = topo_llcoord;
           __initRange(&ll, &ur, &c0, mapping->globalDims());
           min = max = rank;
-          do {
-            if (other->__isMemberCoord(&c0,
-                                       mapping->globalDims())) {
+          do
+          {
+            if(other->__isMemberCoord(&c0,
+                                      mapping->globalDims()))
+            {
               continue;
             }
             // keep it
             rc = COORDS2RANK(&c0, &rank);
             __bumpRange(&ll, &ur, &c0, mapping->globalDims());
-            if (rank < min) min = rank;
-            if (rank > max) max = rank;
+            if(rank < min) min = rank;
+            if(rank > max) max = rank;
             rl[k++] = rank;
-          } while (__nextCoord(&c0, mapping->globalDims()));
-          if (k == 0) {
+          } while(__nextCoord(&c0, mapping->globalDims()));
+          if(k == 0)
+          {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
             break;
           }
           _new->__size = k;
           _new->__free_ranklist =false;
           s = __sizeRange(&ll, &ur, mapping->globalDims());
-          if (s == k) {
+          if(s == k)
+          {
             _new->__type = PAMI_COORD_TOPOLOGY;
             _new->topo_llcoord = ll;
             _new->topo_urcoord = ur;
             set_istorus(_new->topo_llcoord,_new->topo_urcoord,_new->topo_istorus);  
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
-          } else if (max - min + 1 == k) {
+          }
+          else if(max - min + 1 == k)
+          {
             _new->__type = PAMI_RANGE_TOPOLOGY;
             _new->topo_first = min;
             _new->topo_last = max;
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
-          } else {
+          }
+          else
+          {
             _new->__type = PAMI_LIST_TOPOLOGY;
             _new->topo_ranklist = rl;
             _new->__free_ranklist = true;
@@ -2220,18 +2514,20 @@ namespace PAMI {
           return;
           break;
         case PAMI_SINGLE_TOPOLOGY:
-          if (other->topo_rank != topo_rank) {
+          if(other->topo_rank != topo_rank)
+          {
             *_new = *this;
             return;
           }
           break;
         case PAMI_RANGE_TOPOLOGY:
           // This mostly results in a range...
-          flag =	((topo_first >= other->topo_first) << 3) |
-            ((topo_first <= other->topo_last) << 2) |
-            ((topo_last >= other->topo_first) << 1) |
-            ((topo_last <= other->topo_last) << 0);
-          switch (flag) {
+          flag =  ((topo_first >= other->topo_first) << 3) |
+                  ((topo_first <= other->topo_last) << 2) |
+                  ((topo_last >= other->topo_first) << 1) |
+                  ((topo_last <= other->topo_last) << 0);
+          switch(flag)
+          {
           case b0000:
           case b0001:
           case b0010:
@@ -2254,16 +2550,18 @@ namespace PAMI {
             // convert to list...
             _new->__type = PAMI_LIST_TOPOLOGY;
             s = other->topo_first - topo_first +
-              topo_last - other->topo_last;
+                topo_last - other->topo_last;
             PAMI_assert_debugf(s != 0, "subtraction results in empty topology\n");
-	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+            rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                               (void **)&rl, 0, s * sizeof(*rl));
+            PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
-            for (j = topo_first; j < other->topo_first; ++j) {
+            for(j = topo_first; j < other->topo_first; ++j)
+            {
               rl[k++] = j;
             }
-            for (j = other->topo_last + 1; j <= topo_last; ++j) {
+            for(j = other->topo_last + 1; j <= topo_last; ++j)
+            {
               rl[k++] = j;
             }
             PAMI_assert_debug(k == s);
@@ -2299,18 +2597,21 @@ namespace PAMI {
         case PAMI_LIST_TOPOLOGY:
           /// \todo keep this from being O(n^2)
           s = __size;
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, s * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
-          for (i = 0; i < s; ++i) {
-            if (other->isRankMember(topo_list(i))) {
+          for(i = 0; i < s; ++i)
+          {
+            if(other->isRankMember(topo_list(i)))
+            {
               continue;
             }
             // keep it...
             rl[k++] = topo_list(i);
           }
-          if (k == 0) {
+          if(k == 0)
+          {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
             _new->__type = PAMI_EMPTY_TOPOLOGY;
             _new->__size = 0;
@@ -2328,37 +2629,49 @@ namespace PAMI {
         default:
           break;
         }
-      } else if (__type == PAMI_SINGLE_TOPOLOGY) {
-        if (other->isRankMember(topo_rank)) {
+      }
+      else if(__type == PAMI_SINGLE_TOPOLOGY)
+      {
+        if(other->isRankMember(topo_rank))
+        {
           _new->__type = PAMI_SINGLE_TOPOLOGY;
           _new->__size = 1;
           _new->__free_ranklist =false;
           _new->topo_rank = topo_rank;
           return;
         }
-      } else if (other->__type == PAMI_SINGLE_TOPOLOGY) {
-        switch (__type) {
+      }
+      else if(other->__type == PAMI_SINGLE_TOPOLOGY)
+      {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
-          if (isRankMember(other->topo_rank)) {
+          if(isRankMember(other->topo_rank))
+          {
             // convert rectangle to list and remove one...
             s = __size;
-	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+            rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                               (void **)&rl, 0, s * sizeof(*rl));
+            PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
             c0 = topo_llcoord;
-            do {
+            do
+            {
               rc = COORDS2RANK(&c0, &rank);
-              if (rank == other->topo_rank) {
+              if(rank == other->topo_rank)
+              {
                 continue;
               }
               // could try to make a range...
               rl[k++] = rank;
-            } while (__nextCoord(&c0, mapping->globalDims()));
-            if (k == 0) {
+            } while(__nextCoord(&c0, mapping->globalDims()));
+            if(k == 0)
+            {
               PAMI::Memory::MemoryManager::heap_mm->free(rl);
               break;
-            } else if (k == 1) {
+            }
+            else if(k == 1)
+            {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
               _new->__free_ranklist =false;
@@ -2371,29 +2684,37 @@ namespace PAMI {
             _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
-          } else {
+          }
+          else
+          {
             *_new = *this;
             return;
           }
           break;
         case PAMI_RANGE_TOPOLOGY:
-          if (isRankMember(other->topo_rank)) {
+          if(isRankMember(other->topo_rank))
+          {
             // convert range into list...
             s = __size;
-	    rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	    PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+            rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                               (void **)&rl, 0, s * sizeof(*rl));
+            PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
             k = 0;
-            for (i = topo_first; i < other->topo_rank; ++i) {
+            for(i = topo_first; i < other->topo_rank; ++i)
+            {
               rl[k++] = i;
             }
-            for (++i; i <= topo_last; ++i) {
+            for(++i; i <= topo_last; ++i)
+            {
               rl[k++] = i;
             }
-            if (k == 0) { // probably never
+            if(k == 0) // probably never
+            {
               PAMI::Memory::MemoryManager::heap_mm->free(rl);
               break;
-            } else if (k == 1) {
+            }
+            else if(k == 1)
+            {
               _new->__type = PAMI_SINGLE_TOPOLOGY;
               _new->__size = 1;
               _new->__free_ranklist =false;
@@ -2406,26 +2727,33 @@ namespace PAMI {
             _new->__free_ranklist =true;
             _new->topo_ranklist = rl;
             return;
-          } else {
+          }
+          else
+          {
             *_new = *this;
             return;
           }
           break;
         case PAMI_LIST_TOPOLOGY:
           s = __size;
-	  rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
-						(void **)&rl, 0, s * sizeof(*rl));
-	  PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
+          rc = PAMI::Memory::MemoryManager::heap_mm->memalign(
+                                                             (void **)&rl, 0, s * sizeof(*rl));
+          PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
           k = 0;
-          for (i = 0; i < s; ++i) {
-            if (topo_list(i) != other->topo_rank) {
+          for(i = 0; i < s; ++i)
+          {
+            if(topo_list(i) != other->topo_rank)
+            {
               rl[k++] = topo_list(i);
             }
           }
-          if (k == 0) { // probably never
+          if(k == 0) // probably never
+          {
             PAMI::Memory::MemoryManager::heap_mm->free(rl);
             break;
-          } else if (k == 1) {
+          }
+          else if(k == 1)
+          {
             _new->__type = PAMI_SINGLE_TOPOLOGY;
             _new->__size = 1;
             _new->__free_ranklist =false;
@@ -2445,12 +2773,16 @@ namespace PAMI {
         default:
           break;
         }
-      } else if (__type != PAMI_EMPTY_TOPOLOGY &&
-                 other->__type != PAMI_EMPTY_TOPOLOGY) {
+      }
+      else if(__type != PAMI_EMPTY_TOPOLOGY &&
+              other->__type != PAMI_EMPTY_TOPOLOGY)
+      {
         // more complicated scenarios - TBD
-        switch (__type) {
+        switch(__type)
+        {
         case PAMI_COORD_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_LIST_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -2462,7 +2794,8 @@ namespace PAMI {
           }
           break;
         case PAMI_LIST_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_RANGE_TOPOLOGY:
@@ -2474,7 +2807,8 @@ namespace PAMI {
           }
           break;
         case PAMI_RANGE_TOPOLOGY:
-          switch (other->__type) {
+          switch(other->__type)
+          {
           case PAMI_COORD_TOPOLOGY:
             break;
           case PAMI_LIST_TOPOLOGY:
@@ -2494,16 +2828,21 @@ namespace PAMI {
       _new->__size = 0;
     }
 
-    void setClient_impl(pami_client_t c){
+    void setClient_impl(pami_client_t c)
+    {
       __client = c;
     }
 
-    size_t endpoint2Index_impl(const pami_endpoint_t& ep){
+    size_t endpoint2Index_impl(const pami_endpoint_t& ep)
+    {
       size_t x;
-      switch (__type) {
+      switch(__type)
+      {
       case PAMI_EPLIST_TOPOLOGY:
-        for (x = 0; x < __size; ++x) {
-          if (ep == topo_eplist(x)) {
+        for(x = 0; x < __size; ++x)
+        {
+          if(ep == topo_eplist(x))
+          {
             return x;
           }
         }
@@ -2512,7 +2851,8 @@ namespace PAMI {
         pami_task_t    task;
         size_t          offset;
         PAMI_ENDPOINT_INFO(ep,task,offset);
-        if(__all_contexts) {
+        if(__all_contexts)
+        {
           return rank2Index_impl(task) * __offset + offset;
         }
         else return rank2Index_impl(task);
@@ -2520,14 +2860,17 @@ namespace PAMI {
       return -1;
     }
 
-    pami_endpoint_t index2Endpoint_impl(size_t ordinal){
-      if(__type == PAMI_EPLIST_TOPOLOGY) {
+    pami_endpoint_t index2Endpoint_impl(size_t ordinal)
+    {
+      if(__type == PAMI_EPLIST_TOPOLOGY)
+      {
         //if we store explicitly the list of endpoints
         return __topo._eplist[ordinal];
       }
       pami_task_t task = this->index2Rank_impl(ordinal);
       pami_endpoint_t ep;
-      if(__all_contexts) {
+      if(__all_contexts)
+      {
         size_t offset = ordinal % __offset;
         ep = PAMI_ENDPOINT_INIT(__client,task,offset);
       }
@@ -2536,15 +2879,16 @@ namespace PAMI {
       return ep;
     }
 
-    pami_endpoint_t rankContext2Endpoint_impl(pami_task_t task, size_t offset){
+    pami_endpoint_t rankContext2Endpoint_impl(pami_task_t task, size_t offset)
+    {
       pami_endpoint_t ep;
       ep = PAMI_ENDPOINT_INIT(__client,task,offset);
       return ep;
     }
 
   private:
-    size_t           __size;		///< number of endpoints in this topology
-    pami_topology_type_t __type;	///< type of topology this is
+    size_t           __size;    ///< number of endpoints in this topology
+    pami_topology_type_t __type;  ///< type of topology this is
     size_t           __offset; ///< context offset or number of contexts
     bool             __all_contexts; ///< flag to specify single or all contexts.
     union topology_u __topo;///< topoloy info

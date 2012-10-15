@@ -1405,16 +1405,19 @@ namespace PAMI
 
     inline pami_result_t destroy_impl ()
     {
-      pami_result_t rc;
-      rc = PAMI_SUCCESS;
+        TRACE_FN_ENTER();
+        pami_result_t rc;
+        rc = PAMI_SUCCESS;
 
-      // Invoke the MU device destroy()
-      if( __global.useMU() )
-      {
-        rc = Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).destroy();
-      }
+        // Invoke the MU device destroy()
+        if ( __global.useMU() )
+        {
+          rc = Device::MU::Factory::getDevice(_devices->_mu, _clientid, _contextid).destroy();
+        }
 
-      return rc;
+        TRACE_FORMAT("rc = %d", rc);
+        TRACE_FN_EXIT();
+        return rc;
     }
 
     inline pami_result_t post_impl (pami_work_t *state, pami_work_function work_fn, void * cookie)
