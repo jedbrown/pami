@@ -820,6 +820,23 @@ namespace PAMI
 
 
 
+    /// \brief rank range constructor (PAMI_RANGE_TOPOLOGY)
+    ///
+    /// \param[in] rank0       first rank in range
+    /// \param[in] rankn       last rank in range
+    ///
+    Topology(pami_task_t rank0, pami_task_t rankn) {
+      __type = PAMI_RANGE_TOPOLOGY;
+      __size = rankn - rank0 + 1;
+      __topo._rankrange._first = rank0;
+      __topo._rankrange._last = rankn;
+      __free_ranklist =false;
+      __offset = 0;
+      __all_contexts = false;
+      // should we do this automatically, or let caller?
+      // (void)__analyzeCoordsRange();
+    }
+
     /// --------------------------------------------------------- ADDED FOR EP
     /// \brief rank range constructor (PAMI_EPRANGE_TOPOLOGY)
     ///

@@ -188,7 +188,7 @@ namespace CCMI
       void  setBuffers (char *src, char *dst, int bytes, int stride, TypeCode *stype, TypeCode *rtype)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p> src %p, dst %p, len %d, _pwq %p", this, src, dst, len, &_pwq);
+        TRACE_FORMAT( "<%p> src %p, dst %p, len %d, _pwq %p", this, src, dst, bytes, &_pwq);
         _msend.bytes = bytes;
 
         //Setup pipework queue. This depends on setRoot so it better be correct

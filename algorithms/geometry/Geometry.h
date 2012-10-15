@@ -1139,7 +1139,7 @@ namespace PAMI
               {
                 AlgorithmT *tmp_a = &((*cm)[_ctxt_offset]);
                 tmp_a->metadata(&mdata0[i]);
-                TRACE_ERR((stderr,"sorted algorithms_info() %zu out of %zu/%zu %s\n",i,al->size(),num0,mdata0[i].name));
+                TRACE_FORMAT("sorted algorithms_info() %zu out of %zu/%zu %s",i,al->size(),num0,mdata0[i].name);
               }
           }
         }
@@ -1158,7 +1158,7 @@ namespace PAMI
               {
                 AlgorithmT *tmp_a = &((*cm)[_ctxt_offset]);
                 tmp_a->metadata(&mdata1[i]);
-                TRACE_ERR((stderr,"sorted algorithms_info(check) %zu out of %zu/%zu %s\n",i,al->size(),num1,mdata1[i].name));
+                TRACE_FORMAT("sorted algorithms_info(check) %zu out of %zu/%zu %s",i,al->size(),num1,mdata1[i].name);
               }
           }
         }
