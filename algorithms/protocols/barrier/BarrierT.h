@@ -88,7 +88,7 @@ public:
         // Use the cached barrier or generate a new one if the cached barrier doesn't exist
         TRACE_FN_ENTER();
         PAMI_GEOMETRY_CLASS  *g = ( PAMI_GEOMETRY_CLASS *)geometry;
-        TRACE_FORMAT( "Generating Barrier with key=%d, ctxt_id=%ld", T_Key, this->_context_id);
+        TRACE_FORMAT( "Generating Barrier with key=%d, ctxt_id=%zu", T_Key, this->_context_id);
         Executor::Composite *composite = (Executor::Composite *) g->getKey(this->_context_id,
                                          T_Key);
 

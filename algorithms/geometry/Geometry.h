@@ -955,7 +955,7 @@ namespace PAMI
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
         void * value = _kvcstore[key][context_id];
-        TRACE_FORMAT( "<%p>(k=%d, val=%p, ctxt=%ld)",this, key, value,context_id);
+        TRACE_FORMAT( "<%p>(k=%d, val=%p, ctxt=%zu)",this, key, value,context_id);
         TRACE_FN_EXIT();
         return value;
       }
@@ -965,7 +965,7 @@ namespace PAMI
         TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
-        TRACE_FORMAT( "<%p>(k=%d, v=%p,ctxt=%ld)", this, key, value,context_id);
+        TRACE_FORMAT( "<%p>(k=%d, v=%p,ctxt=%zu)", this, key, value,context_id);
         _kvcstore[key][context_id] = value;
         TRACE_FN_EXIT();
       }
