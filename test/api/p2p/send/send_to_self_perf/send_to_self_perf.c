@@ -28,8 +28,8 @@
 #include <assert.h>
 
 #include <pami.h>
-#define ITERATIONS 2
-/*#define ITERATIONS 1000 */
+/*#define ITERATIONS 2*/
+#define ITERATIONS 1000
 /*#define ITERATIONS 100 */
 
 #ifndef BUFSIZE
@@ -142,6 +142,8 @@ static void test_dispatch (
     recv->type     = PAMI_TYPE_BYTE;
     recv->addr     = _rbuf;
     recv->offset   = 0;
+    recv->data_fn  = PAMI_DATA_COPY;
+    recv->data_cookie = NULL;
     TRACE_ERR((stderr, "... dispatch function.  recv->local_fn = %p\n", recv->local_fn));
   }
 
@@ -158,6 +160,7 @@ static void send_done_local (pami_context_t   context,
   (*active)--;
 }
 
+#ifdef TEST_REMOTE_COMPLETION
 static void send_done_remote (pami_context_t   context,
                               void          * cookie,
                               pami_result_t    result)
@@ -167,6 +170,7 @@ static void send_done_remote (pami_context_t   context,
   TRACE_ERR((stderr, "Called send_done_remote function.  cookie=%p, active: %zu -> %zu\n", cookie, *active, *active-1));
   (*active)--;
 }
+#endif
 
 unsigned long long test (size_t sndlen, size_t myrank)
 {
@@ -182,7 +186,11 @@ unsigned long long test (size_t sndlen, size_t myrank)
   parameters.send.data.iov_len    = sndlen;
   parameters.events.cookie    = (void *) &_send_active;
   parameters.events.local_fn  = send_done_local;
+#ifdef TEST_REMOTE_COMPLETION
   parameters.events.remote_fn = send_done_remote;
+#else
+  parameters.events.remote_fn = NULL;
+#endif
 
   unsigned i;
   unsigned long long t1 = 0;
@@ -193,8 +201,11 @@ unsigned long long test (size_t sndlen, size_t myrank)
     TRACE_ERR((stderr, "(%zu)\n(%zu) Starting Iteration %d of size %zu\n", _my_rank, _my_rank, i, sndlen));
     if (i == 1)
       t1 = PAMI_Wtimebase(_g_client);
-
+#ifdef TEST_REMOTE_COMPLETION
     _send_active = 2;
+#else
+    _send_active = 1;
+#endif
     _recv_active = 1;
     TRACE_ERR((stderr,"test():  Calling PAMI_Send\n"));
 
@@ -336,7 +347,7 @@ int main ()
           if (_sbuf[j] != _rbuf[j]) printf("Data Miscompare at size %zu, _sbuf[%u] = 0x%02x, _rbuf = 0x%02x\n",sndlen, j, _sbuf[j], _rbuf[j]);
         }
 
-        TRACE_ERR(("sndlen=%u, START=%llu, SEND_DONE_LOCAL=%llu, DISPATCH=%llu, RECV_DONE=%llu, SEND_DONE_REMOTE=%llu, ADVANCE_DONE=%llu\n",
+        TRACE_ERR((stderr, "sndlen=%zu, START=%llu, SEND_DONE_LOCAL=%llu, DISPATCH=%llu, RECV_DONE=%llu, SEND_DONE_REMOTE=%llu, ADVANCE_DONE=%llu\n",
                    sndlen, T_SEND_START,T_SEND_DONE_LOCAL,T_DISPATCH,T_RECV_DONE,T_SEND_DONE_REMOTE,T_ADVANCE_DONE));
         index += sprintf (&str[index], "%10lld %8.4f  ", cycles, usec);
       }
