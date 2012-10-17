@@ -50,12 +50,14 @@ typedef struct
 typedef struct {
    pami_xfer_type_t  *collectives;
    size_t             num_collectives;
+   size_t            *procs_per_node;
+   size_t             num_procs_per_node;
    size_t            *geometry_sizes;
    size_t             num_geometry_sizes;
    size_t            *message_sizes;
    size_t             num_message_sizes;
    int                iter;
-   int 		      verify;
+   int 		          verify;
    int                verbose;
 } advisor_params_t;
 

@@ -49,6 +49,8 @@ typedef struct
 typedef struct {
    pami_xfer_type_t  *collectives;        /** List of collectives to benchmark */
    size_t             num_collectives;    /** Size of collectives list */
+   size_t            *procs_per_node;
+   size_t             num_procs_per_node;
    size_t            *geometry_sizes;     /** List of geometry sizes */
    size_t             num_geometry_sizes; /** Size of geometry list */
    size_t            *message_sizes;      /** List of message sizes */
@@ -74,9 +76,11 @@ void print_param(advisor_params_t *params);
 void init_advisor_params(advisor_params_t *params)
 {
   params->num_collectives = 0;
+  params->num_procs_per_node = 0;
   params->num_geometry_sizes = 0;
   params->num_message_sizes = 0;
   params->collectives = NULL;
+  params->procs_per_node = NULL;
   params->geometry_sizes = NULL;
   params->message_sizes = NULL;
 }
@@ -84,6 +88,7 @@ void init_advisor_params(advisor_params_t *params)
 void free_advisor_params(advisor_params_t *params)
 {
   free(params->collectives);
+  free(params->procs_per_node);
   free(params->geometry_sizes);
   free(params->message_sizes);
 }
@@ -320,6 +325,15 @@ int process_arg(int argc, char *argv[], advisor_params_t *params)
    opterr = 0;
    init_xfer_tables();
    params->verify = 0;
+
+   size_t *ppn;
+   ppn = (size_t*)realloc(params->procs_per_node, 1*sizeof(size_t));
+   if (ppn == NULL) printf("allocating for procs_per_node failed\n");
+
+   ppn[0] = 1;
+   params->num_procs_per_node = 1;
+   params->procs_per_node = ppn;
+
    while ((c = getopt (argc, argv, "o:m:g:f:i:v::c::")) != -1)
    {
      switch (c)
