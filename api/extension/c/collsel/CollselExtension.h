@@ -66,7 +66,7 @@ typedef struct
 
 typedef struct
 {
-  void *rbuf;
+  void *buf;
   void *cookie;
   int bytes;
   int root;

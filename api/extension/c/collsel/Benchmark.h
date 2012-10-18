@@ -92,6 +92,7 @@ pami_type_t  dt_array[DT_COUNT];
 const char * dt_array_str[DT_COUNT];
 
 pami_task_t         my_task_id;
+size_t              num_tasks;
 char * _g_buffer;
 int                 _gRc = PAMI_SUCCESS;
 char * _g_recv_buffer;
@@ -101,6 +102,22 @@ volatile unsigned am_total_count = 0;
 int scatter_check_rcvbuf(void *rbuf,
                          int bytes,
                          pami_task_t task);
+int bcast_check_rcvbuf(void *rbuf,
+                       int bytes,
+                       int root);
+int gather_check_rcvbuf(size_t num_ep,
+                        void *buf,
+                        int bytes);
+void scatter_initialize_sndbuf(void *sbuf,
+                               int bytes,
+                               size_t ntasks);
+void bcast_initialize_sndbuf(void *sbuf,
+                             int bytes,
+                             int root);
+void gather_initialize_sndbuf(int ep_id,
+                              void *buf,
+                              int bytes);
+
 int gFull_test = 0;
 
 
@@ -393,10 +410,67 @@ size_t get_type_size(pami_type_t intype)
   return sz;
 }
 
+
+/**
+ *  *  *  Completion callback
+ *   *   */
+void cb_amscatter_done (void *context, void * clientdata, pami_result_t err)
+{
+  validation_t *v = (validation_t*)clientdata;
+  volatile unsigned *active = (volatile unsigned *) v->cookie;
+
+  int rc_check;
+  _gRc |= rc_check = scatter_check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
+
+  (*active)++;
+}
+/**
+ *  *  *  User dispatch function
+ *   *   */
+void cb_amscatter_recv(pami_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
+                      void                 * cookie,       /**< IN:  dispatch cookie */
+                      const void           * header_addr,  /**< IN:  header address  */
+                      size_t                 header_size,  /**< IN:  header size     */
+                      const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
+                      size_t                 data_size,    /**< IN:  data size       */
+                      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                      pami_geometry_t        geometry,     /**< IN:  Geometry */
+                      pami_recv_t          * recv)         /**< OUT: receive message structure */
+{
+
+  pami_task_t     task;
+  size_t          offset;
+  _gRc |= PAMI_Endpoint_query (origin,
+                              &task,
+                              &offset);
+
+  validation_t *v = _g_val_buffer + task;
+  v->buf    = _g_recv_buffer;
+  v->cookie = cookie;
+  v->bytes  = data_size;
+  v->root   = task;
+
+  recv->cookie      = (void*)v;
+  recv->local_fn    = cb_amscatter_done;
+  recv->addr        = v->buf;
+  recv->type        = PAMI_TYPE_BYTE;
+  recv->offset      = 0;
+  recv->data_fn     = PAMI_DATA_COPY;
+  recv->data_cookie = NULL;
+}
+
+
 void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
 {
   validation_t *v = (validation_t*)clientdata;
   volatile unsigned *active = (volatile unsigned *) v->cookie;
+
+  if(my_task_id != (unsigned)v->root)
+  {
+    int rc_check;
+    _gRc |= rc_check = bcast_check_rcvbuf (_g_buffer, v->bytes, v->root);
+  }
+
 
   (*active)++;
 }
@@ -418,20 +492,71 @@ void cb_ambcast_recv(pami_context_t        context,      /**< IN:  communication
                       &offset);
 
   validation_t *v = _g_val_buffer + task;
-  v->rbuf   = _g_buffer;
+  v->buf    = _g_buffer;
   v->cookie = cookie;
   v->bytes  = data_size;
   v->root   = task;
 
   recv->cookie      = (void*)v;
   recv->local_fn    = cb_ambcast_done;
-  recv->addr        = v->rbuf;
+  recv->addr        = v->buf;
   recv->type        = PAMI_TYPE_BYTE;
   recv->offset      = 0;
   recv->data_fn     = PAMI_DATA_COPY;
   recv->data_cookie = NULL;
 }
 
+
+void cb_amgather_done (void *context, void * clientdata, pami_result_t err)
+{
+  validation_t *v = (validation_t*)clientdata;
+  volatile unsigned *active = (volatile unsigned *) v->cookie;
+
+  if(my_task_id == (unsigned)v->root)
+  {
+    int rc_check;
+    _gRc |= rc_check = gather_check_rcvbuf (num_tasks, _g_recv_buffer, v->bytes);
+  }
+
+  (*active)++;
+}
+/**
+ *  User dispatch function
+ */
+void cb_amgather_send(pami_context_t         context,      /**< IN:  communication context which invoked the dispatch function */
+                      void                 * cookie,       /**< IN:  dispatch cookie */
+                      const void           * header_addr,  /**< IN:  header address  */
+                      size_t                 header_size,  /**< IN:  header size     */
+                      size_t                 data_size,    /**< IN:  data size       */
+                      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
+                      pami_geometry_t        geometry,     /**< IN:  Geometry */
+                      pami_recv_t          * send)         /**< OUT: receive message structure */
+{
+  pami_task_t     task;
+  size_t          offset;
+  _gRc |= PAMI_Endpoint_query (origin,
+                              &task,
+                              &offset);
+
+  validation_t *v = _g_val_buffer + task;
+  v->buf    = _g_send_buffer;
+  v->cookie = cookie;
+  v->bytes  = data_size;
+  v->root   = task;
+  gather_initialize_sndbuf(my_task_id, v->buf, v->bytes);
+
+  send->cookie      = (void*)v;
+  send->local_fn    = cb_amgather_done;
+  send->addr        = v->buf;
+  send->type        = PAMI_TYPE_BYTE;
+  send->offset      = 0;
+  send->data_fn     = PAMI_DATA_COPY;
+  send->data_cookie = NULL;
+}
+
+  
+  
+  
 unsigned primitive_dt(pami_type_t dt)
 {
   unsigned found = 0,i;
@@ -612,54 +737,6 @@ metadata_result_t check_metadata(pami_metadata_t md,
   return result;
 }
 
-/**
- *  *  *  Completion callback
- *   *   */
-void cb_amscatter_done (void *context, void * clientdata, pami_result_t err)
-{
-  validation_t *v = (validation_t*)clientdata;
-  volatile unsigned *active = (volatile unsigned *) v->cookie;
-
-  int rc_check;
-  _gRc |= rc_check = scatter_check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
-
-  (*active)++;
-}
-/**
- *  *  *  User dispatch function
- *   *   */
-void cb_amscatter_recv(pami_context_t        context,      /**< IN:  communication context which invoked the dispatch function */
-                      void                 * cookie,       /**< IN:  dispatch cookie */
-                      const void           * header_addr,  /**< IN:  header address  */
-                      size_t                 header_size,  /**< IN:  header size     */
-                      const void           * pipe_addr,    /**< IN:  address of PAMI pipe  buffer, valid only if non-NULL        */
-                      size_t                 data_size,    /**< IN:  data size       */
-                      pami_endpoint_t        origin,       /**< IN:  root initiating endpoint */
-                      pami_geometry_t        geometry,     /**< IN:  Geometry */
-                      pami_recv_t          * recv)         /**< OUT: receive message structure */
-{
-
-  pami_task_t     task;
-  size_t          offset;
-  _gRc |= PAMI_Endpoint_query (origin,
-                              &task,
-                              &offset);
-
-  validation_t *v = _g_val_buffer + task;
-  v->rbuf   = _g_recv_buffer;
-  v->cookie = cookie;
-  v->bytes  = data_size;
-  v->root   = task;
-
-  recv->cookie      = (void*)v;
-  recv->local_fn    = cb_amscatter_done;
-  recv->addr        = v->rbuf;
-  recv->type        = PAMI_TYPE_BYTE;
-  recv->offset      = 0;
-  recv->data_fn     = PAMI_DATA_COPY;
-  recv->data_cookie = NULL;
-}
-
 
 size_t get_msg_thresh(size_t byte_thresh, pami_xfer_type_t coll_xfer, size_t ntasks)
 {
@@ -763,17 +840,17 @@ size_t get_msg_thresh(size_t byte_thresh, pami_xfer_type_t coll_xfer, size_t nta
     }
     case PAMI_XFER_AMSCATTER:
     {
-      ret = byte_thresh;
+      ret = byte_thresh / (ntasks + 1);
       break;
     }
     case PAMI_XFER_AMGATHER:
     {
-      ret = byte_thresh;
+      ret = byte_thresh / (ntasks + 1);
       break;
     }
     case PAMI_XFER_AMREDUCE:
     {
-      ret = byte_thresh;
+      ret = byte_thresh / 2;
       break;
     }
     default:
@@ -1160,20 +1237,16 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       void *sbuf = NULL;
       err = posix_memalign(&sbuf, 128, (msg_size * ntasks));
       assert(err == 0);
-      sbuf = (char*)sbuf;
 
       void* rbuf = NULL;
       err = posix_memalign(&rbuf, 128, msg_size);
       assert(err == 0);
-      rbuf = (char*)rbuf;
 
       void *headers = NULL;
       err = posix_memalign((void **)&headers, 128, (ntasks * sizeof(user_header_t)));
-      headers = (char*)headers;
 
       void *validation = NULL;
       err = posix_memalign((void **)&validation, 128, (ntasks * sizeof(validation_t)));
-      validation = (char*)validation;
 
       /* Initialize the headers */
       size_t i;
@@ -1191,6 +1264,34 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
     }
     case PAMI_XFER_AMGATHER:
     {
+      /*  Allocate buffer(s) */
+      int err = 0;
+      void *sbuf = NULL;
+      err = posix_memalign(&sbuf, 128, msg_size);
+      assert(err == 0);
+
+      void* rbuf = NULL;
+      err = posix_memalign(&rbuf, 128, (msg_size * ntasks));
+      assert(err == 0);
+
+      void *headers = NULL;
+      err = posix_memalign((void **)&headers, 128, (ntasks * sizeof(user_header_t)));
+
+      void *validation = NULL;
+      err = posix_memalign((void **)&validation, 128, (ntasks * sizeof(validation_t)));
+
+      /* Initialize the headers */
+      size_t i;
+      for(i = 0; i < ntasks; ++i)
+      {
+        ((user_header_t *)headers)[i].cookie = i;
+      }
+
+      _g_recv_buffer = (char *)rbuf;
+      _g_send_buffer = (char  *)sbuf;
+      _g_val_buffer  = (PAMI::validation_t*)validation;
+      coll[0].cmd.xfer_amgather.headers      = headers;
+      num_tasks      = ntasks;
       break;
     }
     case PAMI_XFER_AMREDUCE:
@@ -1598,8 +1699,6 @@ void fill_coll(pami_client_t client,
     }
     case PAMI_XFER_AMBROADCAST:
     {
-
-    
       am_total_count = 0;
 
       validation_t *v = (validation_t*)coll[0].cookie;
@@ -1610,6 +1709,7 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_ambroadcast.stype        = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_ambroadcast.stypecount   = 0;
 
+      _gRc = PAMI_SUCCESS;
       pami_collective_hint_t h = {0};
       pami_dispatch_callback_function fn;
       fn.ambroadcast = cb_ambcast_recv;
@@ -1621,16 +1721,26 @@ void fill_coll(pami_client_t client,
                                      h);
       coll[0].cmd.xfer_ambroadcast.dispatch = 0;
       if(task == root_zero)
+      {
         coll[0].cmd.xfer_ambroadcast.stypecount = msg_size;
+        bcast_initialize_sndbuf(coll[0].cmd.xfer_ambroadcast.sndbuf,
+                              coll[0].cmd.xfer_ambroadcast.stypecount,
+                              task);
+      }
+      else
+        memset(coll[0].cmd.xfer_ambroadcast.sndbuf, 0xFF, msg_size);
       break;
     }
     case PAMI_XFER_AMSCATTER:
     {
+      am_total_count = 0;
+
       coll[0].cmd.xfer_amscatter.headerlen    = sizeof(user_header_t);
       coll[0].cmd.xfer_amscatter.sndbuf       = _g_send_buffer;
       coll[0].cmd.xfer_amscatter.stype        = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_amscatter.stypecount   = 0;
 
+      _gRc = PAMI_SUCCESS;
       pami_collective_hint_t h = {0};
       pami_dispatch_callback_function fn;
       fn.amscatter = cb_amscatter_recv;
@@ -1642,12 +1752,40 @@ void fill_coll(pami_client_t client,
                                      h);
       coll[0].cmd.xfer_amscatter.dispatch = root_zero;
       if(task == root_zero)
-      coll[0].cmd.xfer_amscatter.stypecount = msg_size;
-
+      {
+        coll[0].cmd.xfer_amscatter.stypecount = msg_size;
+        scatter_initialize_sndbuf(coll[0].cmd.xfer_amscatter.sndbuf,
+                                coll[0].cmd.xfer_amscatter.stypecount,
+                                ntasks);
+      }
+      else
+        memset(_g_recv_buffer,
+           0xFF,
+           msg_size);
       break;
     }
     case PAMI_XFER_AMGATHER:
     {
+      am_total_count = 0;
+
+      coll[0].cmd.xfer_amgather.headerlen    = sizeof(user_header_t);
+      coll[0].cmd.xfer_amgather.rcvbuf       = _g_recv_buffer;
+      coll[0].cmd.xfer_amgather.rtype        = PAMI_TYPE_BYTE;
+      coll[0].cmd.xfer_amgather.rtypecount   = 0;
+
+      _gRc = PAMI_SUCCESS;
+      pami_collective_hint_t h = {0};
+      pami_dispatch_callback_function fn;
+      fn.amgather = cb_amgather_send;
+      PAMI_AMCollective_dispatch_set(context,
+                                     coll[0].algorithm,
+                                     root_zero,/* Set the dispatch id, can be any arbitrary value */
+                                     fn,
+                                     (void*) &am_total_count,
+                                     h);
+      coll[0].cmd.xfer_amgather.dispatch = root_zero;
+      if(task == root_zero)
+      coll[0].cmd.xfer_amgather.rtypecount = msg_size;
       break;
     }
     case PAMI_XFER_AMREDUCE:
@@ -1803,10 +1941,18 @@ void release_coll(pami_xfer_t *coll,
     }
     case PAMI_XFER_AMSCATTER:
     {
+      free(_g_val_buffer);
+      free(_g_recv_buffer);
+      free(coll[0].cmd.xfer_amscatter.sndbuf);
+      free(coll[0].cmd.xfer_amscatter.headers);
       break;
     }
     case PAMI_XFER_AMGATHER:
     {
+      free(_g_val_buffer);
+      free(_g_send_buffer);
+      free(coll[0].cmd.xfer_amgather.rcvbuf);
+      free(coll[0].cmd.xfer_amgather.headers);
       break;
     }
     case PAMI_XFER_AMREDUCE:
@@ -2271,6 +2417,12 @@ int check_results(pami_collective_t cmd, bench_setup *bench)
                                         bench->np,
                                         bench->task_id);
   }
+  else if (bench->xfer == PAMI_XFER_AMBROADCAST)
+    return _gRc;
+  else if (bench->xfer == PAMI_XFER_AMSCATTER)
+    return _gRc;
+  else if (bench->xfer == PAMI_XFER_AMGATHER)
+    return _gRc;
 
   return PAMI_SUCCESS;
 }
@@ -2429,7 +2581,7 @@ void measure_collective(pami_context_t   context,
   // colls[1] is barrier to synch nodes
   // colls[2] is reduce for timing
   volatile unsigned  poll_flag[3] = {0};
-  volatile unsigned *nAMCollecive =  NULL;
+  volatile unsigned *nAMCollective =  NULL;
   
   double t0, total = 0;
   int i, iters;
@@ -2443,7 +2595,7 @@ void measure_collective(pami_context_t   context,
     iters /= (bench->bytes/cutoff[bench->xfer]);
   }
 
-  if(xfer_type != PAMI_XFER_AMBROADCAST)
+  if(xfer_type != PAMI_XFER_AMBROADCAST && xfer_type != PAMI_XFER_AMSCATTER && xfer_type != PAMI_XFER_AMGATHER)
   {
     colls[0].cookie    = (void*) &poll_flag[0];
   }
@@ -2454,11 +2606,11 @@ void measure_collective(pami_context_t   context,
     init_buffs(colls[0].cmd, bench);
 
   pami_result_t result;
-  if(xfer_type == PAMI_XFER_AMBROADCAST)
-    nAMCollecive = (unsigned *)((validation_t*)colls[0].cookie)->cookie;
+  if(xfer_type == PAMI_XFER_AMBROADCAST || xfer_type == PAMI_XFER_AMSCATTER || xfer_type == PAMI_XFER_AMGATHER)
+    nAMCollective = &am_total_count;
   for (i = 0; i < MIN(iters, CACHE_WARMUP_ITERS); i++)
   {
-    if(xfer_type != PAMI_XFER_AMBROADCAST)
+    if(xfer_type != PAMI_XFER_AMBROADCAST && xfer_type != PAMI_XFER_AMSCATTER && xfer_type != PAMI_XFER_AMGATHER)
     {
       blocking_coll(context, &colls[0], &poll_flag[0]);
     }
@@ -2473,15 +2625,15 @@ void measure_collective(pami_context_t   context,
           return;
         }
       }
-      while((int)*nAMCollecive <= i)
+      while((int)*nAMCollective <= i)
         result = PAMI_Context_advance(context, 1);
     }
   }
 
   blocking_coll(context, &colls[1], &poll_flag[1]);
-  if(xfer_type == PAMI_XFER_AMBROADCAST)
-    *nAMCollecive = 0;
-  if(xfer_type != PAMI_XFER_AMBROADCAST)/* Have the if outside time loop for accuracy */
+  if(xfer_type == PAMI_XFER_AMBROADCAST || xfer_type == PAMI_XFER_AMSCATTER || xfer_type == PAMI_XFER_AMGATHER)
+    *nAMCollective = 0;
+  if(xfer_type != PAMI_XFER_AMBROADCAST && xfer_type != PAMI_XFER_AMSCATTER && xfer_type != PAMI_XFER_AMGATHER)/* Have the if outside time loop for accuracy */
   {
     t0 = timer();
     for (i = 0; i < iters; i++)
@@ -2504,10 +2656,11 @@ void measure_collective(pami_context_t   context,
           return;
         }
       }
-      while((int)*nAMCollecive <= i)
+      while((int)*nAMCollective <= i)
         result = PAMI_Context_advance(context, 1);
     }
     total = timer() - t0;
+    assert(*nAMCollective == (unsigned)iters);
   }
   blocking_coll(context, &colls[1], &poll_flag[1]);
 
