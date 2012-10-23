@@ -225,8 +225,8 @@ inline pami_result_t AdvisorTable::generate(char             *filename,
         pami_xfer_t coll[3];
 
         pami_xfer_type_t coll_xfer_type = _params.collectives[i];
-        size_t msg_thresh = get_msg_thresh(byte_thresh, coll_xfer_type, _ntasks);
-        coll_mem_alloc(&coll[0], coll_xfer_type, msg_thresh, _ntasks);
+        size_t msg_thresh = get_msg_thresh(byte_thresh, coll_xfer_type, geo_size);
+        coll_mem_alloc(&coll[0], coll_xfer_type, msg_thresh, geo_size);
         size_t col_num_algo[2];
 
         // Query the 
@@ -268,7 +268,7 @@ inline pami_result_t AdvisorTable::generate(char             *filename,
             size_t low, high;
             char *algo_name = l<col_num_algo[0]?col_md[l].name:q_col_md[l-col_num_algo[0]].name;
             metadata_result_t result = {0};
-            fill_coll(client, contexts[0], coll, coll_xfer_type, &low, &high, l, msg_size, _task_id, _ntasks, root,
+            fill_coll(client, contexts[0], coll, coll_xfer_type, &low, &high, l, msg_size, _task_id, geo_size, root,
                       col_num_algo, &result, col_algo, col_md, q_col_algo, q_col_md);
             algo_list[l].algo = coll[0].algorithm;
 

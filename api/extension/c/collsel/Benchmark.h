@@ -543,7 +543,6 @@ void cb_amgather_send(pami_context_t         context,      /**< IN:  communicati
   v->cookie = cookie;
   v->bytes  = data_size;
   v->root   = task;
-  gather_initialize_sndbuf(my_task_id, v->buf, v->bytes);
 
   send->cookie      = (void*)v;
   send->local_fn    = cb_amgather_done;
@@ -1291,7 +1290,6 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       _g_send_buffer = (char  *)sbuf;
       _g_val_buffer  = (PAMI::validation_t*)validation;
       coll[0].cmd.xfer_amgather.headers      = headers;
-      num_tasks      = ntasks;
       break;
     }
     case PAMI_XFER_AMREDUCE:
@@ -1773,6 +1771,8 @@ void fill_coll(pami_client_t client,
       coll[0].cmd.xfer_amgather.rtype        = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_amgather.rtypecount   = 0;
 
+      num_tasks      = ntasks;
+      gather_initialize_sndbuf(my_task_id, _g_send_buffer, msg_size);
       _gRc = PAMI_SUCCESS;
       pami_collective_hint_t h = {0};
       pami_dispatch_callback_function fn;
@@ -1785,7 +1785,7 @@ void fill_coll(pami_client_t client,
                                      h);
       coll[0].cmd.xfer_amgather.dispatch = root_zero;
       if(task == root_zero)
-      coll[0].cmd.xfer_amgather.rtypecount = msg_size;
+        coll[0].cmd.xfer_amgather.rtypecount = msg_size;
       break;
     }
     case PAMI_XFER_AMREDUCE:
