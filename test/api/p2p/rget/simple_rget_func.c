@@ -239,6 +239,7 @@ pami_recv_t        * recv)        /**< OUT: receive message structure */
 
   /* Perform the rdma get operation */
   pami_rget_simple_t parameters;
+  parameters.rma.hints   = null_send_hint;
   parameters.rma.dest    = rts->origin;
   parameters.rma.bytes   = rts->bytes;
   parameters.rma.cookie  = get;
