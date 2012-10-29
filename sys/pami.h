@@ -380,6 +380,9 @@ extern "C"
                                                    alignment                                    */
     unsigned               recv_min_align;   /**<  This protocol requires a minimum address
                                                    alignment                                    */
+    unsigned               global_order;     /**<  This collective requires the user to start 
+                                                   the collective in a consistent global order, 
+                                                   even across geometries                       */ 
     /**
      * \brief Bitmask to determine if certain checks are required.
      */
@@ -426,6 +429,8 @@ extern "C"
         unsigned           asyncflowctl : 1; /**<  This protocol is asynchronous and may require
                                                    some flow control (barrier) to control 
                                                    excessive unexpected data buffering.         */
+        unsigned           oneatatime   : 1; /**<  This protocol only permits one collective   
+                                                   to be out-standing at a time                 */ 
       } values;
     } check_correct;
 
