@@ -418,6 +418,8 @@ extern "C"
         unsigned           continrflags : 1; /**<  This protocol requires continuous data(recv):  
                                                    for vector collectives, the target buffers
                                                    of the vectors must be adjacent in memory    */
+        unsigned           blocking     : 1; /**<  This protocol is blocking. 0: not blocking,
+                                                   1: blocking                                  */
       } values;
     } check_correct;
 
