@@ -61,6 +61,7 @@ namespace PAMI
           this->check_correct.values.continrflags = 0;
           this->check_correct.values.blocking     = 0;
           this->check_correct.values.inplace      = 1;
+          this->check_correct.values.asyncflowctl = 0;
 
           // Performance Checks
           this->check_perf.bitmask_perf           = 0;

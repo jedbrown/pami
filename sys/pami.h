@@ -423,6 +423,9 @@ extern "C"
         unsigned           inplace      : 1; /**<  This protocol supports in-place buffering: 
                                                    0: the send and recv buffers my not overlap,
                                                    1: the send and recv buffers may overlap     */
+        unsigned           asyncflowctl : 1; /**<  This protocol is asynchronous and may require
+                                                   some flow control (barrier) to control 
+                                                   excessive unexpected data buffering.         */
       } values;
     } check_correct;
 
