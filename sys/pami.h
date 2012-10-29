@@ -420,6 +420,9 @@ extern "C"
                                                    of the vectors must be adjacent in memory    */
         unsigned           blocking     : 1; /**<  This protocol is blocking. 0: not blocking,
                                                    1: blocking                                  */
+        unsigned           inplace      : 1; /**<  This protocol supports in-place buffering: 
+                                                   0: the send and recv buffers my not overlap,
+                                                   1: the send and recv buffers may overlap     */
       } values;
     } check_correct;
 
