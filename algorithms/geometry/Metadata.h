@@ -55,8 +55,8 @@ namespace PAMI
           this->check_correct.values.sendminalign = 1;
           this->check_correct.values.recvminalign = 1;
           this->check_correct.values.alldtop      = 1;
-          this->check_correct.values.contigsflags = 1;
-          this->check_correct.values.contigrflags = 1;
+          this->check_correct.values.contigsflags = 0;
+          this->check_correct.values.contigrflags = 0;
           this->check_correct.values.continsflags = 0;
           this->check_correct.values.continrflags = 0;
 
