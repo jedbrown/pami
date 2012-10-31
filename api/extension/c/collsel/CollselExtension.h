@@ -68,10 +68,18 @@ typedef struct
 
 typedef struct
 {
+  int op;
+  int dt;
+} red_user_header_t;
+
+typedef struct
+{
   void *buf;
   void *cookie;
   int bytes;
   int root;
+  int op;
+  int dt;
 } validation_t;
 
 typedef struct
@@ -86,6 +94,8 @@ typedef void* fast_query_t;
 typedef struct
 {
   pami_algorithm_t algo;
+  char            *algo_name;
+  unsigned         algo_id;
   double times[3];
 } sorted_list;
 

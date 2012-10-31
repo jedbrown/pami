@@ -2582,12 +2582,20 @@ void measure_collective(pami_context_t   context,
   // colls[2] is reduce for timing
   volatile unsigned  poll_flag[3] = {0};
   volatile unsigned *nAMCollective =  NULL;
-  
+
   double t0, total = 0;
   int i, iters;
   int rc_check;
 
   pami_xfer_type_t xfer_type = bench->xfer;
+  
+  /* To Be removed once AMReduce is fixed */
+  if(xfer_type == PAMI_XFER_AMREDUCE){
+    bench->times[0] = bench->times[1] = bench->times[2] = 0.0;
+	return;
+  }
+  
+  
   iters = bench->iters; 
   if (bench->bytes >= cutoff[bench->xfer])
   {

@@ -37,6 +37,9 @@ const char *TMP_OUTPUT_PREFIX="./collsel";
 const size_t SSIZE_T=sizeof(size_t);
 const size_t SDOUBLE=sizeof(double);
 
+#include "CollselData.h"
+#include "CollselXMLWriter.h"
+
 namespace PAMI{
 
   class AdvisorTable
@@ -51,6 +54,7 @@ namespace PAMI{
       ~AdvisorTable();
     private:
       void init(advisor_params_t *params);
+      void sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length);
 
       Advisor &_advisor;
       advisor_params_t _params;
@@ -58,6 +62,7 @@ namespace PAMI{
       size_t           _ntasks;
       bool             _free_geometry_sz;
       bool             _free_message_sz;
+      CollselData      _collsel_data;
   };
 
 
@@ -76,6 +81,31 @@ namespace PAMI{
       free(_params.geometry_sizes);
     if(_free_message_sz)
       free(_params.message_sizes);
+  }
+
+  int cmp_by_time(const void *a, const void *b) 
+{ 
+    sorted_list *ia = (sorted_list *)a;
+    sorted_list *ib = (sorted_list *)b;
+    return (int)(100.f*ia->times[2] - 100.f*ib->times[2]);
+	/* float comparison: returns negative if b > a 
+	and positive if a > b. We multiplied result by 100.0
+	to preserve decimal fraction */ 
+ 
+} 
+
+  inline void AdvisorTable::sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length)
+  {
+     int tmp_sorted_list[COLLSEL_MAX_ALGO];
+     memset(tmp_sorted_list, -1, sizeof(int)*COLLSEL_MAX_ALGO);
+     qsort(algo_list, length, sizeof(sorted_list), cmp_by_time);
+     int i;
+     for(i = 0; i < length*2; i+=2)
+     {
+       tmp_sorted_list[i]    = algo_list[i].algo_id;
+       currAlgoList[i]   = tmp_sorted_list[i] + '0';
+       if(i+1 < (length*2 - 1))currAlgoList[i+1] = ',';
+     }
   }
 
   inline void AdvisorTable::init(advisor_params_t *params)
@@ -162,6 +192,21 @@ namespace PAMI{
     PAMI_assertf(result == PAMI_SUCCESS, "Failed to query client task id");
     _task_id = config.value.intval;
 
+    /* XML and CollselData related */
+    GeometryShapeMap     &ppn_map       = _collsel_data.get_datastore();
+    AlgoMap              *algo_map      = _collsel_data.get_algorithm_map();
+    AlgoNameToIdMap      *algo_name_map = _collsel_data.get_algorithm_name_map(); /* Used to get correct ids for algorithm based on their names */
+    AlgoMap              *tmp_algo_map  = NULL;
+    GeometrySizeMap      *geo_map       = NULL;
+    CollectivesMap       *coll_map      = NULL;
+    MessageSizeMap       *msg_map       = NULL;
+    AlgoList              currAlgoList  = NULL;
+    AlgoList              prevAlgoList  = NULL;
+    unsigned              algo_ids[PAMI_XFER_COUNT];
+    memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
+    //algo_map[PAMI_XFER_BROADCAST].insert(Algo_Pair(0,0x1234567));
+
+
     config.name = PAMI_CLIENT_NUM_TASKS;
     result = PAMI_Client_query(client, &config, 1);
     PAMI_assertf(result == PAMI_SUCCESS, "Failed to query number of tasks");
@@ -210,13 +255,17 @@ namespace PAMI{
       // loop on each setting of procs_per_node
       for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
 
+        /* Inserting geo_map in ppn_map with key _params.procs_per_node[psize] */
+        geo_map         = &ppn_map[_params.procs_per_node[psize]];
         // Loop on geometry size
         for(gsize = 0; gsize < _params.num_geometry_sizes; gsize ++) {
           PAMI_assertf(_params.geometry_sizes[gsize] <= _ntasks, 
               "Geometry size (%zu) exceeds the number of tasks (%zu)", 
               _params.geometry_sizes[gsize], _ntasks);
 
-          size_t geo_size = _params.geometry_sizes[gsize];
+          size_t geo_size =  _params.geometry_sizes[gsize];
+          /* Inserting coll_map in geo_map with key geo_size */
+          coll_map        = &(*geo_map)[geo_size];
 
           // Create subgeometry
           size_t geo_ntasks = _ntasks;
@@ -248,6 +297,12 @@ namespace PAMI{
             pami_xfer_t coll[3];
 
             pami_xfer_type_t coll_xfer_type = _params.collectives[csize];
+            /* Inserting msg_map in coll_map with key coll_xfer_type */
+            msg_map = &(*coll_map)[coll_xfer_type];
+            /* The algolists will be the sorted list */
+            currAlgoList = prevAlgoList = NULL;
+            /* we will set the names, pami_algorithm_t and ids (key) in the algomap */
+            tmp_algo_map = &algo_map[coll_xfer_type];
             size_t msg_thresh = get_msg_thresh(byte_thresh, coll_xfer_type, geo_size);
             coll_mem_alloc(&coll[0], coll_xfer_type, msg_thresh, geo_size);
             size_t col_num_algo[2];
@@ -319,13 +374,20 @@ namespace PAMI{
 
                     flen = fread(tmp_algo_name, 1, tmp_algo_name_len, tFile);
                     CRC(flen != tmp_algo_name_len, "read tmp_algo_name");
+                    if(algo_name_map[coll_xfer_type].find(tmp_algo_name) == algo_name_map[coll_xfer_type].end())
+                    {
+                      algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type]++;
+                    }
+                    (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(tmp_algo_name)->second].algorithm_name = tmp_algo_name;
+                    algo_list[i].algo_name = tmp_algo_name;
+                    algo_list[i].algo_id   = algo_name_map[coll_xfer_type].find(tmp_algo_name)->second;
 
                     for (j = 0; j < 3; j ++) {
                       flen = fread(&tmp_results[j], 1, SDOUBLE, tFile); 
                       CRC(flen != SDOUBLE, "read tmp_results");
 
                     }
-
+                    memcpy(algo_list[i].times, tmp_results, 3*SDOUBLE);
                     /*
                     printf("READ of (%s): %zu of %zu record: algo(%zu) algo.name.len(%zu) algo.name(%s) results(%6f:%6f:%6f)\n",
                             tmp_output_fname,
@@ -361,12 +423,25 @@ namespace PAMI{
                   size_t low, high;
                   char *algo_name =
                     algo<col_num_algo[0]?col_md[algo].name:q_col_md[algo-col_num_algo[0]].name;
+
+
                   metadata_result_t result = {0};
                   fill_coll(client, contexts[0], coll, coll_xfer_type, &low, &high,
                       algo, act_msg_size[msize], _task_id, geo_size, root,
                       col_num_algo, &result, col_algo, col_md, q_col_algo, q_col_md);
-                  algo_list[algo].algo = coll[0].algorithm;
 
+                  if(algo_name_map[coll_xfer_type].find(algo_name) == algo_name_map[coll_xfer_type].end())
+                  {
+                    algo_name_map[coll_xfer_type][algo_name] = algo_ids[coll_xfer_type]++;
+                  }
+                  /* tmp_algo_map when filled, it is used by XML writer to write key data for algorithms
+                     the algo_list on the other hand is used to sort the data */
+                  (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(algo_name)->second].algorithm_name = algo_name;
+                  (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(algo_name)->second].algorithm      = coll[0].algorithm;
+                  algo_list[algo].algo      = coll[0].algorithm;
+                  algo_list[algo].algo_name = algo_name;
+                  algo_list[algo].algo_id   = algo_name_map[coll_xfer_type].find(algo_name)->second;
+				  
                   if(act_msg_size[msize] <low || act_msg_size[msize] > high)
                   {
                     if(!_task_id) printf(
@@ -424,12 +499,36 @@ namespace PAMI{
 
                 } // end of algorithm loop
 
+
                 if(!_task_id) {
                   // close the tmp output file
                   fclose(tFile);
                 }
               }
+              /* We have currAlgoList and prevAlgoList to compare and set message min and max ranges in xml */
+              if(currAlgoList == NULL)
+                currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2)); 
+              sort_algo_list(algo_list, currAlgoList, num_algo);
+              if(prevAlgoList == NULL) /* This means this is the first time in the message size loop */
+              {
+                prevAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
+                strcpy((char *)prevAlgoList, (const char *)currAlgoList);
+                (*msg_map)[act_msg_size[msize]] = currAlgoList;
+              }
+              else
+              {
+                if(strcmp((const char *)currAlgoList, (const char *)prevAlgoList) != 0)
+                {
+                  (*msg_map)[act_msg_size[msize-1]] = prevAlgoList;
+                  (*msg_map)[act_msg_size[msize]]   = currAlgoList;
+                  strcpy((char *)prevAlgoList, (const char *)currAlgoList);
+                }
+              }
             } // end of message size loop
+            free(currAlgoList);
+            currAlgoList = NULL;
+            free(prevAlgoList);
+            prevAlgoList = NULL;
 
             // store the actual number of message sizes
             act_num_msg_size = msize;
@@ -444,7 +543,8 @@ namespace PAMI{
         } // end geometry size loop
       } // end procs_per_node loop
 
-
+      PAMI::XMLWriter<>  xml_creator;
+      xml_creator.write_xml("test_one.xml", ppn_map, algo_map);
       if(!_task_id) {
         // since all the interations passed with no issue
         // remove all the tmp output files
