@@ -121,7 +121,9 @@ namespace CCMI
           _comm_schedule->init (_mdata._root, BROADCAST_OP, phase, nph);
           CCMI_assert(_comm_schedule != NULL);
           _comm_schedule->getDstUnionTopology (&_dsttopology, _dst_eps);
-          CCMI_assert(_dsttopology.size() <= BCAST_MAX_PARALLEL);
+          // Rectangle protocols do not use the _dst_eps list and will not return ENOMEM so the _dst_eps/_num_dst_eps may
+          // safely be left 'too small' and this assert is not appropriate.   
+          // CCMI_assert(_dsttopology.size() <= (size_t)_num_dst_eps);
           if (_connmgr)
             _msend.connection_id = _connmgr->getConnectionId(_mdata._comm, _mdata._root, color, (unsigned) - 1, (unsigned) - 1);
 
