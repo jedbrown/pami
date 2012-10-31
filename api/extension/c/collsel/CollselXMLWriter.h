@@ -18,6 +18,15 @@ namespace PAMI
   {
 
   public:
+    XMLWriter():tmp_str(new char[STR_MAX_SZ])
+    {
+    }
+
+    ~XMLWriter()
+    {
+      delete[] tmp_str;
+    }
+
     int write_xml(const std::string &filename,
                   PAMI::GeometryShapeMap &collsel_map,
                   PAMI::AlgoMap *algo_map,
@@ -342,11 +351,12 @@ namespace PAMI
       }
     }
 
+    // Temporary storage for integer to string conversions
+    char  *tmp_str;
     //Create a new XML document
     xml_document<> doc;
-    // Temporary storage for integer to string conversions
+    // Max tmp_str size
     static const int STR_MAX_SZ;
-    static char  tmp_str[];
     // XML tag & attribute names
     static const char* PAMI_TUNE_TAG;
     static const char* PAMI_ENV_TAG;
@@ -374,7 +384,6 @@ namespace PAMI
   };
 
   template<class Iter,class Ch>   const int XMLWriter<Iter,Ch>::STR_MAX_SZ = 16;
-  template<class Iter,class Ch>   char XMLWriter<Iter,Ch>::tmp_str[STR_MAX_SZ];
   template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::PAMI_TUNE_TAG     = "pami_tune";
   template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::PAMI_ENV_TAG      = "pami_environment";
   template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLLSEL_TAG       = "collective_selection";
