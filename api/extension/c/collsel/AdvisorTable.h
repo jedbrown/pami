@@ -543,8 +543,12 @@ namespace PAMI{
         } // end geometry size loop
       } // end procs_per_node loop
 
-      PAMI::XMLWriter<>  xml_creator;
-      xml_creator.write_xml("test_one.xml", ppn_map, algo_map);
+      if(!_task_id)
+      {
+        PAMI::XMLWriter<>  xml_creator;
+        xml_creator.write_xml("test_one.xml", ppn_map, algo_map);
+      }
+
       if(!_task_id) {
         // since all the interations passed with no issue
         // remove all the tmp output files
@@ -574,7 +578,6 @@ namespace PAMI{
           }
         }
       }
-
     }
 
     return PAMI_SUCCESS;
