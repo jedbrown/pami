@@ -147,6 +147,12 @@ namespace CCMI
         TRACE_FN_EXIT();
         PAMI_abort();
       };
+
+      virtual void freeObject(void *object) {
+	//This method is overridden by sub-class factories
+	CCMI_abort();
+      }
+
       inline pami_context_t getContext()
       {
         TRACE_FN_ENTER();

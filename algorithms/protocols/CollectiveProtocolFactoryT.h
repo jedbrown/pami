@@ -168,6 +168,10 @@ namespace CCMI
         TRACE_FN_EXIT();
       }
 
+      virtual void freeObject(void *obj) {
+	_alloc.returnObject(obj); //free the object
+      }
+
       T_Conn * connmgr () { return _cmgr; }
       void *allocateObject () { return _alloc.allocateObject(); }
       T_Conn                                     * _cmgr;

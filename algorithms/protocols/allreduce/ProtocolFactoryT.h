@@ -126,7 +126,8 @@ public:
         {
 	  geometry->setAllreduceComposite(contextid,NULL, iteration);
 	  arcomposite->cleanup(); //Call destructor
-	  CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.returnObject(arcomposite);
+	  CollectiveProtocolFactory *factory = (CollectiveProtocolFactory *) arcomposite->getAlgorithmFactory();
+	  factory->freeObject(arcomposite);
         }
 
         T_Composite* obj = (T_Composite*)CollectiveProtocolFactoryT<T_Composite, get_metadata, T_Conn, T_XFER_TYPE >::_alloc.allocateObject();
