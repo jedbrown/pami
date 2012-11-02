@@ -96,16 +96,18 @@ namespace PAMI{
 
   inline void AdvisorTable::sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length)
   {
-     int tmp_sorted_list[COLLSEL_MAX_ALGO];
-     memset(tmp_sorted_list, -1, sizeof(int)*COLLSEL_MAX_ALGO);
-     qsort(algo_list, length, sizeof(sorted_list), cmp_by_time);
      int i;
-     for(i = 0; i < length*2; i+=2)
+
+     qsort(algo_list, length, sizeof(sorted_list), cmp_by_time);
+
+     char * tmpCurrAlgoList = (char *)currAlgoList;
+     int    lenChars        = 0;
+     for(i = 0; i < length-1; i++)
      {
-       tmp_sorted_list[i]    = algo_list[i].algo_id;
-       currAlgoList[i]   = tmp_sorted_list[i] + '0';
-       if(i+1 < (length*2 - 1))currAlgoList[i+1] = ',';
+       lenChars = sprintf(tmpCurrAlgoList, "%d,",algo_list[i].algo_id);
+       tmpCurrAlgoList += lenChars;
      }
+     lenChars = sprintf(tmpCurrAlgoList, "%d",algo_list[i].algo_id);
   }
 
   inline void AdvisorTable::init(advisor_params_t *params)
@@ -218,7 +220,9 @@ namespace PAMI{
     CollectivesMap       *coll_map      = NULL;
     MessageSizeMap       *msg_map       = NULL;
     AlgoList              currAlgoList  = NULL;
-    AlgoList              prevAlgoList  = NULL;
+    AlgoList              tempAlgoList  = (AlgoList)malloc(COLLSEL_MAX_ALGO*2);
+    MessageSizeMap        garbCollList;
+    size_t                garbCollIndx  = 0;
     unsigned              algo_ids[PAMI_XFER_COUNT];
     memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
     //algo_map[PAMI_XFER_BROADCAST].insert(Algo_Pair(0,0x1234567));
@@ -245,7 +249,7 @@ namespace PAMI{
 
     // tmp output file name
     char   tmp_output_fname[128];
-    FILE  *tFile;
+    FILE  *tFile = NULL;
 
     if(mode == 0){
       //read in the file
@@ -317,7 +321,7 @@ namespace PAMI{
               /* Inserting msg_map in coll_map with key coll_xfer_type */
               msg_map = &(*coll_map)[coll_xfer_type];
               /* The algolists will be the sorted list */
-              currAlgoList = prevAlgoList = NULL;
+              currAlgoList = NULL;
               /* we will set the names, pami_algorithm_t and ids (key) in the algomap */
               tmp_algo_map = &algo_map[coll_xfer_type];
               size_t msg_thresh = get_msg_thresh(byte_thresh, coll_xfer_type, geo_size);
@@ -391,6 +395,7 @@ namespace PAMI{
 
                       flen = fread(tmp_algo_name, 1, tmp_algo_name_len, tFile);
                       CRC(flen != tmp_algo_name_len, "read tmp_algo_name");
+                       /* SSS: TODO.. Allocate tmp_algo_name for each iter */
                       if(algo_name_map[coll_xfer_type].find(tmp_algo_name) == algo_name_map[coll_xfer_type].end())
                       {
                         algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type]++;
@@ -520,31 +525,33 @@ namespace PAMI{
                     fclose(tFile);
                   }
                 }
-                /* We have currAlgoList and prevAlgoList to compare and set message min and max ranges in xml */
-                if(currAlgoList == NULL)
-                  currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2)); 
-                sort_algo_list(algo_list, currAlgoList, num_algo);
-                if(prevAlgoList == NULL) /* This means this is the first time in the message size loop */
+                if(!_task_id)
                 {
-                  prevAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
-                  strcpy((char *)prevAlgoList, (const char *)currAlgoList);
-                  (*msg_map)[act_msg_size[msize]] = currAlgoList;
-                }
-                else
-                {
-                  if(strcmp((const char *)currAlgoList, (const char *)prevAlgoList) != 0)
+                  /* We have currAlgoList and prevAlgoList to compare and set message min and max ranges in xml */
+                  sort_algo_list(algo_list, tempAlgoList, num_algo);
+                  if(currAlgoList == NULL)
                   {
-                    (*msg_map)[act_msg_size[msize-1]] = prevAlgoList;
+                    currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
+                    garbCollList[garbCollIndx++]      = currAlgoList;
+                    strcpy((char *)currAlgoList, (const char *)tempAlgoList);
                     (*msg_map)[act_msg_size[msize]]   = currAlgoList;
-                    strcpy((char *)prevAlgoList, (const char *)currAlgoList);
+                  }
+
+                  if(strcmp((const char *)currAlgoList, (const char *)tempAlgoList) != 0)
+                  { 
+                    (*msg_map)[act_msg_size[msize-1]] = currAlgoList;                  
+                    currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
+                    garbCollList[garbCollIndx++]      = currAlgoList;
+                    strcpy((char *)currAlgoList, (const char *)tempAlgoList);
+                    (*msg_map)[act_msg_size[msize]]   = currAlgoList;
                   }
                 }
               } // end of message size loop
-              free(currAlgoList);
-              currAlgoList = NULL;
-              free(prevAlgoList);
-              prevAlgoList = NULL;
-
+              if(!_task_id)
+              {
+                 if(currAlgoList != NULL)
+                  (*msg_map)[act_msg_size[msize-1]] = currAlgoList;
+              }
               // store the actual number of message sizes
               act_num_msg_size = msize;
 
@@ -593,6 +600,10 @@ namespace PAMI{
             }
           }
         }
+        MessageSizeMap::iterator iter;
+        for (iter = garbCollList.begin(); iter != garbCollList.end(); iter++)
+          free(iter->second);
+        garbCollList.clear();
       }
     }
 
