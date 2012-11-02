@@ -24,9 +24,21 @@
 #include "Benchmark.h"
 #include "CollselData.h"
 #include "CollselXMLWriter.h"
+#include <sys/stat.h>
+#include <string>
+#include <dirent.h>
+using namespace std;
+
 #define DOUBLE_DIG (9.999999999999999e99)
 #define COLLSEL_MAX_ALGO 40 // Maximum number of algorithms per collective
 #define COLLSEL_MAX_NUM_MSG_SZ 64 // Maximum number of message sizes
+#define ROOT 0
+enum {
+  FILE_CHECK = 0,
+  FILE_BAD,
+  FILE_OK
+};
+
 // check statement
 #define CRC(STATE, MSG) { \
   if (STATE) { \
@@ -35,7 +47,14 @@
   } \
 } 
 
-const char *TMP_OUTPUT_PREFIX="./collsel";
+typedef struct {
+  size_t    algo;
+  string    algo_name;
+  double    results[3];
+} algo_record_t;
+
+const char *TMP_OUTPUT_DIR=".collsel";
+const char *TMP_OUTPUT_PREFIX="/collsel";
 const size_t SSIZE_T=sizeof(size_t);
 const size_t SDOUBLE=sizeof(double);
 extern int _g_verify;
@@ -184,21 +203,133 @@ namespace PAMI{
     }
   }
 
+  // check if the directory for tmp output files exists
+  // if not, create the directory
+  inline bool dir_check() 
+  {
+    struct stat st;
+    bool res = (stat(TMP_OUTPUT_DIR, &st) == 0);
+    if (!res) {
+      if (mkdir(TMP_OUTPUT_DIR, S_IRWXU|S_IRGRP|S_IXGRP) != 0) {
+        printf("Failed to create directory %s\n", TMP_OUTPUT_DIR);
+        exit(-1);
+      } else {
+        if (_g_verbose) 
+          printf("Created directory %s\n", TMP_OUTPUT_DIR);
+      }
+
+    } else {
+      printf("Directory %s already exists\n", TMP_OUTPUT_DIR);
+    }
+
+    return res;
+  }
+
+  inline void dir_clean() 
+  {
+    DIR *dir;
+    struct dirent *entry;
+    char path[PATH_MAX];
+
+    dir = opendir(TMP_OUTPUT_DIR);
+    if (dir == NULL) {
+      printf("Error opening directory %s\n", TMP_OUTPUT_DIR);
+      return;
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+      if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
+        snprintf(path, PATH_MAX, "%s/%s", TMP_OUTPUT_DIR, entry->d_name);
+        if (entry->d_type == DT_REG) {
+          if (remove(path) != 0) {
+            printf("Error deleting file %s\n", path);
+          } else {
+            if (_g_verbose) 
+              printf("File %s has been deleted\n", path);
+          }
+        }
+      }
+    }
+    closedir(dir);
+
+    if (_g_verbose) 
+      printf("Directory %s has been cleaned\n", TMP_OUTPUT_DIR);
+
+    if (rmdir(TMP_OUTPUT_DIR) == 0) {
+      if (_g_verbose) 
+        printf("Directory %s has been removed\n", TMP_OUTPUT_DIR);
+    } else {
+      printf("Failed to remove directory %s\n", TMP_OUTPUT_DIR);
+    }
+
+
+  }
+
+  // make sure the file has the right size
   inline bool file_check(char* fname) 
   {
     FILE* file;
     bool res = false;
+    size_t readfsize = 0;
     size_t fsize = 0;
+    
     file = fopen(fname, "r");
     if (file != NULL) {
-      fseek(file, 0, SEEK_END);
-      fsize = ftell(file);
-      if (fsize > 8) {
-        res = true;
+      if (fseek(file, 0, SEEK_END) == 0) {
+        fsize = ftell(file);
+        if (fseek(file, fsize - SSIZE_T, SEEK_SET) == 0) {
+          if (fread(&readfsize, 1, SSIZE_T, file) == SSIZE_T) {
+            if (fsize == readfsize) {
+              res = true;
+            }
+          }
+        }
       }
       fclose(file);
     } 
+
     return res;
+  }
+
+  inline void file_write(char* fname, algo_record_t* records, size_t record_num) 
+  {
+    FILE*   wFile;
+    size_t  wlen, i, j, algo_name_len, fsize=0;
+
+    // when the tmp output file doesn't exist
+    wFile = fopen(fname, "w");
+    CRC(wFile == NULL, "create tmp output file");
+
+    wlen = fwrite(&record_num, 1, SSIZE_T, wFile);
+    CRC(wlen != SSIZE_T, "write algo_name_len");
+
+    for (i = 0; i < record_num; i ++) {
+      // write the output of the current algorithm into the tmp output file
+      wlen = fwrite(&(records[i].algo), 1, SSIZE_T, wFile);
+      CRC(wlen != SSIZE_T, "write algo");
+
+      algo_name_len = records[i].algo_name.size();
+      wlen = fwrite(&algo_name_len, 1, SSIZE_T, wFile);
+      CRC(wlen != SSIZE_T, "write algo_name_len");
+
+      wlen = fwrite(records[i].algo_name.c_str(), 1, algo_name_len, wFile);
+      CRC(wlen != algo_name_len, "write algo_name");
+
+      for (j = 0; j < 3; j ++) {
+        wlen = fwrite(&(records[i].results[j]), 1, SDOUBLE, wFile);
+        CRC(wlen != SDOUBLE, "write results");
+      }
+
+      fsize += SSIZE_T*2 + SDOUBLE*3 + algo_name_len;
+    }
+
+    fsize += SSIZE_T*2;
+
+    // add file size at the end of the file 
+    wlen = fwrite(&fsize, 1, SSIZE_T, wFile);
+    CRC(wlen != SSIZE_T, "write file size");
+
+    fclose(wFile);
   }
 
   inline pami_result_t AdvisorTable::generate(char             *filename,
@@ -229,6 +360,7 @@ namespace PAMI{
     MessageSizeMap        garbCollList;
     size_t                garbCollIndx  = 0;
     unsigned              algo_ids[PAMI_XFER_COUNT];
+    
     memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
     //algo_map[PAMI_XFER_BROADCAST].insert(Algo_Pair(0,0x1234567));
 
@@ -261,7 +393,7 @@ namespace PAMI{
     }
     else if(mode == 1)
     {
-      size_t psize, gsize, csize, msize, algo, algo_name_len, i, j, flen;
+      size_t psize, gsize, csize, msize, algo, i, j, flen;
       size_t act_msg_size[COLLSEL_MAX_NUM_MSG_SZ];
       size_t act_num_msg_size = 0;
       int geometry_id = 1;
@@ -271,12 +403,35 @@ namespace PAMI{
       query_geometry_algorithm_aw(client, contexts[0], world_geometry, PAMI_XFER_BARRIER, &barrier);
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & barrier_poll_flag;
+
+      // Setup bcast on world geometry
+      pami_xfer_t bcast;
+      char buf = FILE_CHECK;
+      pami_endpoint_t root_ep;
+      pami_task_t root_task = (pami_task_t)ROOT;
+      PAMI_Endpoint_create(client, root_task, 0, &root_ep);
+      volatile unsigned bcast_poll_flag = 0;
+      query_geometry_algorithm_aw(client, contexts[0], world_geometry, PAMI_XFER_BROADCAST, &bcast);
+      bcast.cb_done                      = cb_done;
+      bcast.cookie                       = (void*)&bcast_poll_flag;
+      bcast.cmd.xfer_broadcast.buf       = &buf;
+      bcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
+      bcast.cmd.xfer_broadcast.typecount = 1;
+      bcast.cmd.xfer_broadcast.root      = root_ep;
+
       // Allocate buffers to store algorithms and metadata
       pami_algorithm_t  col_algo[COLLSEL_MAX_ALGO];
       pami_metadata_t   col_md[COLLSEL_MAX_ALGO];
       pami_algorithm_t  q_col_algo[COLLSEL_MAX_ALGO];
       pami_metadata_t   q_col_md[COLLSEL_MAX_ALGO];
       sorted_list       algo_list[COLLSEL_MAX_ALGO];
+
+      bool tmp_dir_exists = false;
+      if(_g_checkpoint && !_task_id) {
+        tmp_dir_exists = dir_check();
+      }
+
+      algo_record_t *algo_record;
 
       // loop on each setting of procs_per_node
       for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
@@ -364,35 +519,64 @@ namespace PAMI{
               for(msize = 0; msize < _params.num_message_sizes && _params.message_sizes[msize] <= msg_thresh; msize ++) {
                 act_msg_size[msize] = MIN(_params.message_sizes[msize], msg_thresh);
 
-                if(_g_verbose)
-                  if(!_task_id) {
+                if(_g_verbose && !_task_id) 
+                {
                     printf("# Algorithm                           Message Size    Min (usec)        Max (usec)        Avg (usec)\n");
                     printf("# ---------                           ------------    ----------        ----------        ----------\n");
-                  }
+                }
 
-                if(_g_checkpoint)
-                  sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
+                buf = FILE_CHECK;
+
+                if(_g_checkpoint && !_task_id) {
+                  sprintf(tmp_output_fname, "%s%s_%zu_%zu_%d_%zu",
+                      TMP_OUTPUT_DIR,
                       TMP_OUTPUT_PREFIX,
                       _params.procs_per_node[psize],
                       _params.geometry_sizes[gsize],
                       _params.collectives[csize],
                       act_msg_size[msize]);
 
-                if (_g_checkpoint && file_check(tmp_output_fname)) {
+                    if (tmp_dir_exists && file_check(tmp_output_fname)) {
+                      buf = FILE_OK;
+                    } else {
+                      buf = FILE_BAD;
+                    }
+                }
+
+                if (_g_checkpoint) {
+                  blocking_coll(contexts[0], &bcast, &bcast_poll_flag);
+
+                  PAMI_assertf(buf != FILE_CHECK, "broadcast for FILE CHECK failed"); 
+                  //printf("After bcast, buf is %d\n", buf);
+                }
+
+                if (_g_checkpoint && _g_verbose && !_task_id) {
+                  switch (buf) {
+                    case FILE_CHECK:
+                      printf("Skipped sanity check for file %s, about to run this iteration\n", 
+                          tmp_output_fname);
+                      break;
+                    case FILE_OK:
+                      printf("File %s passed sanity check, about to load data from it\n", 
+                          tmp_output_fname);
+                      break;
+                    case FILE_BAD:
+                      printf("File %s failed sanity check, about to run this iteration\n", 
+                          tmp_output_fname);
+                  }
+                }
+
+                if (buf == FILE_OK) {
                   if (!_task_id) {
                     tFile = fopen(tmp_output_fname, "r");
 
                     // when the tmp output file exists
                     size_t tmp_num_algo, tmp_algo, tmp_algo_name_len;
-                    char rdin_algo_name[128];
                     char *tmp_algo_name;
                     double tmp_results[3];
 
                     flen = fread(&tmp_num_algo, 1, SSIZE_T, tFile);
                     CRC(flen != SSIZE_T, "read tmp_num_algo");
-
-                    PAMI_assertf(tmp_num_algo == num_algo, 
-                        "Algorithm number mismatched.\n");
 
                     for (i = 0; i < tmp_num_algo; i ++) {
                       flen = fread(&tmp_algo, 1, SSIZE_T, tFile); 
@@ -401,13 +585,19 @@ namespace PAMI{
                       flen = fread(&tmp_algo_name_len, 1, SSIZE_T, tFile); 
                       CRC(flen != SSIZE_T, "read tmp_algo_name_len");
 
-                      tmp_algo_name = (char *)malloc(tmp_algo_name_len);
+                      tmp_algo_name = (char *)malloc(tmp_algo_name_len + 1);
+                      memset(tmp_algo_name, 0, tmp_algo_name_len + 1);
                       garbCollList[garbCollIndx++] = (AlgoList)tmp_algo_name;
-                      flen = fread(rdin_algo_name, 1, tmp_algo_name_len, tFile);
-                      strncpy(tmp_algo_name, rdin_algo_name, tmp_algo_name_len);
+                      flen = fread(tmp_algo_name, 1, tmp_algo_name_len, tFile);
                       CRC(flen != tmp_algo_name_len, "read tmp_algo_name");
                        /* SSS: TODO.. Allocate tmp_algo_name for each iter */
                       AlgoNameToIdMap::iterator iter1;
+                      if (_g_verbose) {
+                        printf("%zu data in garbColl %s at %p or [%s at %p]\n",
+                            garbCollIndx, tmp_algo_name, tmp_algo_name, 
+                            garbCollList[garbCollIndx-1],
+                            garbCollList[garbCollIndx-1]);
+                      }
                       int found   = 0;
                       int foundId = 0;
                       for (iter1 = algo_name_map[coll_xfer_type].begin(); iter1 != algo_name_map[coll_xfer_type].end(); iter1++)
@@ -444,16 +634,15 @@ namespace PAMI{
                     fclose(tFile);
                   }
                 } else {
-                  if(_g_checkpoint && !_task_id) {
-                    // when the tmp output file doesn't exist
-                    tFile = fopen(tmp_output_fname, "w");
-                    CRC(tFile == NULL, "create tmp output file");
 
-                    // write the number of algorithms into the
-                    // beginning of the tmp output file
-                    flen = fwrite(&num_algo, 1, SSIZE_T, tFile);
-                    CRC(flen != SSIZE_T, "write num_algo");
+                  if(_g_checkpoint && !_task_id) {
+                    // allocate enough space for algo_record, the actual number
+                    // of records could be smaller
+                    algo_record = new algo_record_t[num_algo];
                   }
+
+                  // to keep track of the actual number of algorithms being used
+                  size_t act_algo_num = 0;
 
                   //loop on algorithms
                   for(algo = 0; algo < num_algo; algo ++)
@@ -482,9 +671,9 @@ namespace PAMI{
 
                     if(act_msg_size[msize] <low || act_msg_size[msize] > high)
                     {
-                      if(!_task_id && _g_verbose) printf(
-                          "  %s skipped as message size %zu is not in range (%zu-%zu)\n", algo_name,
-                          act_msg_size[msize], low, high);
+                        if(_g_verbose && !_task_id)
+                          printf("  %s skipped as message size %zu is not in range (%zu-%zu)\n", 
+                              algo_name, act_msg_size[msize], low, high);
                       algo_list[algo].times[0] = DOUBLE_DIG;
                       algo_list[algo].times[1] = DOUBLE_DIG;
                       algo_list[algo].times[2] = DOUBLE_DIG;
@@ -512,38 +701,29 @@ namespace PAMI{
                     memcpy(algo_list[algo].times, bench[0].times, 3*SDOUBLE);
 
                     if(!_task_id) {
-                      if(_g_verbose) printf("  %-35s %-15zu %-17f %-17f %-17f\n", algo_name,
-                          act_msg_size[msize], algo_list[algo].times[0],
-                          algo_list[algo].times[1], algo_list[algo].times[2]);
-
-                      if(_g_checkpoint)
-                      {
-                        // write the output of the current algorithm into the tmp output file
-                        flen = fwrite(&algo, 1, SSIZE_T, tFile);
-                        CRC(flen != SSIZE_T, "write algo");
-
-                        algo_name_len = strlen(algo_name);
-                        flen = fwrite(&algo_name_len, 1, SSIZE_T, tFile);
-                        CRC(flen != SSIZE_T, "write algo_name_len");
-
-                        flen = fwrite(algo_name, 1, algo_name_len, tFile);
-                        CRC(flen != algo_name_len, "write algo_name");
-
+                      if(_g_checkpoint && !_task_id) {
+                        algo_record[algo].algo = algo;
+                        algo_record[algo].algo_name = string(algo_name);
                         for (i = 0; i < 3; i ++) {
-                          flen = fwrite(&(algo_list[algo].times[i]), 1, SDOUBLE, tFile);
-                          CRC(flen != SDOUBLE, "write results");
+                          algo_record[algo].results[i] = algo_list[algo].times[i];
                         }
                       }
-                      // also write these result into the structure
+
+                      if (_g_verbose) 
+                        printf("  %-35s %-15zu %-17f %-17f %-17f\n", algo_name,
+                            act_msg_size[msize], algo_list[algo].times[0],
+                            algo_list[algo].times[1], algo_list[algo].times[2]);
                     }
+
+                    act_algo_num ++;
 
                   } // end of algorithm loop
 
-
                   if(_g_checkpoint && !_task_id) {
-                    // close the tmp output file
-                    fclose(tFile);
+                      file_write(tmp_output_fname, algo_record, act_algo_num);
+                      delete[] algo_record;
                   }
+
                 }
                 if(!_task_id)
                 {
@@ -551,7 +731,8 @@ namespace PAMI{
                   sort_algo_list(algo_list, tempAlgoList, num_algo);
                   if(currAlgoList == NULL)
                   {
-                    currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
+                    currAlgoList = (AlgoList)malloc(strlen((char*)tempAlgoList) + 1);
+                    memset(currAlgoList, 0,  strlen((char*)tempAlgoList) + 1);
                     garbCollList[garbCollIndx++]      = currAlgoList;
                     strcpy((char *)currAlgoList, (const char *)tempAlgoList);
                     (*msg_map)[act_msg_size[msize]]   = currAlgoList;
@@ -560,7 +741,8 @@ namespace PAMI{
                   if(strcmp((const char *)currAlgoList, (const char *)tempAlgoList) != 0)
                   { 
                     (*msg_map)[act_msg_size[msize-1]] = currAlgoList;                  
-                    currAlgoList = (AlgoList)malloc((sizeof(char) * num_algo * 2));
+                    currAlgoList = (AlgoList)malloc(strlen((char*)tempAlgoList) + 1);
+                    memset(currAlgoList, 0,  strlen((char*)tempAlgoList) + 1);
                     garbCollList[garbCollIndx++]      = currAlgoList;
                     strcpy((char *)currAlgoList, (const char *)tempAlgoList);
                     (*msg_map)[act_msg_size[msize]]   = currAlgoList;
@@ -595,38 +777,14 @@ namespace PAMI{
 
         // since all the interations passed with no issue
         // remove all the tmp output files
-        if(_g_checkpoint)
-        {
-          for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
-            for(gsize = 0; gsize < _params.num_geometry_sizes; gsize ++) {
-              for(csize = 0; csize < _params.num_collectives; csize ++) {
-                for(msize = 0; msize < act_num_msg_size; msize ++) {
-                  sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
-                      TMP_OUTPUT_PREFIX,
-                      _params.procs_per_node[psize],
-                      _params.geometry_sizes[gsize],
-                      _params.collectives[csize],
-                      act_msg_size[msize]);
-/*                
-                printf("about to delete file (%s) with %zu:%zu:%zu\n",
-                        tmp_output_fname,
-                        psize, 
-                        _params.num_procs_per_node,
-                        _params.procs_per_node[psize]);
-*/               
-                  if (remove(tmp_output_fname) != 0) {
-                    if(_g_verbose)
-                      printf("Error deleting file %s\n",
-                        tmp_output_fname);
-                  }
-                }
-              }
-            }
-          }
+        if(_g_checkpoint) {
+          dir_clean();
         }
+
         MessageSizeMap::iterator iter;
-        for (iter = garbCollList.begin(); iter != garbCollList.end(); iter++)
+        for (iter = garbCollList.begin(); iter != garbCollList.end(); iter++) {
           free(iter->second);
+        }
         garbCollList.clear();
       }
     }
