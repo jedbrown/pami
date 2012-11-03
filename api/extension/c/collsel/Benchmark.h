@@ -28,6 +28,8 @@
 #define CACHE_WARMUP_ITERS 100
 
 int cutoff[PAMI_XFER_COUNT];
+int _g_verify;
+int _g_verbose;
 
 namespace PAMI{
 
@@ -419,8 +421,8 @@ void cb_amscatter_done (void *context, void * clientdata, pami_result_t err)
   validation_t *v = (validation_t*)clientdata;
   volatile unsigned *active = (volatile unsigned *) v->cookie;
 
-  int rc_check;
-  _gRc |= rc_check = scatter_check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
+  if(_g_verify)
+    _gRc |= scatter_check_rcvbuf (_g_recv_buffer, v->bytes, my_task_id);
 
   (*active)++;
 }
@@ -465,11 +467,11 @@ void cb_ambcast_done (void *context, void * clientdata, pami_result_t err)
   validation_t *v = (validation_t*)clientdata;
   volatile unsigned *active = (volatile unsigned *) v->cookie;
 
-  if(my_task_id != (unsigned)v->root)
-  {
-    int rc_check;
-    _gRc |= rc_check = bcast_check_rcvbuf (_g_buffer, v->bytes, v->root);
-  }
+  if(_g_verify)
+    if(my_task_id != (unsigned)v->root)
+    {
+      _gRc |= bcast_check_rcvbuf (_g_buffer, v->bytes, v->root);
+    }
 
 
   (*active)++;
@@ -512,11 +514,11 @@ void cb_amgather_done (void *context, void * clientdata, pami_result_t err)
   validation_t *v = (validation_t*)clientdata;
   volatile unsigned *active = (volatile unsigned *) v->cookie;
 
-  if(my_task_id == (unsigned)v->root)
-  {
-    int rc_check;
-    _gRc |= rc_check = gather_check_rcvbuf (num_tasks, _g_recv_buffer, v->bytes);
-  }
+  if(_g_verify)
+    if(my_task_id == (unsigned)v->root)
+    {
+      _gRc |= gather_check_rcvbuf (num_tasks, _g_recv_buffer, v->bytes);
+    }
 
   (*active)++;
 }

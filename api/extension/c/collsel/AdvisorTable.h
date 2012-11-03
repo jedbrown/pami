@@ -20,8 +20,10 @@
 #ifndef __api_extension_c_collsel_AdvisorTable_h__
 #define __api_extension_c_collsel_AdvisorTable_h__
 
-#include "api/extension/c/collsel/CollselExtension.h"
-#include "api/extension/c/collsel/Benchmark.h"
+#include "CollselExtension.h"
+#include "Benchmark.h"
+#include "CollselData.h"
+#include "CollselXMLWriter.h"
 #define DOUBLE_DIG (9.999999999999999e99)
 #define COLLSEL_MAX_ALGO 40 // Maximum number of algorithms per collective
 #define COLLSEL_MAX_NUM_MSG_SZ 64 // Maximum number of message sizes
@@ -36,9 +38,8 @@
 const char *TMP_OUTPUT_PREFIX="./collsel";
 const size_t SSIZE_T=sizeof(size_t);
 const size_t SDOUBLE=sizeof(double);
-
-#include "CollselData.h"
-#include "CollselXMLWriter.h"
+extern int _g_verify;
+extern int _g_verbose;
 
 namespace PAMI{
 
@@ -164,6 +165,8 @@ namespace PAMI{
         _params.geometry_sizes[_params.num_geometry_sizes - 1] = 2;
       }
       _free_geometry_sz = true;
+      _g_verify         = _params.verify;
+      _g_verbose        = _params.verbose;
     }
 
     if(!_params.num_message_sizes)
@@ -359,10 +362,11 @@ namespace PAMI{
               for(msize = 0; msize < _params.num_message_sizes && _params.message_sizes[msize] <= msg_thresh; msize ++) {
                 act_msg_size[msize] = MIN(_params.message_sizes[msize], msg_thresh);
 
-                if(!_task_id) {
-                  printf("# Algorithm                           Message Size    Min (usec)        Max (usec)        Avg (usec)\n");
-                  printf("# ---------                           ------------    ----------        ----------        ----------\n");
-                }
+                if(_g_verbose)
+                  if(!_task_id) {
+                    printf("# Algorithm                           Message Size    Min (usec)        Max (usec)        Avg (usec)\n");
+                    printf("# ---------                           ------------    ----------        ----------        ----------\n");
+                  }
 
                 sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
                     TMP_OUTPUT_PREFIX,
@@ -377,7 +381,8 @@ namespace PAMI{
 
                     // when the tmp output file exists
                     size_t tmp_num_algo, tmp_algo, tmp_algo_name_len;
-                    char tmp_algo_name[128];
+                    char rdin_algo_name[128];
+                    char *tmp_algo_name;
                     double tmp_results[3];
 
                     flen = fread(&tmp_num_algo, 1, SSIZE_T, tFile);
@@ -393,16 +398,26 @@ namespace PAMI{
                       flen = fread(&tmp_algo_name_len, 1, SSIZE_T, tFile); 
                       CRC(flen != SSIZE_T, "read tmp_algo_name_len");
 
-                      flen = fread(tmp_algo_name, 1, tmp_algo_name_len, tFile);
+                      tmp_algo_name = (char *)malloc(tmp_algo_name_len);
+                      garbCollList[garbCollIndx++] = (AlgoList)tmp_algo_name;
+                      flen = fread(rdin_algo_name, 1, tmp_algo_name_len, tFile);
+                      strncpy(tmp_algo_name, rdin_algo_name, tmp_algo_name_len);
                       CRC(flen != tmp_algo_name_len, "read tmp_algo_name");
                        /* SSS: TODO.. Allocate tmp_algo_name for each iter */
-                      if(algo_name_map[coll_xfer_type].find(tmp_algo_name) == algo_name_map[coll_xfer_type].end())
+                      AlgoNameToIdMap::iterator iter1;
+                      int found   = 0;
+                      int foundId = 0;
+                      for (iter1 = algo_name_map[coll_xfer_type].begin(); iter1 != algo_name_map[coll_xfer_type].end(); iter1++)
+                      {
+                        if(strcmp(iter1->first, tmp_algo_name)==0) {found = 1; foundId = iter1->second;}
+                      }
+                      if(!found)
                       {
                         algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type]++;
                       }
-                      (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(tmp_algo_name)->second].algorithm_name = tmp_algo_name;
+                      (*tmp_algo_map)[foundId].algorithm_name = tmp_algo_name;
                       algo_list[i].algo_name = tmp_algo_name;
-                      algo_list[i].algo_id   = algo_name_map[coll_xfer_type].find(tmp_algo_name)->second;
+                      algo_list[i].algo_id   = foundId;
 
                       for (j = 0; j < 3; j ++) {
                         flen = fread(&tmp_results[j], 1, SDOUBLE, tFile); 
@@ -464,7 +479,7 @@ namespace PAMI{
 
                     if(act_msg_size[msize] <low || act_msg_size[msize] > high)
                     {
-                      if(!_task_id) printf(
+                      if(!_task_id && _g_verbose) printf(
                           "  %s skipped as message size %zu is not in range (%zu-%zu)\n", algo_name,
                           act_msg_size[msize], low, high);
                       algo_list[algo].times[0] = DOUBLE_DIG;
@@ -494,7 +509,7 @@ namespace PAMI{
                     memcpy(algo_list[algo].times, bench[0].times, 3*SDOUBLE);
 
                     if(!_task_id) {
-                      printf("  %-35s %-15zu %-17f %-17f %-17f\n", algo_name,
+                      if(_g_verbose) printf("  %-35s %-15zu %-17f %-17f %-17f\n", algo_name,
                           act_msg_size[msize], algo_list[algo].times[0],
                           algo_list[algo].times[1], algo_list[algo].times[2]);
 
@@ -593,7 +608,8 @@ namespace PAMI{
                         _params.procs_per_node[psize]);
 */               
                 if (remove(tmp_output_fname) != 0) {
-                  printf("Error deleting file %s\n",
+                  if(_g_verbose)
+                    printf("Error deleting file %s\n",
                       tmp_output_fname);
                 }
               }
