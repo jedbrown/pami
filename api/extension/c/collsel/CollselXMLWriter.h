@@ -339,11 +339,26 @@ namespace PAMI
       MessageSizeMap::iterator iter, prev_iter;
       xml_node<>* msg_node;
       int tmp_str_sz;
+      unsigned char *algolist;
       for (iter = msg_map.begin(); iter != msg_map.end(); iter++)
       {
         msg_node = doc.allocate_node(node_element, MESSAGE_TAG);
         tmp_str_sz = snprintf(tmp_str, STR_MAX_SZ,"%zu",iter->first);
         msg_node->append_node(doc.allocate_node(node_element, SIZE_MIN_TAG,
+                  doc.allocate_string(tmp_str, tmp_str_sz+1)));
+        algolist = iter->second;
+        if(++iter != msg_map.end())
+        {
+          if(strcmp((const char*)algolist, (const char*)iter->second) == 0)
+          {
+            tmp_str_sz = snprintf(tmp_str, STR_MAX_SZ,"%zu",iter->first);
+          }
+          else
+            --iter;
+        }
+        else
+          --iter;
+        msg_node->append_node(doc.allocate_node(node_element, SIZE_MAX_TAG,
                   doc.allocate_string(tmp_str, tmp_str_sz+1)));
         msg_node->append_node(doc.allocate_node(node_element, ALGORITHMS_TAG,
                   doc.allocate_string((const char *)iter->second, strlen((const char *)iter->second)+1)));

@@ -16,7 +16,7 @@
 /* end_generated_IBM_copyright_prolog                               */
 /**
  * \file api/extensions/collsel/pami_tune.c
- * \user parameter proces to the the PAMI collsel extension
+ * \brief Run collectives benchmark utilizing the PAMI collsel extension
  */
 
 #include <pami.h>
@@ -25,6 +25,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 typedef void* advisor_t;
 typedef void* advisor_table_t;
@@ -106,8 +107,7 @@ Options:\n\
                 (Default: Disabled)\n\n\
   -v            Verbose mode\n\
                 (Default: Disabled)\n\n\
-  -h            Print this help message\n\n\
-    ", stdout);
+  -h            Print this help message\n\n", stdout);
 
   return 0;
 }
@@ -168,7 +168,7 @@ int process_collectives(char *coll_arg, advisor_params_t *params)
   int i, ret = 0, arg_len = strlen(coll_arg);
   char *collectives = (char *) malloc(arg_len + 1);
   char *coll;
-  // Allocating some extra space should be fine 
+  /* Allocating some extra space should be fine */
   params->collectives = (pami_xfer_type_t *)malloc(sizeof(pami_xfer_type_t)*PAMI_XFER_COUNT);
 
   strcpy(collectives, coll_arg);
@@ -183,7 +183,7 @@ int process_collectives(char *coll_arg, advisor_params_t *params)
         break;
       }
     }
-    // arg did not match any collective
+    /* arg did not match any collective */
     if(i == PAMI_XFER_COUNT)
     {
       free(params->collectives);
@@ -208,7 +208,7 @@ int process_msg_sizes(char *msg_sizes_arg, advisor_params_t *params)
   char *msg_sizes = (char *) malloc(arg_len + 1);
   char *msg_sz;
   size_t tmp;
-  // Allocating some extra space should be fine 
+  /* Allocating some extra space should be fine */
   params->message_sizes = (size_t *)malloc(sizeof(size_t) * 30);
 
   strcpy(msg_sizes, msg_sizes_arg);
@@ -241,7 +241,7 @@ int process_geo_sizes(char *geo_sizes_arg, advisor_params_t *params)
   char *geo_sizes = (char *) malloc(arg_len + 1);
   char *geo_sz;
   size_t tmp;
-  // Allocating some extra space should be fine 
+  /* Allocating some extra space should be fine */
   params->geometry_sizes = (size_t *)malloc(sizeof(size_t) * 30);
 
   strcpy(geo_sizes, geo_sizes_arg);
@@ -334,9 +334,53 @@ int process_file(const char *filename, advisor_params_t *params)
   return 0;
 }
 
+int process_output_file(char *filename, char **out_file)
+{
+  char *newname;
+  int i, filename_len, ret = 0;
+  FILE *of;
 
+  filename_len = strlen(filename);
 
-int process_arg(int argc, char *argv[], advisor_params_t *params )
+  /* Check if file already exists */
+  if(access(filename, F_OK) == 0)
+  {
+    fprintf(stderr, "File %s already exists, renaming existing file\n", filename);
+    newname = (char *) malloc(filename_len + 4);
+    for (i = 0; i < 50; ++i)
+    {
+      sprintf(newname,"%s.%d", filename, i);
+      if(!(access(newname, F_OK) == 0))
+      {
+        ret = rename(filename, newname);
+        break;
+      }
+    }
+    free(newname);
+    if(i == 50 || ret != 0)
+    {
+      fprintf(stderr, "Error renaming file\n");
+      return 1;
+    }
+  }
+  /* Verify if the output file can be created */
+  of = fopen(filename, "w");
+  if (of == NULL)
+  {
+    fprintf(stderr, "Error creating output file: %s\n", filename);
+    ret = 1;
+  }
+  else
+  {
+    fclose(of);
+    remove(filename);
+    *out_file = (char *) malloc(filename_len + 1);
+    strcpy(*out_file, filename);
+  }
+  return ret;
+}
+
+int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_file)
 {
    char filename[100];
    int i,c,ret;
@@ -371,6 +415,8 @@ int process_arg(int argc, char *argv[], advisor_params_t *params )
          process_file(filename, params);
          break;
        case 'o':
+         if(!task_id) /* Only task 0 creates o/p file */
+           ret = process_output_file(optarg, out_file);
          break;
        case 'i':
          params->iter = atoi(optarg);
@@ -438,26 +484,28 @@ int process_arg(int argc, char *argv[], advisor_params_t *params )
    return 0;
 }
 
-void print_param(advisor_params_t *params)
+void print_params(advisor_params_t *params, char *output_file)
 {
   size_t i;
-  printf("number of collective %zu %p\n", params->num_collectives, params->collectives);
+  printf("Number of collective %zu %p\n", params->num_collectives, params->collectives);
   for(i=0; i<params->num_collectives; i++){
     printf("%d ", params->collectives[i]);
   }
-  printf("\n number of geometry sizes %zu %p\n", params->num_geometry_sizes, params->geometry_sizes);
+  printf("\n Number of geometry sizes %zu %p\n", params->num_geometry_sizes, params->geometry_sizes);
   for(i=0; i<params->num_geometry_sizes; i++){
     printf("%zu ", params->geometry_sizes[i]);
   }
-  printf("\n number of message sizes %zu %p\n", params->num_message_sizes, params->message_sizes);
+  printf("\n Number of message sizes %zu %p\n", params->num_message_sizes, params->message_sizes);
   for(i=0; i<params->num_message_sizes; i++){
     printf("%zu ", params->message_sizes[i]);
   }
+  printf("\n Output file: %s\n", output_file);
 }
 
 int main(int argc, char ** argv)
 {
   int ret = 0;
+  char *output_file = NULL;
   pami_client_t client;
   pami_context_t context;
   pami_configuration_t config;
@@ -466,7 +514,7 @@ int main(int argc, char ** argv)
   advisor_params_t params;
   init_advisor_params(&params);
 
-  status = PAMI_Client_create("TEST", &client, NULL, 0);
+  status = PAMI_Client_create("PAMITUNE", &client, NULL, 0);
   if(status != PAMI_SUCCESS)
   {
     fprintf (stderr, "Error. Unable to initialize pami client. result = %d\n", status);
@@ -495,13 +543,23 @@ int main(int argc, char ** argv)
   }
   num_tasks = config.value.intval;
 
-  int result = process_arg(argc, argv, &params);
+  int result = process_arg(argc, argv, &params, &output_file);
   if(result)
   {
     print_usage();
     ret = 1;
     goto destroy_client;
   }
+  /* If user did not set output filename use default */
+  if(output_file == NULL)
+  {
+    if(process_output_file("pami_tune_results.xml", &output_file))
+    {
+      ret = 1;
+      goto destroy_client;
+    }
+  }
+  print_params(&params, output_file);
 
   status = PAMI_Context_createv(client, NULL, 0, &context, 1);
   if(status != PAMI_SUCCESS)
@@ -515,7 +573,7 @@ int main(int argc, char ** argv)
   PAMI_Extension_open (client, "EXT_collsel", &extension);
   if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. The \"EXT_collsel\" extension is not turned on. result = %d\n", status);
+    fprintf (stderr, "Error. Unable to load the PAMI \"EXT_collsel\" extension. result = %d\n", status);
     ret = 1;
     goto destroy_context;
   }
@@ -528,7 +586,7 @@ int main(int argc, char ** argv)
 
   pami_extension_collsel_table_generate pamix_collsel_table_generate =
     (pami_extension_collsel_table_generate) PAMI_Extension_symbol (extension, "Collsel_table_generate_fn");
-  status = pamix_collsel_table_generate (advisor, NULL, &params, 1);
+  status = pamix_collsel_table_generate (advisor, output_file, &params, 1);
 
   pami_extension_collsel_destroy pamix_collsel_destroy =
     (pami_extension_collsel_destroy) PAMI_Extension_symbol (extension, "Collsel_destroy_fn");
@@ -538,7 +596,7 @@ int main(int argc, char ** argv)
   status = PAMI_Extension_close (extension);
   if(status != PAMI_SUCCESS)
   {
-    fprintf (stderr, "Error. The \"EXT_torus_network\" extension could not be closed. result = %d\n", status);
+    fprintf (stderr, "Error. The \"EXT_collsel\" extension could not be closed. result = %d\n", status);
     ret = 1;
     goto destroy_context;
   }
@@ -555,11 +613,13 @@ destroy_client:
   status = PAMI_Client_destroy(&client);
   if(status != PAMI_SUCCESS)
   {
-    fprintf(stderr, "Error. Unable to finalize pami client. result = %d\n", status);
+    fprintf(stderr, "Error. Unable to destroy pami client. result = %d\n", status);
     return 1;
   }
 
   free_advisor_params(&params);
+  if(output_file)
+    free(output_file);
 
   return ret;
 }
