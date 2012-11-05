@@ -40,6 +40,7 @@ const size_t SSIZE_T=sizeof(size_t);
 const size_t SDOUBLE=sizeof(double);
 extern int _g_verify;
 extern int _g_verbose;
+int _g_checkpoint;
 
 namespace PAMI{
 
@@ -167,6 +168,7 @@ namespace PAMI{
       _free_geometry_sz = true;
       _g_verify         = _params.verify;
       _g_verbose        = _params.verbose;
+      _g_checkpoint     = _params.checkpoint;
     }
 
     if(!_params.num_message_sizes)
@@ -368,14 +370,15 @@ namespace PAMI{
                     printf("# ---------                           ------------    ----------        ----------        ----------\n");
                   }
 
-                sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
-                    TMP_OUTPUT_PREFIX,
-                    _params.procs_per_node[psize],
-                    _params.geometry_sizes[gsize],
-                    _params.collectives[csize],
-                    act_msg_size[msize]);
+                if(_g_checkpoint)
+                  sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
+                      TMP_OUTPUT_PREFIX,
+                      _params.procs_per_node[psize],
+                      _params.geometry_sizes[gsize],
+                      _params.collectives[csize],
+                      act_msg_size[msize]);
 
-                if (file_check(tmp_output_fname)) {
+                if (_g_checkpoint && file_check(tmp_output_fname)) {
                   if (!_task_id) {
                     tFile = fopen(tmp_output_fname, "r");
 
@@ -441,7 +444,7 @@ namespace PAMI{
                     fclose(tFile);
                   }
                 } else {
-                  if(!_task_id) {
+                  if(_g_checkpoint && !_task_id) {
                     // when the tmp output file doesn't exist
                     tFile = fopen(tmp_output_fname, "w");
                     CRC(tFile == NULL, "create tmp output file");
@@ -513,29 +516,31 @@ namespace PAMI{
                           act_msg_size[msize], algo_list[algo].times[0],
                           algo_list[algo].times[1], algo_list[algo].times[2]);
 
-                      // write the output of the current algorithm into the tmp output file
-                      flen = fwrite(&algo, 1, SSIZE_T, tFile);
-                      CRC(flen != SSIZE_T, "write algo");
+                      if(_g_checkpoint)
+                      {
+                        // write the output of the current algorithm into the tmp output file
+                        flen = fwrite(&algo, 1, SSIZE_T, tFile);
+                        CRC(flen != SSIZE_T, "write algo");
 
-                      algo_name_len = strlen(algo_name);
-                      flen = fwrite(&algo_name_len, 1, SSIZE_T, tFile);
-                      CRC(flen != SSIZE_T, "write algo_name_len");
+                        algo_name_len = strlen(algo_name);
+                        flen = fwrite(&algo_name_len, 1, SSIZE_T, tFile);
+                        CRC(flen != SSIZE_T, "write algo_name_len");
 
-                      flen = fwrite(algo_name, 1, algo_name_len, tFile);
-                      CRC(flen != algo_name_len, "write algo_name");
+                        flen = fwrite(algo_name, 1, algo_name_len, tFile);
+                        CRC(flen != algo_name_len, "write algo_name");
 
-                      for (i = 0; i < 3; i ++) {
-                        flen = fwrite(&(algo_list[algo].times[i]), 1, SDOUBLE, tFile);
-                        CRC(flen != SDOUBLE, "write results");
+                        for (i = 0; i < 3; i ++) {
+                          flen = fwrite(&(algo_list[algo].times[i]), 1, SDOUBLE, tFile);
+                          CRC(flen != SDOUBLE, "write results");
+                        }
                       }
-
                       // also write these result into the structure
                     }
 
                   } // end of algorithm loop
 
 
-                  if(!_task_id) {
+                  if(_g_checkpoint && !_task_id) {
                     // close the tmp output file
                     fclose(tFile);
                   }
@@ -586,20 +591,22 @@ namespace PAMI{
       if(!_task_id)
       {
         PAMI::XMLWriter<>  xml_creator;
-        xml_creator.write_xml("test_one.xml", ppn_map, algo_map);
+        xml_creator.write_xml(filename, ppn_map, algo_map);
 
         // since all the interations passed with no issue
         // remove all the tmp output files
-        for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
-          for(gsize = 0; gsize < _params.num_geometry_sizes; gsize ++) {
-            for(csize = 0; csize < _params.num_collectives; csize ++) {
-              for(msize = 0; msize < act_num_msg_size; msize ++) {
-                sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
-                    TMP_OUTPUT_PREFIX,
-                    _params.procs_per_node[psize],
-                    _params.geometry_sizes[gsize],
-                    _params.collectives[csize],
-                    act_msg_size[msize]);
+        if(_g_checkpoint)
+        {
+          for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
+            for(gsize = 0; gsize < _params.num_geometry_sizes; gsize ++) {
+              for(csize = 0; csize < _params.num_collectives; csize ++) {
+                for(msize = 0; msize < act_num_msg_size; msize ++) {
+                  sprintf(tmp_output_fname, "%s_%zu_%zu_%d_%zu",
+                      TMP_OUTPUT_PREFIX,
+                      _params.procs_per_node[psize],
+                      _params.geometry_sizes[gsize],
+                      _params.collectives[csize],
+                      act_msg_size[msize]);
 /*                
                 printf("about to delete file (%s) with %zu:%zu:%zu\n",
                         tmp_output_fname,
@@ -607,10 +614,11 @@ namespace PAMI{
                         _params.num_procs_per_node,
                         _params.procs_per_node[psize]);
 */               
-                if (remove(tmp_output_fname) != 0) {
-                  if(_g_verbose)
-                    printf("Error deleting file %s\n",
-                      tmp_output_fname);
+                  if (remove(tmp_output_fname) != 0) {
+                    if(_g_verbose)
+                      printf("Error deleting file %s\n",
+                        tmp_output_fname);
+                  }
                 }
               }
             }

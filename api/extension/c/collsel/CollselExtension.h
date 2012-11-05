@@ -59,6 +59,7 @@ typedef struct {
    int                iter;
    int 		          verify;
    int                verbose;
+   int                checkpoint;
 } advisor_params_t;
 
 typedef struct

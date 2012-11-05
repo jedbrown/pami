@@ -59,6 +59,7 @@ typedef struct {
    int                iter;
    int                verify;
    int                verbose;
+   int                checkpoint;
 } advisor_params_t;
 
 /* Initialize collective selection extension */
@@ -107,6 +108,8 @@ Options:\n\
                 (Default: Disabled)\n\n\
   -v            Verbose mode\n\
                 (Default: Disabled)\n\n\
+  -x            Checkpoint mode. Enable checkpointing\n\
+                (Default: Disabled)\n\n\
   -h            Print this help message\n\n", stdout);
 
   return 0;
@@ -125,6 +128,7 @@ void init_advisor_params(advisor_params_t *params)
   params->iter = 100;
   params->verify = 0;
   params->verbose = 0;
+  params->checkpoint = 0;
 }
 
 void free_advisor_params(advisor_params_t *params)
@@ -397,7 +401,7 @@ int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_fi
    params->procs_per_node = ppn;
 
    opterr = 0;
-   while ((c = getopt (argc, argv, "c:m:g:f:o:i:v::d::h::")) != -1)
+   while ((c = getopt (argc, argv, "c:m:g:f:o:i:v::d::x::h::")) != -1)
    {
      switch (c)
      {
@@ -432,6 +436,9 @@ int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_fi
          break;
        case 'v':
          params->verbose = 1;
+         break;
+       case 'x':
+         params->checkpoint = 1;
          break;
        case 'h':
          ret = 1;
@@ -551,7 +558,7 @@ int main(int argc, char ** argv)
     goto destroy_client;
   }
   /* If user did not set output filename use default */
-  if(output_file == NULL)
+  if(output_file == NULL && !task_id)
   {
     if(process_output_file("pami_tune_results.xml", &output_file))
     {
@@ -559,7 +566,8 @@ int main(int argc, char ** argv)
       goto destroy_client;
     }
   }
-  print_params(&params, output_file);
+  if(params.verbose && !task_id)
+    print_params(&params, output_file);
 
   status = PAMI_Context_createv(client, NULL, 0, &context, 1);
   if(status != PAMI_SUCCESS)
