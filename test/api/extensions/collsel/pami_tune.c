@@ -80,9 +80,8 @@ const char *         xfer_array_str[PAMI_XFER_COUNT];
 int task_id;
 int num_tasks;
 
-void print_param(advisor_params_t *params);
 
-int print_usage()
+static int print_usage()
 {
   if(!task_id)
     fputs("Usage: pami_tune [options]\n\
@@ -108,14 +107,14 @@ Options:\n\
                 (Default: Disabled)\n\n\
   -v            Verbose mode\n\
                 (Default: Disabled)\n\n\
-  -x            Checkpoint mode. Enable checkpointing\n\
+  -x            Checkpoint mode. Enable pami_tune checkpointing\n\
                 (Default: Disabled)\n\n\
   -h            Print this help message\n\n", stdout);
 
   return 0;
 }
 
-void init_advisor_params(advisor_params_t *params)
+static void init_advisor_params(advisor_params_t *params)
 {
   params->num_collectives = 0;
   params->num_procs_per_node = 0;
@@ -126,12 +125,14 @@ void init_advisor_params(advisor_params_t *params)
   params->geometry_sizes = NULL;
   params->message_sizes = NULL;
   params->iter = 100;
-  params->verify = 0;
-  params->verbose = 0;
-  params->checkpoint = 0;
+  /* Set the following to -1, so that we can
+     check if the user has set them or not */
+  params->verify = -1;
+  params->verbose = -1;
+  params->checkpoint = -1;
 }
 
-void free_advisor_params(advisor_params_t *params)
+static void free_advisor_params(advisor_params_t *params)
 {
   if(params->collectives) free(params->collectives);
   if(params->procs_per_node) free(params->procs_per_node);
@@ -139,7 +140,7 @@ void free_advisor_params(advisor_params_t *params)
   if(params->message_sizes) free(params->message_sizes);
 }
 
-void init_xfer_tables()
+static void init_xfer_tables()
 {
   xfer_array_str[PAMI_XFER_BROADCAST]     ="broadcast";
   xfer_array_str[PAMI_XFER_ALLREDUCE]     ="allreduce";
@@ -167,11 +168,17 @@ void init_xfer_tables()
 
 
 
-int process_collectives(char *coll_arg, advisor_params_t *params)
+static int process_collectives(char *coll_arg, advisor_params_t *params)
 {
   int i, ret = 0, arg_len = strlen(coll_arg);
   char *collectives = (char *) malloc(arg_len + 1);
   char *coll;
+  /* if already set via config file, free it */
+  if(params->collectives)
+  {
+    free(params->collectives);
+    params->num_collectives = 0;
+  }
   /* Allocating some extra space should be fine */
   params->collectives = (pami_xfer_type_t *)malloc(sizeof(pami_xfer_type_t)*PAMI_XFER_COUNT);
 
@@ -206,12 +213,18 @@ int process_collectives(char *coll_arg, advisor_params_t *params)
 }
 
 
-int process_msg_sizes(char *msg_sizes_arg, advisor_params_t *params)
+static int process_msg_sizes(char *msg_sizes_arg, advisor_params_t *params)
 {
   int ret = 0, arg_len = strlen(msg_sizes_arg);
   char *msg_sizes = (char *) malloc(arg_len + 1);
   char *msg_sz;
   size_t tmp;
+  /* if already set via config file, free it */
+  if(params->message_sizes)
+  {
+    free(params->message_sizes);
+    params->num_message_sizes = 0;
+  }
   /* Allocating some extra space should be fine */
   params->message_sizes = (size_t *)malloc(sizeof(size_t) * 30);
 
@@ -239,12 +252,18 @@ int process_msg_sizes(char *msg_sizes_arg, advisor_params_t *params)
   return ret;
 }
 
-int process_geo_sizes(char *geo_sizes_arg, advisor_params_t *params)
+static int process_geo_sizes(char *geo_sizes_arg, advisor_params_t *params)
 {
   int ret = 0, arg_len = strlen(geo_sizes_arg);
   char *geo_sizes = (char *) malloc(arg_len + 1);
   char *geo_sz;
   size_t tmp;
+  /* if already set via config file, free it */
+  if(params->geometry_sizes)
+  {
+    free(params->geometry_sizes);
+    params->num_geometry_sizes = 0;
+  }
   /* Allocating some extra space should be fine */
   params->geometry_sizes = (size_t *)malloc(sizeof(size_t) * 30);
 
@@ -272,73 +291,7 @@ int process_geo_sizes(char *geo_sizes_arg, advisor_params_t *params)
   return ret;
 }
 
-int process_file(const char *filename, advisor_params_t *params)
-{
-  FILE *fr = fopen(filename, "r");
-  if(!fr)
-  {
-    fprintf(stderr, "Error. Can't open file %s\n", filename);
-    return 1;
-  }
-  char line[10000];
-  /* process collectives */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    char * pch;
-    pch = strtok (line," ,\n");
-    while(pch != NULL)
-    {
-      process_collectives(pch, params);
-      pch = strtok(NULL, " ,\n");
-    }
-  }
-  /* process geo sizes */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    char * pch;
-    pch = strtok (line," ,\n");
-    while(pch != NULL)
-    {
-      process_geo_sizes(pch, params);
-      pch = strtok(NULL, " ,\n");
-    }
-  }
-
-  /* process msg sizes */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    char * pch;
-    pch = strtok (line," ,\n");
-    while(pch != NULL)
-    {
-      process_msg_sizes(pch, params);
-      pch = strtok(NULL, " ,\n");
-    }
-  }
-
-  /* process iteration */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    sscanf(line, "%d", &params->iter);
-  }
-
-  /* process verify */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    sscanf(line, "%d", &params->verify);
-  }
-
-  /* process verbose */
-  if(fgets(line, 10000, fr)!=NULL)
-  {
-    sscanf(line, "%d", &params->verbose);
-  }
-  fclose(fr);
-
-  return 0;
-}
-
-int process_output_file(char *filename, char **out_file)
+static int process_output_file(char *filename, char **out_file)
 {
   char *newname;
   int i, filename_len, ret = 0;
@@ -378,16 +331,138 @@ int process_output_file(char *filename, char **out_file)
   {
     fclose(of);
     remove(filename);
+    /* if file name is already set via config file, free it */
+    if(*out_file) free(*out_file);
     *out_file = (char *) malloc(filename_len + 1);
     strcpy(*out_file, filename);
   }
   return ret;
 }
 
-int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_file)
+static char* ltrim(char *line)
 {
-   char filename[100];
-   int i,c,ret;
+  while(*line && isspace(*line))
+    ++line;
+
+  return line;
+}
+
+static char* rtrim(char *line)
+{
+  char *end = line + strlen(line);
+  while(end > line && isspace(*--end))
+    *end = '\0';
+
+  return line;
+}
+
+static int checkvalue(char *name, char *value, const char *filename, int *ival)
+{
+  int ret = 0;
+  char *tmp;
+  *ival = (int)strtol(value, &tmp, 10);
+  if(*ival != 1)
+  {
+    if((*ival == 0 && value == tmp)|| *ival != 0)
+    {
+      if(!task_id)
+        fprintf(stderr, "Invalid value for %s parameter: %s in file: %s\n", name, value, filename);
+      ret = 1;
+    }
+  }
+  return ret;
+}
+
+static int process_ini_file(const char *filename, advisor_params_t *params, char **out_file)
+{
+  char *line, *start, *name, *value;
+  int ret = 0;
+  FILE *file = fopen(filename, "r");
+  if(!file)
+  {
+    fprintf(stderr, "Error. Can't open file %s\n", filename);
+    return 1;
+  }
+  line = (char *) malloc(1000);
+
+  while (fgets(line, 1000, file) != NULL)
+  {
+    start = ltrim(rtrim(line));
+    /* Skip comments and sections */
+    if(*start == ';' || *start == '[' || *start == '#')
+      continue;
+    name = strtok(line, "=");
+    if(name == NULL) continue;
+    value = strtok(NULL, "=");
+    if(value == NULL) continue;
+    name  = rtrim(name);
+    value = ltrim(value);
+    /* Do not override command line values if they are set */
+    if(strcmp(name, "collectives") == 0)
+    {
+      if(!params->collectives)
+        ret = process_collectives(value, params);
+    }
+    else if(strcmp(name, "message_sizes") == 0)
+    {
+      if(!params->message_sizes)
+        ret = process_msg_sizes(value, params);
+    }
+    else if(strcmp(name, "geometry_sizes") == 0)
+    {
+      if(!params->geometry_sizes)
+        ret = process_geo_sizes(value, params);
+    }
+    else if(strcmp(name, "output_file") == 0)
+    {
+      if(!*out_file)
+        ret = process_output_file(value, out_file);
+    }
+    else if(strcmp(name, "iterations") == 0)
+    {
+      if(params->iter == 100)
+      {
+        params->iter = atoi(value);
+        if(params->iter <= 0)
+        {
+          if(!task_id)
+            fprintf(stderr, "Invalid iteration count: %s in file: %s\n", value, filename);
+          ret = 1;
+        }
+      }
+    }
+    else if(strcmp(name, "verbose") == 0)
+    {
+      if(params->verbose == -1)
+        ret = checkvalue(name, value, filename, &params->verbose);
+    }
+    else if(strcmp(name, "diagnostics") == 0)
+    {
+      if(params->verify == -1)
+        ret = checkvalue(name, value, filename, &params->verify);
+    }
+    else if(strcmp(name, "checkpoint") == 0)
+    {
+      if(params->checkpoint == -1)
+        ret = checkvalue(name, value, filename, &params->checkpoint);
+    }
+    else
+    {
+      fprintf(stderr, "Invalid parameter: %s in file: %s\n", name, filename);
+      ret = 1;
+    }
+    if(ret) break;
+  }
+  free(line);
+  fclose(file);
+
+  return ret;
+}
+
+
+static int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_file)
+{
+   int i,c,ret = 0;
 
    init_xfer_tables();
    params->verify = 0;
@@ -415,8 +490,7 @@ int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_fi
          ret = process_geo_sizes(optarg, params);
          break;
        case 'f':
-         strcpy(filename, optarg);
-         process_file(filename, params);
+         ret = process_ini_file(optarg, params, out_file);
          break;
        case 'o':
          if(!task_id) /* Only task 0 creates o/p file */
@@ -488,25 +562,36 @@ int process_arg(int argc, char *argv[], advisor_params_t *params, char ** out_fi
        params->collectives[params->num_collectives++] = i;
      }
    }
+   /* If user did not set any of the following parameters, disable them */
+   if(params->verbose == -1) params->verbose = 0;
+   if(params->verify == -1) params->verify = 0;
+   if(params->checkpoint == -1) params->checkpoint = 0;
    return 0;
 }
 
-void print_params(advisor_params_t *params, char *output_file)
+static void print_params(advisor_params_t *params, char *output_file)
 {
   size_t i;
-  printf("Number of collective %zu %p\n", params->num_collectives, params->collectives);
+  printf("  Benchmark Parameters\n");
+  printf("  --------------------\n");
+
+  printf("  Collectives:\n   ");
   for(i=0; i<params->num_collectives; i++){
-    printf("%d ", params->collectives[i]);
+    printf(" %s", xfer_array_str[params->collectives[i]]);
   }
-  printf("\n Number of geometry sizes %zu %p\n", params->num_geometry_sizes, params->geometry_sizes);
+  printf("\n  Geometry sizes:\n   ");
   for(i=0; i<params->num_geometry_sizes; i++){
-    printf("%zu ", params->geometry_sizes[i]);
+    printf(" %zu", params->geometry_sizes[i]);
   }
-  printf("\n Number of message sizes %zu %p\n", params->num_message_sizes, params->message_sizes);
+  printf("\n  Message sizes:\n   ");
   for(i=0; i<params->num_message_sizes; i++){
-    printf("%zu ", params->message_sizes[i]);
+    printf(" %zu", params->message_sizes[i]);
   }
-  printf("\n Output file: %s\n", output_file);
+  printf("\n  Iterations       : %d\n", params->iter);
+  printf("  Output file      : %s\n", output_file);
+  printf("  Checkpoint mode  : %d\n", params->checkpoint);
+  printf("  Diagnostics mode : %d\n", params->verify);
+  printf("  Verbose mode     : %d\n", params->verbose);
 }
 
 int main(int argc, char ** argv)
