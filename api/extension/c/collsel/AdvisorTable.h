@@ -431,7 +431,7 @@ namespace PAMI{
         tmp_dir_exists = dir_check();
       }
 
-      algo_record_t *algo_record;
+      algo_record_t *algo_record = NULL;
 
       // loop on each setting of procs_per_node
       for (psize = 0; psize < _params.num_procs_per_node; psize ++) {
@@ -602,7 +602,7 @@ namespace PAMI{
                       int foundId = 0;
                       for (iter1 = algo_name_map[coll_xfer_type].begin(); iter1 != algo_name_map[coll_xfer_type].end(); iter1++)
                       {
-                        if(strcmp(iter1->first, tmp_algo_name)==0) {found = 1; foundId = iter1->second;}
+                        if(strcmp(iter1->first, tmp_algo_name)==0) {found = 1; foundId = iter1->second; break;}
                       }
                       if(!found)
                       {
@@ -657,17 +657,23 @@ namespace PAMI{
                         algo, act_msg_size[msize], _task_id, geo_size, root,
                         col_num_algo, &result, col_algo, col_md, q_col_algo, q_col_md);
 
-                    if(algo_name_map[coll_xfer_type].find(algo_name) == algo_name_map[coll_xfer_type].end())
+                    AlgoNameToIdMap::iterator iter1;
+                    int found   = 0;
+                    int foundId = 0;
+                    for (iter1 = algo_name_map[coll_xfer_type].begin(); iter1 != algo_name_map[coll_xfer_type].end(); iter1++)
+                    {
+                      if(strcmp(iter1->first, algo_name)==0) {found = 1; foundId = iter1->second; break;}
+                    }
+                    if(!found)
                     {
                       algo_name_map[coll_xfer_type][algo_name] = algo_ids[coll_xfer_type]++;
                     }
-                    /* tmp_algo_map when filled, it is used by XML writer to write key data for algorithms
-                       the algo_list on the other hand is used to sort the data */
-                    (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(algo_name)->second].algorithm_name = algo_name;
-                    (*tmp_algo_map)[algo_name_map[coll_xfer_type].find(algo_name)->second].algorithm      = coll[0].algorithm;
+                    (*tmp_algo_map)[foundId].algorithm_name = algo_name;
+                    (*tmp_algo_map)[foundId].algorithm      = coll[0].algorithm;
                     algo_list[algo].algo      = coll[0].algorithm;
                     algo_list[algo].algo_name = algo_name;
-                    algo_list[algo].algo_id   = algo_name_map[coll_xfer_type].find(algo_name)->second;
+                    algo_list[algo].algo_id   = foundId;
+
 
                     if(act_msg_size[msize] <low || act_msg_size[msize] > high)
                     {
