@@ -118,7 +118,6 @@ namespace PAMI{
   inline void AdvisorTable::sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length)
   {
      int i;
-
      qsort(algo_list, length, sizeof(sorted_list), cmp_by_time);
 
      char * tmpCurrAlgoList = (char *)currAlgoList;
@@ -606,7 +605,8 @@ namespace PAMI{
                       }
                       if(!found)
                       {
-                        algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type]++;
+                        algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type];
+                        foundId = algo_ids[coll_xfer_type]++;
                       }
                       (*tmp_algo_map)[foundId].algorithm_name = tmp_algo_name;
                       algo_list[i].algo_name = tmp_algo_name;
@@ -666,7 +666,8 @@ namespace PAMI{
                     }
                     if(!found)
                     {
-                      algo_name_map[coll_xfer_type][algo_name] = algo_ids[coll_xfer_type]++;
+                      algo_name_map[coll_xfer_type][algo_name] = algo_ids[coll_xfer_type];
+                      foundId = algo_ids[coll_xfer_type]++;
                     }
                     (*tmp_algo_map)[foundId].algorithm_name = algo_name;
                     (*tmp_algo_map)[foundId].algorithm      = coll[0].algorithm;
