@@ -226,7 +226,7 @@ static int process_msg_sizes(char *msg_sizes_arg, advisor_params_t *params)
     params->num_message_sizes = 0;
   }
   /* Allocating some extra space should be fine */
-  params->message_sizes = (size_t *)malloc(sizeof(size_t) * 30);
+  params->message_sizes = (size_t *)malloc(sizeof(size_t) * 50);
 
   strcpy(msg_sizes, msg_sizes_arg);
   msg_sz = strtok(msg_sizes,",");
@@ -265,7 +265,7 @@ static int process_geo_sizes(char *geo_sizes_arg, advisor_params_t *params)
     params->num_geometry_sizes = 0;
   }
   /* Allocating some extra space should be fine */
-  params->geometry_sizes = (size_t *)malloc(sizeof(size_t) * 30);
+  params->geometry_sizes = (size_t *)malloc(sizeof(size_t) * 50);
 
   strcpy(geo_sizes, geo_sizes_arg);
   geo_sz = strtok(geo_sizes,",");
@@ -304,7 +304,7 @@ static int process_output_file(char *filename, char **out_file)
   {
     fprintf(stderr, "File %s already exists, renaming existing file\n", filename);
     newname = (char *) malloc(filename_len + 4);
-    for (i = 0; i < 50; ++i)
+    for (i = 0; i < 100; ++i)
     {
       sprintf(newname,"%s.%d", filename, i);
       if(!(access(newname, F_OK) == 0))

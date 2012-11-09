@@ -468,7 +468,7 @@ namespace PAMI{
           ++geometry_id;
           if(new_geometry != PAMI_GEOMETRY_NULL) {
 
-            printf("%d:Created geometry<%p> with size %zu and id %d\n", _task_id, new_geometry, geo_size, geometry_id);
+            //printf("%d:Created geometry<%p> with size %zu and id %d\n", _task_id, new_geometry, geo_size, geometry_id);
 
             // Loop on each collective
             for(csize = 0; csize < _params.num_collectives; csize ++) {

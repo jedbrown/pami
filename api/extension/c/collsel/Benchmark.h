@@ -596,8 +596,8 @@ void cb_amreduce_send(pami_context_t         context,      /**< IN:  communicati
                       pami_data_function   * op,           /**< OUT: PAMI math operation to perform on the datatype */
                       pami_recv_t          * send)         /**< OUT: receive message structure */
 {
-  red_user_header_t *hdr;
-  hdr = (red_user_header_t *) header_addr;
+  reduce_user_header_t *hdr;
+  hdr = (reduce_user_header_t *) header_addr;
 
   pami_task_t     task;
   size_t          offset;
@@ -1373,7 +1373,7 @@ void coll_mem_alloc(pami_xfer_t * coll, pami_xfer_type_t coll_xfer, size_t msg_s
       assert(err == 0);
 
       void *user_header = NULL;
-      err = posix_memalign((void **)&user_header, 128, sizeof(user_header_t));
+      err = posix_memalign((void **)&user_header, 128, sizeof(reduce_user_header_t));
 
       void *validation = NULL;
       err = posix_memalign((void **)&validation, 128, (ntasks * sizeof(validation_t)));
@@ -1881,7 +1881,7 @@ void fill_coll(pami_client_t client,
     {
       am_total_count = 0;
 
-      coll[0].cmd.xfer_amreduce.headerlen    = sizeof(user_header_t);
+      coll[0].cmd.xfer_amreduce.headerlen    = sizeof(reduce_user_header_t);
       coll[0].cmd.xfer_amreduce.rcvbuf       = _g_recv_buffer;
       coll[0].cmd.xfer_amreduce.rtype        = PAMI_TYPE_BYTE;
       coll[0].cmd.xfer_amreduce.rtypecount   = 0;
@@ -1898,9 +1898,9 @@ void fill_coll(pami_client_t client,
                                      h);
       coll[0].cmd.xfer_amreduce.dispatch   = root_zero;
       coll[0].cmd.xfer_amreduce.rtypecount = msg_size;
-      red_user_header_t* red_user_header = (red_user_header_t*)coll[0].cmd.xfer_amreduce.user_header;
-      red_user_header->op = 4;/*Corresponding to PAMI_DATA_SUM in the array*/
-      red_user_header->dt = 3;/*Corresponding to PAMI_TYPE_UNSIGNED_CHAR in the array*/
+      reduce_user_header_t* ruser_header = (reduce_user_header_t*)coll[0].cmd.xfer_amreduce.user_header;
+      ruser_header->op = 4;/*Corresponding to PAMI_DATA_SUM in the array*/
+      ruser_header->dt = 3;/*Corresponding to PAMI_TYPE_UNSIGNED_CHAR in the array*/
       reduce_initialize_sndbuf(_g_send_buffer,
                              msg_size,
                              PAMI_DATA_SUM,

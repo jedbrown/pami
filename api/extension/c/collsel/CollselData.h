@@ -1,7 +1,6 @@
 #ifndef __api_extension_c_collsel_CollselData_h__
 #define __api_extension_c_collsel_CollselData_h__
 
-#include <boost/unordered_map.hpp>
 #include <map>
 #include "pami.h"
 
@@ -13,13 +12,13 @@ namespace PAMI
     char            *algorithm_name;
   } CollselAlgorithm;
 
-  typedef std::map<unsigned, CollselAlgorithm> AlgoMap;                  // Key is the algorithm ID used in XML
-  typedef std::map<char *, unsigned> AlgoNameToIdMap;                    // Key is the algorithm name
-  typedef unsigned char* AlgoList;                                       // Each byte in the array represents a collective algo ID
-  typedef std::map<size_t, AlgoList> MessageSizeMap;                     // Key is the message size
-  typedef boost::unordered_map<unsigned, MessageSizeMap> CollectivesMap; // Key is the collective pami_xfer_type_t value
-  typedef std::map<unsigned, CollectivesMap> GeometrySizeMap;            // Key is the geometry size 
-  typedef std::map<unsigned, GeometrySizeMap> GeometryShapeMap;          // Key is the geometry shape (PPN)
+  typedef std::map<unsigned, CollselAlgorithm> AlgoMap;          // Key is the algorithm ID used in XML
+  typedef std::map<char *, unsigned> AlgoNameToIdMap;            // Key is the algorithm name
+  typedef unsigned char* AlgoList;                               // Each byte in the array represents a collective algo ID
+  typedef std::map<size_t, AlgoList> MessageSizeMap;             // Key is the message size
+  typedef std::map<unsigned, MessageSizeMap> CollectivesMap;     // Key is the collective pami_xfer_type_t value
+  typedef std::map<unsigned, CollectivesMap> GeometrySizeMap;    // Key is the geometry size 
+  typedef std::map<unsigned, GeometrySizeMap> GeometryShapeMap;  // Key is the geometry shape (PPN)
 
   class CollselData
   {

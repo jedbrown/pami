@@ -71,7 +71,7 @@ typedef struct
 {
   int op;
   int dt;
-} red_user_header_t;
+} reduce_user_header_t;
 
 typedef struct
 {

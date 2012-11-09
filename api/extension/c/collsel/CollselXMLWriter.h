@@ -268,7 +268,7 @@ namespace PAMI
             collective_node = doc.allocate_node(node_element, COLLECTIVE_TAG);
             tmp_str_sz = snprintf(tmp_str, STR_MAX_SZ,"%u",i);
             collective_node->append_node(doc.allocate_node(node_element, COLLECTIVE_ID_TAG,
-                      doc.allocate_string(tmp_str, tmp_str_sz)));
+                      doc.allocate_string(tmp_str, tmp_str_sz+1)));
           }
           algo_node = doc.allocate_node(node_element, ALGO_TAG);
           tmp_str_sz = snprintf(tmp_str, STR_MAX_SZ,"%u",iter->first);
