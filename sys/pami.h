@@ -380,9 +380,6 @@ extern "C"
                                                    alignment                                    */
     unsigned               recv_min_align;   /**<  This protocol requires a minimum address
                                                    alignment                                    */
-    unsigned               global_order;     /**<  This collective requires the user to start 
-                                                   the collective in a consistent global order, 
-                                                   even across geometries                       */ 
     /**
      * \brief Bitmask to determine if certain checks are required.
      */
@@ -400,10 +397,9 @@ extern "C"
                                                    requires "nonlocal" knowledge, meaning that
                                                    the result code from the check_fn must be
                                                    allreduced to determine if the operation
-                                                   will work 0:no, 1:  requires nonlocal data   */
+                                                   will work 0:no, 1:  requires nonlocal data  */
         unsigned           rangeminmax  : 1; /**<  This protocol only supports a range of bytes
-                                                   sent/received. 0: no min/max, 
-                                                   1: check range_lo/range_hi                   */
+                                                   sent/received. 0: no min/max, 1: check range_lo/range_hi */
         unsigned           sendminalign : 1; /**<  This protocol requires a minimum address
                                                    alignment of send_min_align bytes.
                                                    0: no min alignment, 1: check send_min_align */
@@ -413,24 +409,18 @@ extern "C"
         unsigned           alldtop      : 1; /**<  This protocol works for all datatypes and
                                                    operations for reduction/scan
                                                    0:not for all dt & op, 1:for all dt & op     */
-        unsigned           contigsflags : 1; /**<  This protocol requires contiguous data(send) */
-        unsigned           contigrflags : 1; /**<  This protocol requires contiguous data(recv) */
-        unsigned           continsflags : 1; /**<  This protocol requires continuous data(send):  
+        unsigned           contigsflags : 1; /**<  This protocol requires contiguous data(send)
+                                                   contiguous:  data type must be PAMI_TYPE_BYTE     */
+        unsigned           contigrflags : 1; /**<  This protocol requires contiguous data(recv)
+                                                   contiguous:  data type must be PAMI_TYPE_BYTE     */
+        unsigned           continsflags : 1; /**<  This protocol requires continuous data(send)
+                                                   continuous:  data type must be PAMI_TYPE_BYTE and
                                                    for vector collectives, the target buffers
                                                    of the vectors must be adjacent in memory    */
-        unsigned           continrflags : 1; /**<  This protocol requires continuous data(recv):  
+        unsigned           continrflags : 1; /**<  This protocol requires continuous data(recv)
+                                                   continuous:  data type must be PAMI_TYPE_BYTE and
                                                    for vector collectives, the target buffers
                                                    of the vectors must be adjacent in memory    */
-        unsigned           blocking     : 1; /**<  This protocol is blocking. 0: not blocking,
-                                                   1: blocking                                  */
-        unsigned           inplace      : 1; /**<  This protocol supports in-place buffering: 
-                                                   0: the send and recv buffers my not overlap,
-                                                   1: the send and recv buffers may overlap     */
-        unsigned           asyncflowctl : 1; /**<  This protocol is asynchronous and may require
-                                                   some flow control (barrier) to control 
-                                                   excessive unexpected data buffering.         */
-        unsigned           oneatatime   : 1; /**<  This protocol only permits one collective   
-                                                   to be out-standing at a time                 */ 
       } values;
     } check_correct;
 

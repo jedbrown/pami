@@ -47,7 +47,6 @@ namespace PAMI
           this->range_hi                          = MD_SIZE_MAX;
           this->send_min_align                    = 1;
           this->recv_min_align                    = 1;
-          this->global_order                      = 0;
 
           // Correctness Check
           this->check_correct.bitmask_correct     = 0;
@@ -56,14 +55,10 @@ namespace PAMI
           this->check_correct.values.sendminalign = 1;
           this->check_correct.values.recvminalign = 1;
           this->check_correct.values.alldtop      = 1;
-          this->check_correct.values.contigsflags = 0;
-          this->check_correct.values.contigrflags = 0;
+          this->check_correct.values.contigsflags = 1;
+          this->check_correct.values.contigrflags = 1;
           this->check_correct.values.continsflags = 0;
           this->check_correct.values.continrflags = 0;
-          this->check_correct.values.blocking     = 0;
-          this->check_correct.values.inplace      = 1;
-          this->check_correct.values.asyncflowctl = 0;
-          this->check_correct.values.oneatatime   = 0;
 
           // Performance Checks
           this->check_perf.bitmask_perf           = 0;
