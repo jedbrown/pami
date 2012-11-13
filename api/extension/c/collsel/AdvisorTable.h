@@ -24,6 +24,7 @@
 #include "Benchmark.h"
 #include "CollselData.h"
 #include "CollselXMLWriter.h"
+#include "CollselXMLParser.h"
 #include <sys/stat.h>
 #include <string>
 #include <dirent.h>
@@ -608,7 +609,7 @@ namespace PAMI{
                         algo_name_map[coll_xfer_type][tmp_algo_name] = algo_ids[coll_xfer_type];
                         foundId = algo_ids[coll_xfer_type]++;
                       }
-                      (*tmp_algo_map)[foundId].algorithm_name = tmp_algo_name;
+                      (*tmp_algo_map)[foundId] = tmp_algo_name;
                       algo_list[i].algo_name = tmp_algo_name;
                       algo_list[i].algo_id   = foundId;
 
@@ -669,8 +670,8 @@ namespace PAMI{
                       algo_name_map[coll_xfer_type][algo_name] = algo_ids[coll_xfer_type];
                       foundId = algo_ids[coll_xfer_type]++;
                     }
-                    (*tmp_algo_map)[foundId].algorithm_name = algo_name;
-                    (*tmp_algo_map)[foundId].algorithm      = coll[0].algorithm;
+                    (*tmp_algo_map)[foundId]  = algo_name;
+                    //(*tmp_algo_map)[foundId].algorithm      = coll[0].algorithm;
                     algo_list[algo].algo      = coll[0].algorithm;
                     algo_list[algo].algo_name = algo_name;
                     algo_list[algo].algo_id   = foundId;
@@ -801,7 +802,13 @@ namespace PAMI{
 
   inline pami_result_t AdvisorTable::load(char* filename)
   {
-    return PAMI_SUCCESS;
+    pami_result_t ret = PAMI_SUCCESS;
+    PAMI::XMLParser<> parser;
+    if(parser.read_xml(filename, &_collsel_data))
+    {
+      ret = PAMI_ERROR;
+    }
+    return ret;
   }
 
   inline pami_result_t AdvisorTable::unload()

@@ -54,18 +54,30 @@ pami_result_t CollselExtension::Collsel_table_load_fn(advisor_t        advisor,
                                                       char            *filename,
                                                       advisor_table_t *advisor_table)
 {
+  pami_result_t res;
   Advisor      *a  = (Advisor*) advisor;
   AdvisorTable *at = new AdvisorTable(*a);
-  *advisor_table   = (advisor_table_t) at;
-  return at->load(filename);
+  // Load collective selection data from XML
+  res = at->load(filename);
+  if(res == PAMI_SUCCESS)
+  {
+    *advisor_table   = (advisor_table_t) at;
+  }
+  return res;
 }
 
 
 pami_result_t CollselExtension::Collsel_table_unload_fn(advisor_table_t *advisor_table)
 {
+  pami_result_t res;
   AdvisorTable *at = (AdvisorTable*) *advisor_table;
-  *advisor_table = NULL;
-  return   at->unload();
+  // Free any allocated resources
+  res = at->unload();
+  if(res == PAMI_SUCCESS)
+  {
+    *advisor_table = NULL;
+  }
+  return res;
 }
 
 pami_result_t CollselExtension::Collsel_query_fn(advisor_table_t *advisor_table,

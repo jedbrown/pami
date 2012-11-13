@@ -33,6 +33,29 @@ namespace PAMI
 {
   using  namespace boost::property_tree::detail::rapidxml;
 
+  const char* PAMI_TUNE_TAG     = "pami_tune";
+  const char* PAMI_ENV_TAG      = "pami_environment";
+  const char* COLLSEL_TAG       = "collective_selection";
+  const char* VERSION_TAG       = "version";
+  const char* COLLECTIVES_TAG   = "collectives";
+  const char* COLLECTIVE_TAG    = "collective";
+  const char* COLLECTIVE_ID_TAG = "collective_id";
+  const char* ALGO_TAG          = "algorithm";
+  const char* ALGO_ID_TAG       = "id";
+  const char* ALGO_NAME_TAG     = "name";
+  const char* GEOMETRIES_TAG    = "geometries";
+  const char* PPN_TAG           = "ppn";
+  const char* GEOMETRY_TAG      = "geometry";
+  const char* GEOMETRY_SIZE_TAG = "geometry_size";
+  const char* COLL_TAG          = "coll";
+  const char* COLL_ID_TAG       = "coll_id";
+  const char* MESSAGE_TAG       = "message";
+  const char* SIZE_MIN_TAG      = "size_min";
+  const char* SIZE_MAX_TAG      = "size_max";
+  const char* ALGORITHMS_TAG    = "algorithms";
+  const char* OP_ATTR           = "op";
+  const char* DT_ATTR           = "dt";
+
   template <class Iter = std::back_insert_iterator<std::string>, class Ch = char>
   class XMLWriter
   {
@@ -295,7 +318,7 @@ namespace PAMI
           algo_node->append_node(doc.allocate_node(node_element, ALGO_ID_TAG,
                     doc.allocate_string(tmp_str, tmp_str_sz+1)));
           algo_node->append_node(doc.allocate_node(node_element, ALGO_NAME_TAG,
-                    doc.allocate_string(iter->second.algorithm_name)));
+                    doc.allocate_string(iter->second)));
           collective_node->append_node(algo_node);
         }
         if(collective_node)
@@ -393,54 +416,10 @@ namespace PAMI
     // Max tmp_str size
     static const int STR_MAX_SZ;
     // XML tag & attribute names
-    static const char* PAMI_TUNE_TAG;
-    static const char* PAMI_ENV_TAG;
-    static const char* COLLSEL_TAG;
-    static const char* VERSION_TAG;
-    static const char* COLLECTIVES_TAG;
-    static const char* COLLECTIVE_TAG;
-    static const char* COLLECTIVE_ID_TAG;
-    static const char* ALGO_TAG;
-    static const char* ALGO_ID_TAG;
-    static const char* ALGO_NAME_TAG;
-    static const char* GEOMETRIES_TAG;
-    static const char* PPN_TAG;
-    static const char* GEOMETRY_TAG;
-    static const char* GEOMETRY_SIZE_TAG;
-    static const char* COLL_TAG;
-    static const char* COLL_ID_TAG;
-    static const char* MESSAGE_TAG;
-    static const char* SIZE_MIN_TAG;
-    static const char* SIZE_MAX_TAG;
-    static const char* ALGORITHMS_TAG;
-    static const char* OP_ATTR;
-    static const char* DT_ATTR;
     static const int write_no_linefeed;   //Instruct to add linefeeds
   };
 
   template<class Iter,class Ch>   const int XMLWriter<Iter,Ch>::STR_MAX_SZ = 16;
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::PAMI_TUNE_TAG     = "pami_tune";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::PAMI_ENV_TAG      = "pami_environment";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLLSEL_TAG       = "collective_selection";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::VERSION_TAG       = "version";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLLECTIVES_TAG   = "collectives";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLLECTIVE_TAG    = "collective";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLLECTIVE_ID_TAG = "collective_id";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::ALGO_TAG          = "algorithm";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::ALGO_ID_TAG       = "id";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::ALGO_NAME_TAG     = "name";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::GEOMETRIES_TAG    = "geometries";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::PPN_TAG           = "ppn";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::GEOMETRY_TAG      = "geometry";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::GEOMETRY_SIZE_TAG = "geometry_size";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLL_TAG          = "coll";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::COLL_ID_TAG       = "coll_id";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::MESSAGE_TAG       = "message";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::SIZE_MIN_TAG      = "size_min";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::SIZE_MAX_TAG      = "size_max";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::ALGORITHMS_TAG    = "algorithms";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::OP_ATTR           = "op";
-  template<class Iter,class Ch>   const char* XMLWriter<Iter,Ch>::DT_ATTR           = "dt";
   template<class Iter,class Ch>   const int XMLWriter<Iter,Ch>::write_no_linefeed = 0x1;   //Instruct to add linefeeds
 }
 #endif

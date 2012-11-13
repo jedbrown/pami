@@ -23,22 +23,19 @@
 
 #include <map>
 #include "pami.h"
+#include "boost/property_tree/detail/rapidxml.hpp"
 
 namespace PAMI
 {
-  typedef struct
-  {
-    pami_algorithm_t algorithm;
-    char            *algorithm_name;
-  } CollselAlgorithm;
+  using  namespace boost::property_tree::detail::rapidxml;
 
-  typedef std::map<unsigned, CollselAlgorithm> AlgoMap;          // Key is the algorithm ID used in XML
-  typedef std::map<char *, unsigned> AlgoNameToIdMap;            // Key is the algorithm name
-  typedef unsigned char* AlgoList;                               // Each byte in the array represents a collective algo ID
-  typedef std::map<size_t, AlgoList> MessageSizeMap;             // Key is the message size
-  typedef std::map<unsigned, MessageSizeMap> CollectivesMap;     // Key is the collective pami_xfer_type_t value
-  typedef std::map<unsigned, CollectivesMap> GeometrySizeMap;    // Key is the geometry size 
-  typedef std::map<unsigned, GeometrySizeMap> GeometryShapeMap;  // Key is the geometry shape (PPN)
+  typedef std::map<unsigned, char *> AlgoMap;                  // Key is the algorithm ID used in XML
+  typedef std::map<char *, unsigned> AlgoNameToIdMap;          // Key is the algorithm name
+  typedef unsigned char* AlgoList;                             // Each byte in the array represents a collective algo ID
+  typedef std::map<size_t, AlgoList> MessageSizeMap;           // Key is the message size
+  typedef std::map<unsigned, MessageSizeMap> CollectivesMap;   // Key is the collective pami_xfer_type_t value
+  typedef std::map<unsigned, CollectivesMap> GeometrySizeMap;  // Key is the geometry size 
+  typedef std::map<unsigned, GeometrySizeMap> GeometryShapeMap;// Key is the geometry shape (PPN)
 
   class CollselData
   {
@@ -132,11 +129,11 @@ namespace PAMI
     /**
      *  Map the algorithm ID used in the XML to the actual PAMI algorithm
      */
-    pami_algorithm_t lookup_algorithm(pami_xfer_type_t coll, unsigned char algo_id)
+    char*  lookup_algorithm(pami_xfer_type_t coll, unsigned char algo_id)
     {
       AlgoMap::iterator iter = algo_map[coll].find(algo_id);
       assert(iter != algo_map->end());
-      return iter->second.algorithm;
+      return iter->second;
     }
 
     GeometryShapeMap& get_datastore()
@@ -154,10 +151,16 @@ namespace PAMI
       return algo_name_map;
     }
 
+    char * mempool_allocate(size_t size)
+    {
+      return mpool.allocate_string(NULL, size);
+    }
+
     private:
     GeometryShapeMap collsel_map;      // Collsel data store
-    AlgoMap algo_map[PAMI_XFER_COUNT]; // Map the algorithm ID in XML to the actual PAMI algorithm (null terminated array)
+    AlgoMap algo_map[PAMI_XFER_COUNT]; // Map the algorithm ID in XML to the actual PAMI algorithm 
     AlgoNameToIdMap algo_name_map[PAMI_XFER_COUNT];
+    memory_pool<>   mpool;   // Memory pool
   };
 }
 #endif
