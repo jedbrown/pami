@@ -34,11 +34,12 @@ using namespace std;
 #define COLLSEL_MAX_ALGO 40 // Maximum number of algorithms per collective
 #define COLLSEL_MAX_NUM_MSG_SZ 64 // Maximum number of message sizes
 #define ROOT 0
-enum {
+typedef enum {
   FILE_CHECK = 0,
+  FILE_NOT_EXIST,
   FILE_BAD,
   FILE_OK
-};
+} file_state_t;
 
 // check statement
 #define CRC(STATE, MSG) { \
@@ -233,11 +234,10 @@ namespace PAMI{
 
   // check if the directory for tmp output files exists
   // if not, create the directory
-  inline bool dir_check()
+  inline void dir_check() 
   {
     struct stat st;
-    bool res = (stat(TMP_OUTPUT_DIR, &st) == 0);
-    if (!res) {
+    if (stat(TMP_OUTPUT_DIR, &st) != 0) {
       if (mkdir(TMP_OUTPUT_DIR, S_IRWXU|S_IRGRP|S_IXGRP) != 0) {
         printf("Failed to create directory %s\n", TMP_OUTPUT_DIR);
         exit(-1);
@@ -245,12 +245,11 @@ namespace PAMI{
         if (_g_verbose)
           printf("Created directory %s\n", TMP_OUTPUT_DIR);
       }
-
     } else {
-      printf("Directory %s already exists\n", TMP_OUTPUT_DIR);
+      if (_g_verbose) 
+        printf("Directory %s already exists\n", TMP_OUTPUT_DIR);
     }
-
-    return res;
+    return;
   }
 
   inline void dir_clean()
@@ -292,10 +291,10 @@ namespace PAMI{
   }
 
   // make sure the file has the right size
-  inline bool file_check(char* fname)
+  inline file_state_t file_check(char* fname) 
   {
     FILE* file;
-    bool res = false;
+    file_state_t res = FILE_BAD;
     size_t readfsize = 0;
     size_t fsize = 0;
 
@@ -306,12 +305,14 @@ namespace PAMI{
         if (fseek(file, fsize - SSIZE_T, SEEK_SET) == 0) {
           if (fread(&readfsize, 1, SSIZE_T, file) == SSIZE_T) {
             if (fsize == readfsize) {
-              res = true;
+              res = FILE_OK;
             }
           }
         }
       }
       fclose(file);
+    } else {
+      res = FILE_NOT_EXIST;
     }
 
     return res;
@@ -452,9 +453,8 @@ namespace PAMI{
       pami_metadata_t   q_col_md[COLLSEL_MAX_ALGO];
       sorted_list       algo_list[COLLSEL_MAX_ALGO];
 
-      bool tmp_dir_exists = false;
       if(_g_checkpoint && !_task_id) {
-        tmp_dir_exists = dir_check();
+        dir_check();
       }
 
       algo_record_t *algo_record = NULL;
@@ -542,7 +542,18 @@ namespace PAMI{
               size_t num_algo = col_num_algo[0] + col_num_algo[1];
 
               // Loop on message size
-              for(msize = 0; msize < _params.num_message_sizes && _params.message_sizes[msize] <= msg_thresh; msize ++) {
+              size_t msg_sz_num;
+              if (coll_xfer_type == PAMI_XFER_BARRIER) {
+                msg_sz_num = 1;
+              } else {
+                msg_sz_num = _params.num_message_sizes;
+              }
+
+              for(msize = 0; msize < msg_sz_num; msize ++) {
+                if (coll_xfer_type != PAMI_XFER_BARRIER && _params.message_sizes[msize] > msg_thresh) {
+                  continue;
+                }
+
                 act_msg_size[msize] = MIN(_params.message_sizes[msize], msg_thresh);
 
                 if(_g_verbose && !_task_id) 
@@ -562,11 +573,7 @@ namespace PAMI{
                       _params.collectives[csize],
                       act_msg_size[msize]);
 
-                    if (tmp_dir_exists && file_check(tmp_output_fname)) {
-                      buf = FILE_OK;
-                    } else {
-                      buf = FILE_BAD;
-                    }
+                  buf = file_check(tmp_output_fname);
                 }
 
                 if (_g_checkpoint) {
@@ -578,8 +585,8 @@ namespace PAMI{
 
                 if (_g_checkpoint && _g_verbose && !_task_id) {
                   switch (buf) {
-                    case FILE_CHECK:
-                      printf("Skipped sanity check for file %s, about to run this iteration\n", 
+                    case FILE_NOT_EXIST:
+                      printf("File %s doesn't exist, about to run fresh iteration\n", 
                           tmp_output_fname);
                       break;
                     case FILE_OK:
