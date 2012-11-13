@@ -41,10 +41,9 @@
 #else
 #define ITRC(...)
 #endif
+#include "util/common.h"
 #include "Math.h"
 #include "ReferenceCount.h"
-//#undef assert
-//#define assert(...)
 
 namespace PAMI
 {
@@ -298,7 +297,7 @@ namespace PAMI
     inline TypeCode::TypeCode(size_t code_size)
         : code(NULL), code_buf_size(0), prev_cursor(0), code_cursor(0), completed(true)
     {
-        assert(code_size);
+        PAMI_assert(code_size);
         ResizeCodeBuffer(code_size);
     }
 
@@ -364,7 +363,7 @@ namespace PAMI
             sizeof(Begin), sizeof(Copy), sizeof(Call), sizeof(Shift), sizeof(End)
         };
 
-        assert(0<code_cursor);
+        PAMI_assert(0<code_cursor);
 
         Op &top = *(Op *)(code + code_cursor);
         code_cursor -= op_size[top.prev_opcode];
@@ -373,7 +372,7 @@ namespace PAMI
 
     inline void * TypeCode::GetCodeAddr() const
     {
-        assert(IsCompleted());
+        PAMI_assert(IsCompleted());
         return code;
     }
 
@@ -419,7 +418,7 @@ namespace PAMI
 
     inline void   TypeCode::SetAtomSize(size_t atom_size)
     {
-        assert(GetUnit() % atom_size == 0);
+        PAMI_assert(GetUnit() % atom_size == 0);
         ((Begin *)code)->atom_size = atom_size;
     }
 
@@ -496,25 +495,23 @@ namespace PAMI
 
     inline void TypeCode::AddShift(size_t shift)
     {
-        assert(!IsCompleted());
+        PAMI_assert(!IsCompleted());
 
         Shift prev_shift;
         Copy prev_copy;
 
         ITRC(IT_TYPE, "AddShift(): this 0x%zx shift %zd\n", this, shift);
 
-        do {
-            if (0 == shift) {
-                // SHIFT 0                  => NO-OP
-                break;
-            }
+        // SHIFT 0                  => NO-OP
+
+        if (0 != shift) {
             if (Top(prev_shift)) {
                 // SHIFT shift1
                 // SHIFT shift2             => SHIFT shift1+shift2
                 ITRC(IT_TYPE, " AddShift(): this 0x%zx modify prev SHIFT\n", this);
                 Pop();
                 AddShift(prev_shift.shift + shift);
-                break;
+                return;
             }
             if (Top(prev_copy)) {
                 // previous instruction is a copy: if single repeat modify its stride
@@ -524,38 +521,34 @@ namespace PAMI
                     ITRC(IT_TYPE, " AddShift(): this 0x%zx modify prev COPY\n", this);
                     Pop();
                     AddSimpleInternal(prev_copy.bytes, prev_copy.stride + shift, 1);
-                    break;
+                    return;
                 }
             }
             // No optimization, yet: add a shift instruction
             Push(Shift(shift));
-        } while (0);
+        }
     }
 
     inline void TypeCode::AddSimpleInternal(size_t bytes, size_t stride, size_t reps)
     {
-        assert(!IsCompleted());
-
         Copy prev_copy;
 
         ITRC(IT_TYPE, "AddSimpleInternal(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
 
-        do {
-            if (0 == reps) {
-                // COPY  bytes  stride  0       => NO-OP
-                break;
-            }
+        // COPY  bytes  stride  0       => NO-OP
+
+        if (0 != reps) {
             if (0 == bytes) {
                 // COPY  0  stride  reps        => SHIFT  stride*reps
                 ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx add SHIFT\n", this);
                 AddShift(stride * reps);
-                break;
+                return;
             }
             if ((bytes == stride) && (1<reps)) {
                 // COPY  bytes  bytes  reps     => COPY  bytes*reps  stride*reps  1
                 ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx add modified COPY\n", this);
                 AddSimpleInternal(bytes * reps, stride * reps, 1);
-                break;
+                return;
             }
             if (Top(prev_copy)) {
                 // the previous instruction was a COPY
@@ -565,7 +558,7 @@ namespace PAMI
                     ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx modify prev COPY [1]\n", this);
                     Pop();
                     AddSimpleInternal(prev_copy.bytes + bytes, prev_copy.stride + stride, 1);
-                    break;
+                    return;
                 }
                 if (prev_copy.bytes==bytes && prev_copy.stride==stride) {
                     // COPY  bytes  stride  reps1
@@ -573,17 +566,17 @@ namespace PAMI
                     ITRC(IT_TYPE, " AddSimpleInternal(): this 0x%zx modify previous COPY [2]\n", this);
                     Pop();
                     AddSimpleInternal(bytes, stride, prev_copy.reps + reps);
-                    break;
+                    return;
                 }
             }
             // no optimization yet: add a copy instruction
             Push(Copy(bytes, stride, reps));
-        } while (0);
+        }
     }
 
     inline void TypeCode::AddSimple(size_t bytes, size_t stride, size_t reps)
     {
-        assert(!IsCompleted());
+        PAMI_assert(!IsCompleted());
 
         ITRC(IT_TYPE, "AddSimple(): this 0x%zx bytes %zu stride %zd reps %zu\n", this, bytes, stride, reps);
 
@@ -599,31 +592,26 @@ namespace PAMI
 
     inline void TypeCode::AddTypedInternal(TypeCode *sub_type, size_t stride, size_t reps)
     {
-        assert(!IsCompleted());
-        assert(sub_type->IsCompleted());
-
         Call prev_call;
         Begin prev_begin;
 
         ITRC(IT_TYPE, "AddTypedInternal(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
         sub_type->Show();
 
-        do {
-            if (0 == reps) {
-                // CALL subtype  stride  0      => NO-OP
-                break;
-            }
+        // CALL subtype  stride  0      => NO-OP
+
+        if (0 != reps) {
             if (sub_type->IsContiguous()) {
                 // CALL  subtye  stride  reps
                 // subtype is contiguous        => COPY  subtype->bytes  stride  reps
                 ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [1]\n", this);
                 AddSimpleInternal(sub_type->GetDataSize(), stride, reps);
-                break;
+                return;
             }
             if (sub_type->IsSimple()) {
                 // CALL  subtype  stride1  reps1
                 // subtype is simple
-                assert(COPY == ((Op *)(sub_type->code+sizeof(Begin)))->opcode);
+                PAMI_assert(COPY == ((Op *)(sub_type->code+sizeof(Begin)))->opcode);
 
                 Copy *sub_copy = (Copy *)(sub_type->code+sizeof(Begin));
 
@@ -632,14 +620,14 @@ namespace PAMI
                     // COPY  bytes  stride2  reps2  => COPY  bytes  stride2  reps1*reps2
                     ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [2]\n", this);
                     AddSimpleInternal(sub_copy->bytes, sub_copy->stride, sub_copy->reps * reps);
-                    break;
+                    return;
                 }
                 // the Call's stride is different from the subtype's extent
                 if (1 == sub_copy->reps) {
                     // the subtype consists of a single copy instruction w/no repeats
                     ITRC(IT_TYPE, " AddTypedInternal(): this 0x%zx add COPY [3]\n", this);
                     AddSimpleInternal(sub_copy->bytes, stride, reps);
-                    break;
+                    return;
                 }
             }
             if (Top(prev_call)) {
@@ -649,16 +637,19 @@ namespace PAMI
                     // CALL  bytes  stride  reps2   => CALL  bytes  stride  reps1+reps2
                     Pop();
                     AddTypedInternal(sub_type, stride, prev_call.reps + reps);
-                    break;
+                    return;
                 }
             }
             // No optimization yet: add a new CALL
             Push(Call((size_t)sub_type, stride, reps));
-        } while (0);
+        }
     }
 
     inline void TypeCode::AddTyped(TypeCode *sub_type, size_t stride, size_t reps)
     {
+        PAMI_assert(!IsCompleted());
+        PAMI_assert(sub_type->IsCompleted());
+
         ITRC(IT_TYPE, "AddTyped(): this 0x%zx sub_type 0x%zx stride %zd reps %zu\n", this, sub_type, stride, reps);
 
         // set the primitive value if undefined
@@ -680,12 +671,12 @@ namespace PAMI
 
     inline void TypeCode::Complete()
     {
-        assert(!IsCompleted());
+        PAMI_assert(!IsCompleted());
 
         // push the END instruction
         Push(End());
 
-        assert(code_cursor <= GetCodeSize());
+        PAMI_assert(code_cursor <= GetCodeSize());
 
         // calculate the data layout properties: data size/extent, unit, depth
         // copy the sub-types' code, if any
@@ -748,7 +739,7 @@ namespace PAMI
                     // no instruction breaks simplicity
                     if (BEGIN == op->prev_opcode) SetSimple(false);
                     pc += sizeof(End); break;
-                default:    assert(!"Bogus opcode");
+                default:    PAMI_assert(!"Bogus opcode");
             }
         } while (op->opcode != END);
 
@@ -763,7 +754,7 @@ namespace PAMI
             // check for contiguity
             Copy *single_copy = (Copy *)(code + sizeof(Begin));
             if (single_copy->bytes != single_copy->stride) { SetContiguous(false); break; }
-            assert(1 == single_copy->reps);
+            PAMI_assert(1 == single_copy->reps);
         } while (0);
 
         // check the primitive type
@@ -790,7 +781,7 @@ namespace PAMI
                 case COPY:   ((Copy *)op)->Show(pc); pc += sizeof(Copy); break;
                 case CALL:   ((Call *)op)->Show(pc); pc += sizeof(Call); break;
                 case END:     ((End *)op)->Show(pc); pc += sizeof(End); break;
-                default:    assert(!"Bogus opcode");
+                default:    PAMI_assert(!"Bogus opcode");
             }
         } while (pc < GetCodeSize());
 #endif
@@ -807,7 +798,7 @@ namespace PAMI
     inline TypeContig::TypeContig(size_t atom_size)
         : TypeCode()
     {
-        assert(0<atom_size);
+        PAMI_assert(0<atom_size);
         size_t prim_size = ULONG_MAX - ULONG_MAX%atom_size;
         SetPrimitive(PRIMITIVE_TYPE_BYTE);
         AddSimpleInternal(prim_size, prim_size, 1);
@@ -950,7 +941,7 @@ namespace PAMI
 
     inline TypeContig::~TypeContig()
     {
-        assert(!"Can't delete TypeContig");
+        PAMI_assert(!"Can't delete TypeContig");
     }
 
   }
