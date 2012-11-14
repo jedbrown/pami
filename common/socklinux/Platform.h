@@ -23,5 +23,6 @@
 
 #include "Arch.h"
 
+#define PLATFORM_TID -1U
 
 #endif // __common_socklinux_Platform_h__

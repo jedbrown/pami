@@ -27,4 +27,6 @@
 
 #define PAMI_DEF_SH_WORKUNITS  32   // Default mpi shared work queue workunits
 
+#define PLATFORM_TID -1U
+
 #endif // __common_mpi_platform_h__

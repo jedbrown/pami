@@ -33,6 +33,8 @@ extern "C" {
 #include "../lapi/include/lapi_base_type.h"
 #include "../lapi/include/lapi_env.h"
 
+#define PLATFORM_TID -1U
+
 // Collective shared memory settings
 #define CACHEBLOCKSZ 128
 #if defined(__64BIT__) && !defined(_LAPI_LINUX)
