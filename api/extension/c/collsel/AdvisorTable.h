@@ -268,13 +268,11 @@ namespace PAMI{
     while ((entry = readdir(dir)) != NULL) {
       if (strcmp(entry->d_name, ".") && strcmp(entry->d_name, "..")) {
         snprintf(path, PATH_MAX, "%s/%s", TMP_OUTPUT_DIR, entry->d_name);
-        if (entry->d_type == DT_REG) {
-          if (remove(path) != 0) {
-            printf("Error deleting file %s\n", path);
-          } else {
-            if (_g_verbose)
-              printf("File %s has been deleted\n", path);
-          }
+        if (remove(path) != 0) {
+          printf("Error deleting file %s\n", path);
+        } else {
+          if (_g_verbose)
+            printf("File %s has been deleted\n", path);
         }
       }
     }
