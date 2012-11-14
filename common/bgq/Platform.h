@@ -32,9 +32,6 @@
 // Enable multi-context CCMI/Optimized collective registration.  Default is only PGAS on multi-contexts.
 // #define PAMI_ENABLE_COLLECTIVE_MULTICONTEXT
 
-// New BGQ optimized shmem stack:
-#define PAMI_ENABLE_NEW_SHMEM
-
 // Enable BGQ shmem stack on sub-node geometries
 //#define PAMI_ENABLE_SHMEM_SUBNODE
 

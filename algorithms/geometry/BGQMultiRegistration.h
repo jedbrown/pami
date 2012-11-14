@@ -200,7 +200,6 @@ namespace PAMI
       }
     }
 
-#ifdef PAMI_ENABLE_NEW_SHMEM
     namespace Shmem_Optimized // ONLY SUPPORTS DOUBLES?!
     {
       extern inline metadata_result_t op_dt_metadata_function(struct pami_xfer_t *in)
@@ -247,7 +246,7 @@ namespace PAMI
         return(result);
       }
     }
-#endif
+
     //----------------------------------------------------------------------------
     /// Declare our protocol factory templates and their metadata templates
     ///
@@ -336,12 +335,10 @@ namespace PAMI
     extern inline void ShmemMcombMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine:SHMEM:-");
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop     = 0;
       m->check_correct.values.rangeminmax = 1;
       m->range_hi                         = 64; // Msgs > 64 are pseudo-reduce-only, not allreduce
       m->check_fn                         = range_metadata_function<0,64,Shmem::op_dt_metadata_function>;
-#endif
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<>,
@@ -487,18 +484,12 @@ namespace PAMI
     extern inline void MUShmemMcombCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombineDput:SHMEM:MU");
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.checkrequired = 1; // Must calculate range in the check_fn
       m->check_fn                           = Shmem_Optimized::op_dt_metadata_function; 
       m->check_correct.values.rangeminmax   = 1;
 //    m->range_hi                           = 8192;// Non-doubles have a calculated range so can't set constant
       m->check_perf.values.hw_accel         = 1;
-#else
-      m->check_correct.values.alldtop       = 0;
-      m->check_fn                           = MU::op_dt_metadata_function;
-      m->check_perf.values.hw_accel         = 1;
-#endif
       m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
@@ -602,15 +593,9 @@ namespace PAMI
     extern inline void Mcomb2DMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2Device:SHMEM:MU");
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop   = 0;
       m->check_fn                       = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
-#else
-      m->check_correct.values.alldtop   = 0;
-      m->check_fn                       = MU::op_dt_metadata_function;
-      m->check_perf.values.hw_accel     = 1;
-#endif
     }
     typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
     Mcomb2DMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceFactory;
@@ -622,7 +607,6 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDput:SHMEM:MU");
       m->check_correct.values.inplace       = 0;
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
       m->check_correct.values.recvminalign  = 1;
@@ -631,16 +615,6 @@ namespace PAMI
       m->recv_min_align                     = 32;
       m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
       m->check_perf.values.hw_accel         = 1;
-#else
-      m->check_correct.values.alldtop       = 0;
-      m->check_correct.values.sendminalign  = 1;
-      m->check_correct.values.recvminalign  = 1;
-      m->check_correct.values.nonlocal      = 1;
-      m->send_min_align                     = 32;
-      m->recv_min_align                     = 32;
-      m->check_fn                           = align_metadata_function<1,32,1,32,MU::op_dt_metadata_function>;
-      m->check_perf.values.hw_accel         = 1;
-#endif
     }
     typedef CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2Device<0>,
     Mcomb2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr >    MultiCombine2DeviceDputFactory;
@@ -653,15 +627,9 @@ namespace PAMI
     extern inline void Mcomb2DMetaDataNP(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceNP:SHMEM:MU");
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
-#else
-      m->check_correct.values.alldtop       = 0;
-      m->check_fn                           = MU::op_dt_metadata_function;
-      m->check_perf.values.hw_accel         = 1;
-#endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MultiCombine2DeviceFactoryNP;
@@ -673,15 +641,9 @@ namespace PAMI
     extern inline void Mcomb2DDputMetaDataNP(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("X0:MultiCombine2DeviceDputNP:SHMEM:MU");
-#ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_fn                           = Shmem::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
-#else
-      m->check_correct.values.alldtop       = 0;
-      m->check_fn                           = MU::op_dt_metadata_function;
-      m->check_perf.values.hw_accel         = 1;
-#endif
     }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite2DeviceNP,
     Mcomb2DDputMetaDataNP, CCMI::ConnectionManager::SimpleConnMgr, PAMI_XFER_ALLREDUCE > MultiCombine2DeviceDputFactoryNP;
@@ -1382,16 +1344,12 @@ namespace PAMI
               geometry->addCollectiveCheck(PAMI_XFER_BROADCAST, &_shmem_mcast_factory, _context, _context_id);
 
               // Add Allreduces
-#ifdef PAMI_ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
               if ((__global.topology_local.size() ==  4) ||  
                   (__global.topology_local.size() ==  8) ||
                   (__global.topology_local.size() == 16))
                 //||  
                 //(__global.topology_local.size() == 64))
                 geometry->addCollectiveCheck(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context, _context_id);
-#else
-              geometry->addCollective(PAMI_XFER_ALLREDUCE, &_shmem_mcomb_factory, _context, _context_id);
-#endif
             }
           }
 
@@ -1594,10 +1552,6 @@ namespace PAMI
               }
             }
             // Add 2 device composite protocols
-#ifndef PAMI_ENABLE_NEW_SHMEM
-            // Default Shmem doesn't work with 2 device protocol right now
-            if (local_sub_topology->size() == 1)
-#endif
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
               if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
@@ -1654,14 +1608,12 @@ namespace PAMI
             }
 
             // Add 2 device composite protocols
-#ifdef PAMI_ENABLE_NEW_SHMEM   // limited support - 4/8/16 processes only
             if ((__global.topology_local.size() ==  2) ||  
                 (__global.topology_local.size() ==  4) ||  
                 (__global.topology_local.size() ==  8) ||
                 (__global.topology_local.size() == 16) || 
                 (__global.topology_local.size() == 32) || 
                 (__global.topology_local.size() == 64))
-#endif
 #ifndef PAMI_ENABLE_SHMEM_SUBNODE
               if (__global.topology_local.size() == local_sub_topology->size()) /// \todo might ease this restriction later - when shmem supports it
 #endif
