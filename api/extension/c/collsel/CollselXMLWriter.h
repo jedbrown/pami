@@ -75,7 +75,7 @@ namespace PAMI
                   PAMI::AlgoMap *algo_map,
                   const std::locale &loc = std::locale())
     {
-      std::basic_ofstream<Ch> stream(filename.c_str(), std::ios::out);
+      std::basic_ofstream<Ch> stream(filename.c_str(), std::ios::out | std::ios::trunc);
       if (!stream.is_open ())
       {
          fprintf(stderr,"Error opening file %s\n", filename.c_str());

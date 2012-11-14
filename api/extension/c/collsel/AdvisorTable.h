@@ -68,13 +68,14 @@ namespace PAMI{
   {
     public:
       AdvisorTable(Advisor &advisor);
+      ~AdvisorTable();
       pami_result_t generate(char             *filename,
                              advisor_params_t *params,
                              int               mode);
       pami_result_t load(char* filename);
       pami_result_t unload();
-      ~AdvisorTable();
     private:
+      pami_result_t  check_params(advisor_params_t *params, char *filename, int mode);
       void init(advisor_params_t *params);
       void sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length);
 
@@ -105,16 +106,15 @@ namespace PAMI{
       free(_params.message_sizes);
   }
 
-  int cmp_by_time(const void *a, const void *b) 
-{ 
+  int cmp_by_time(const void *a, const void *b)
+  {
     sorted_list *ia = (sorted_list *)a;
     sorted_list *ib = (sorted_list *)b;
     return (int)(100.f*ia->times[2] - 100.f*ib->times[2]);
 	/* float comparison: returns negative if b > a 
 	and positive if a > b. We multiplied result by 100.0
-	to preserve decimal fraction */ 
- 
-} 
+	to preserve decimal fraction */
+  }
 
   inline void AdvisorTable::sort_algo_list(sorted_list* algo_list, AlgoList currAlgoList, int length)
   {
@@ -129,6 +129,34 @@ namespace PAMI{
        tmpCurrAlgoList += lenChars;
      }
      lenChars = sprintf(tmpCurrAlgoList, "%d",algo_list[i].algo_id);
+  }
+
+  inline pami_result_t  AdvisorTable::check_params(advisor_params_t *params, char *filename, int mode)
+  {
+    // Check only on task 0
+    if(!_task_id && !filename)
+    {
+      fprintf(stderr, "Invalid input file name: %s\n", filename);
+      return PAMI_INVAL;
+    }
+
+    if(!params || mode != 1) // For now we support only mode = 1
+    {
+      if(!_task_id)
+        fprintf(stderr, "Invalid input parameters\n");
+      return PAMI_INVAL;
+    }
+
+    for (size_t i = 0; i < params->num_geometry_sizes; ++i)
+    {
+      if(params->geometry_sizes[i] == 0 || params->geometry_sizes[i] > _ntasks)
+      {
+        if(!_task_id)
+          fprintf(stderr, "Invalid input geometry size: %zu\n", params->geometry_sizes[i]);
+        return PAMI_INVAL;
+      }
+    }
+    return PAMI_SUCCESS;
   }
 
   inline void AdvisorTable::init(advisor_params_t *params)
@@ -205,7 +233,7 @@ namespace PAMI{
 
   // check if the directory for tmp output files exists
   // if not, create the directory
-  inline bool dir_check() 
+  inline bool dir_check()
   {
     struct stat st;
     bool res = (stat(TMP_OUTPUT_DIR, &st) == 0);
@@ -214,7 +242,7 @@ namespace PAMI{
         printf("Failed to create directory %s\n", TMP_OUTPUT_DIR);
         exit(-1);
       } else {
-        if (_g_verbose) 
+        if (_g_verbose)
           printf("Created directory %s\n", TMP_OUTPUT_DIR);
       }
 
@@ -225,7 +253,7 @@ namespace PAMI{
     return res;
   }
 
-  inline void dir_clean() 
+  inline void dir_clean()
   {
     DIR *dir;
     struct dirent *entry;
@@ -244,7 +272,7 @@ namespace PAMI{
           if (remove(path) != 0) {
             printf("Error deleting file %s\n", path);
           } else {
-            if (_g_verbose) 
+            if (_g_verbose)
               printf("File %s has been deleted\n", path);
           }
         }
@@ -252,11 +280,11 @@ namespace PAMI{
     }
     closedir(dir);
 
-    if (_g_verbose) 
+    if (_g_verbose)
       printf("Directory %s has been cleaned\n", TMP_OUTPUT_DIR);
 
     if (rmdir(TMP_OUTPUT_DIR) == 0) {
-      if (_g_verbose) 
+      if (_g_verbose)
         printf("Directory %s has been removed\n", TMP_OUTPUT_DIR);
     } else {
       printf("Failed to remove directory %s\n", TMP_OUTPUT_DIR);
@@ -266,13 +294,13 @@ namespace PAMI{
   }
 
   // make sure the file has the right size
-  inline bool file_check(char* fname) 
+  inline bool file_check(char* fname)
   {
     FILE* file;
     bool res = false;
     size_t readfsize = 0;
     size_t fsize = 0;
-    
+
     file = fopen(fname, "r");
     if (file != NULL) {
       if (fseek(file, 0, SEEK_END) == 0) {
@@ -286,7 +314,7 @@ namespace PAMI{
         }
       }
       fclose(file);
-    } 
+    }
 
     return res;
   }
@@ -333,37 +361,18 @@ namespace PAMI{
   }
 
   inline pami_result_t AdvisorTable::generate(char             *filename,
-      advisor_params_t *params,
-      int               mode)
+                                              advisor_params_t *params,
+                                              int               mode)
   {
-    //if(!filename || !params)
-    //return PAMI_INVAL;
-
+    pami_result_t result;
     pami_configuration_t config;
     pami_client_t client = _advisor._client;
     pami_context_t *contexts = _advisor._contexts;
+
     config.name = PAMI_CLIENT_TASK_ID;
-    pami_result_t result = PAMI_Client_query(client, &config, 1);
+    result = PAMI_Client_query(client, &config, 1);
     PAMI_assertf(result == PAMI_SUCCESS, "Failed to query client task id");
     _task_id = config.value.intval;
-
-    /* XML and CollselData related */
-    GeometryShapeMap     &ppn_map       = _collsel_data.get_datastore();
-    AlgoMap              *algo_map      = _collsel_data.get_algorithm_map();
-    AlgoNameToIdMap      *algo_name_map = _collsel_data.get_algorithm_name_map(); /* Used to get correct ids for algorithm based on their names */
-    AlgoMap              *tmp_algo_map  = NULL;
-    GeometrySizeMap      *geo_map       = NULL;
-    CollectivesMap       *coll_map      = NULL;
-    MessageSizeMap       *msg_map       = NULL;
-    AlgoList              currAlgoList  = NULL;
-    AlgoList              tempAlgoList  = (AlgoList)malloc(COLLSEL_MAX_ALGO*2);
-    MessageSizeMap        garbCollList;
-    size_t                garbCollIndx  = 0;
-    unsigned              algo_ids[PAMI_XFER_COUNT];
-    
-    memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
-    //algo_map[PAMI_XFER_BROADCAST].insert(Algo_Pair(0,0x1234567));
-
 
     config.name = PAMI_CLIENT_NUM_TASKS;
     result = PAMI_Client_query(client, &config, 1);
@@ -374,6 +383,9 @@ namespace PAMI{
     result = PAMI_Geometry_world(client, &world_geometry);
     PAMI_assertf(result == PAMI_SUCCESS, "Failed to get geometry world");
 
+    if((result = check_params(params, filename, mode)) != PAMI_SUCCESS)
+      return result;
+
     init(params);
     init_tables();
     init_cutoff_tables();
@@ -382,7 +394,23 @@ namespace PAMI{
     //gValidTable = alloc2DContig(op_count, dt_count);
     //setup_op_dt(gValidTable,sDt,sOp);
 
+    /* XML and CollselData related */
+    GeometryShapeMap     &ppn_map       = _collsel_data.get_datastore();
+    AlgoMap              *algo_map      = _collsel_data.get_algorithm_map();
+    /* Used to get correct ids for algorithm based on their names */
+    AlgoNameToIdMap      *algo_name_map = _collsel_data.get_algorithm_name_map();
+    AlgoMap              *tmp_algo_map  = NULL;
+    GeometrySizeMap      *geo_map       = NULL;
+    CollectivesMap       *coll_map      = NULL;
+    MessageSizeMap       *msg_map       = NULL;
+    MessageSizeMap        garbCollList;
+    size_t                garbCollIndx  = 0;
+    unsigned              algo_ids[PAMI_XFER_COUNT];
+    AlgoList              currAlgoList  = NULL;
+    AlgoList              tempAlgoList  = (AlgoList)malloc(COLLSEL_MAX_ALGO*2);
     size_t byte_thresh = (1*1024*1024);
+
+    memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
 
     // tmp output file name
     char   tmp_output_fname[128];
