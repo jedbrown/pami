@@ -65,6 +65,11 @@ void cb_done (void *ctxt, void * clientdata, pami_result_t err)
 #ifdef PAMI_TEST_STRICT
     assert(rc == PAMI_SUCCESS || rc == PAMI_INVAL);
 #endif
+    if(gVerbose==2)
+      fprintf(stderr,
+              "(%d/%d) cb_done(%p/%p, %p(%d))\n",
+              (int)pthread_self(),gThreadId,
+              ctxt, gContext,clientdata, *(int*)clientdata);    
   }
 
   int * active = (int *) clientdata;
@@ -80,6 +85,11 @@ int blocking_coll (pami_context_t      context,
   pami_result_t result;
   gContext = context;
   (*active)++;
+  if(gVerbose==2)
+    fprintf(stderr,
+            "(%d/%d) blocking_coll(%p/%p, %p, %p(%d))\n",
+            (int)pthread_self(),gThreadId,
+            context,gContext,coll, active, *(int*)active);    
   result = PAMI_Collective(context, coll);
   if (result != PAMI_SUCCESS)
     {
@@ -87,6 +97,16 @@ int blocking_coll (pami_context_t      context,
       gContext = NULL;
       return 1;
     }
+  if(gVerbose==2)
+  {
+    int i=10000;
+    while (*active && --i)
+      result = PAMI_Context_advance (context, 1);
+    fprintf(stderr,
+            "(%d/%d) blocking_coll(%p/%p, %p, %p(%d))\n",
+            (int)pthread_self(),gThreadId,
+            context, gContext,coll, active, *(int*)active);    
+  }
   while (*active)
     result = PAMI_Context_advance (context, 1);
   gContext = NULL;
@@ -101,6 +121,11 @@ int blocking_coll_advance_all (unsigned             myctxt_idx,
   pami_result_t result;
   gContext = contexts[myctxt_idx];
   (*active)++;
+  if(gVerbose==2)
+    fprintf(stderr,
+            "(%d/%d) blocking_coll_advance_all(%d/%p/%p, %p, %p(%d))\n",
+            (int)pthread_self(),gThreadId,
+            myctxt_idx,contexts[myctxt_idx], gContext,coll, active, *(int*)active);    
   result = PAMI_Collective(contexts[myctxt_idx], coll);
   if (result != PAMI_SUCCESS)
     {
@@ -108,6 +133,20 @@ int blocking_coll_advance_all (unsigned             myctxt_idx,
       gContext = NULL;
       return 1;
     }
+  if(gVerbose==2)
+  {
+    int i=10000;
+    unsigned counter = myctxt_idx;
+    while (*active && --i)
+    {
+      result = PAMI_Context_advance (contexts[counter], 1);
+      counter = (counter+1) % gNum_contexts;
+    }
+    fprintf(stderr,
+            "(%d/%d) blocking_coll_advance_all(%d/%p/%p, %p, %p(%d))\n",
+            (int)pthread_self(),gThreadId,
+            myctxt_idx, contexts[myctxt_idx], gContext,coll, active, *(int*)active);    
+  }
   unsigned counter = myctxt_idx;
   while (*active)
   {
@@ -295,9 +334,9 @@ int create_all_ctxt_geometry(pami_client_t           client,
                                            contexts[0],
                                            cb_done,
                                            &geom_init);
-    if (result != PAMI_SUCCESS)
+    if ((result != PAMI_SUCCESS) || (*new_geometry == NULL))
     {
-      fprintf (stderr, "Error. Unable to create a new geometry. result = %d\n", result);
+      fprintf (stderr, "Error. Unable to create a new geometry (%p). result = %d\n", new_geometry, result);
       return 1;
     }
     unsigned long long cnt=0;

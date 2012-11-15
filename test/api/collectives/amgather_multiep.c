@@ -65,7 +65,6 @@ size_t               num_tasks;
 size_t               num_ep;
 pami_context_t      *context;
 pami_client_t        client;
-int                  fence_arrivals;
 int                 _gRc = PAMI_SUCCESS;
 
 /**
@@ -181,12 +180,6 @@ typedef struct thread_data_t
 } thread_data_t;
 
 
-void fence_cb_done (void *ctxt, void * clientdata, pami_result_t err)
-{
-  volatile int *arrived = (volatile int *) clientdata;
-  (*arrived)--;
-}
-
 int main(int argc, char*argv[])
 {
   setup_env();
@@ -213,7 +206,7 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,    /* task id            */
                      &num_tasks);    /* number of tasks    */
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   num_ep = num_tasks *gNum_contexts;
@@ -243,7 +236,7 @@ int main(int argc, char*argv[])
                              &must_query_algo,
                              &must_query_md);
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Create the range geometry */
@@ -269,17 +262,16 @@ int main(int argc, char*argv[])
                                  rangecount,
                                  1);
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Set up world barrier */
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
-  fence_arrivals = num_threads;
 
   rc |= blocking_coll_advance_all(0, context, &barrier, &poll_flag);
-  if (rc == 1) return 1;
+  if (rc != PAMI_SUCCESS) return 1;
   int t;
 
   assert(gNum_contexts >= num_threads);
@@ -528,13 +520,6 @@ fn_exit:
 
   validation = (char*)validation - gBuffer_offset;
   free(validation);
-
-  rc = PAMI_Fence_all (myContext,
-                       fence_cb_done,
-                       &fence_arrivals);
-
-  while (fence_arrivals != 0)
-    rc = PAMI_Context_advance (myContext, 1);
 
   pthread_exit(NULL);
 }

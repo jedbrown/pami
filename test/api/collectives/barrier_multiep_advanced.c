@@ -68,7 +68,7 @@ int main(int argc, char*argv[])
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   assert(task_id >= 0);
@@ -85,7 +85,7 @@ int main(int argc, char*argv[])
                              &must_query_algo,
                              &must_query_md);
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Create the range geometry */
@@ -110,7 +110,7 @@ int main(int argc, char*argv[])
                                  rangecount,
                                  iContext+1);
 
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /* variables to control the delay for barrier correctness */
@@ -123,7 +123,7 @@ int main(int argc, char*argv[])
   barrier.algorithm = always_works_algo[0];
 
   rc |= blocking_coll_advance_all(iContext, context, &barrier, &poll_flag);
-  if (rc == 1) return 1;
+  if (rc != PAMI_SUCCESS) return 1;
   int t;
   /* here we start a number of threads; each of them will query geometry and run an algo*/
 

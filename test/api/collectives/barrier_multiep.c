@@ -32,19 +32,12 @@ pami_task_t          task_id;
 size_t               num_tasks;
 pami_context_t      *context;
 pami_client_t        client;
-int fence_arrivals;
 
 typedef struct thread_data_t
 {
   pami_context_t context;
   int            tid;
 } thread_data_t;
-
-void fence_cb_done (void *ctxt, void * clientdata, pami_result_t err)
-{
-  int * arrived = (int *) clientdata;
-  (*arrived)--;
-}
 
 int main(int argc, char*argv[])
 {
@@ -74,7 +67,7 @@ int main(int argc, char*argv[])
                      0,              /* no configuration   */
                      &task_id,       /* task id            */
                      &num_tasks);    /* number of tasks    */
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   assert(task_id >= 0);
@@ -99,7 +92,7 @@ int main(int argc, char*argv[])
                              &always_works_md,
                              &must_query_algo,
                              &must_query_md);
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Create the range geometry */
@@ -119,18 +112,17 @@ int main(int argc, char*argv[])
                                  range,
                                  rangecount,
                                  1);
-  if (rc == 1)
+  if (rc != PAMI_SUCCESS)
     return 1;
 
   /*  Set up world barrier */
   barrier.cb_done   = cb_done;
   barrier.cookie    = (void*) & poll_flag;
   barrier.algorithm = always_works_algo[0];
-  fence_arrivals = num_threads;
 
   gContext = context[0];
   rc |= blocking_coll_advance_all(0, context, &barrier, &poll_flag);
-  if (rc == 1) return 1;
+  if (rc != PAMI_SUCCESS) return 1;
   int t;
 
   if(task_id == 0) printf("%s:  Tasks:%zu Threads/task:%d Contexts/task:%zu\n",
@@ -259,12 +251,6 @@ static void * barrier_test(void* p)
   free(newbar_md);
   free(q_newbar_algo);
   free(q_newbar_md);
-  rc = PAMI_Fence_all (myContext,
-		       fence_cb_done,
-		       &fence_arrivals);
-
-  while (fence_arrivals != 0)
-    rc = PAMI_Context_advance (myContext, 1);
 
   pthread_exit(NULL);
 }
