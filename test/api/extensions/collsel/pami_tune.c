@@ -295,7 +295,6 @@ static int process_output_file(char *filename, char **out_file)
 {
   char *newname;
   int i, filename_len, ret = 0;
-  FILE *of;
 
   filename_len = strlen(filename);
 
@@ -320,22 +319,11 @@ static int process_output_file(char *filename, char **out_file)
       return 1;
     }
   }
-  /* Verify if the output file can be created */
-  of = fopen(filename, "w");
-  if (of == NULL)
-  {
-    fprintf(stderr, "Error creating output file: %s\n", filename);
-    ret = 1;
-  }
-  else
-  {
-    fclose(of);
-    remove(filename);
-    /* if file name is already set via config file, free it */
-    if(*out_file) free(*out_file);
-    *out_file = (char *) malloc(filename_len + 1);
-    strcpy(*out_file, filename);
-  }
+  /* if file name is already set via config file, free it */
+  if(*out_file) free(*out_file);
+  *out_file = (char *) malloc(filename_len + 1);
+  strcpy(*out_file, filename);
+
   return ret;
 }
 
@@ -415,7 +403,7 @@ static int process_ini_file(const char *filename, advisor_params_t *params, char
     }
     else if(strcmp(name, "output_file") == 0)
     {
-      if(!*out_file)
+      if(!*out_file && !task_id) /* Only task 0 creates o/p file */
         ret = process_output_file(value, out_file);
     }
     else if(strcmp(name, "iterations") == 0)
@@ -683,7 +671,7 @@ int main(int argc, char ** argv)
 
   pami_extension_collsel_destroy pamix_collsel_destroy =
     (pami_extension_collsel_destroy) PAMI_Extension_symbol (extension, "Collsel_destroy_fn");
-  status = pamix_collsel_destroy (advisor);
+  status = pamix_collsel_destroy (&advisor);
 
 
   status = PAMI_Extension_close (extension);

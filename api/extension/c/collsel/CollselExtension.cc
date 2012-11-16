@@ -27,15 +27,21 @@ pami_result_t CollselExtension::Collsel_init_fn(pami_client_t            client,
                                                 size_t                   num_contexts,
                                                 advisor_t                *advisor)
 {
-  *advisor = (advisor_t*)new Advisor(client,configuration,num_configs,
-                                    contexts,num_contexts);
+  *advisor = (advisor_t) new Advisor(client,configuration,num_configs,
+                                     contexts,num_contexts);
   return PAMI_SUCCESS;
 }
 
 pami_result_t CollselExtension::Collsel_destroy_fn(advisor_t *advisor)
 {
-  Advisor *deleteme = (Advisor *)advisor;
-  delete deleteme;
+  Advisor *adv = (Advisor *) *advisor;
+
+  if(adv == NULL)
+    return PAMI_INVAL;
+
+  delete adv;
+  *advisor = NULL;
+
   return PAMI_SUCCESS;
 }
 

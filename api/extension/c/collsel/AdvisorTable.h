@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <string>
 #include <dirent.h>
+#include <stdio.h>
 using namespace std;
 
 #define DOUBLE_DIG (9.999999999999999e99)
@@ -135,10 +136,28 @@ namespace PAMI{
   inline pami_result_t  AdvisorTable::check_params(advisor_params_t *params, char *filename, int mode)
   {
     // Check only on task 0
-    if(!_task_id && !filename)
+    if(!_task_id)
     {
-      fprintf(stderr, "Invalid input file name: %s\n", filename);
-      return PAMI_INVAL;
+      if(!filename)
+      {
+        fprintf(stderr, "Invalid input file name: %s\n", filename);
+        return PAMI_INVAL;
+      }
+      else
+      {
+        /* Verify if the output file can be created */
+        FILE *of = fopen(filename, "w");
+        if (of == NULL)
+        {
+          fprintf(stderr, "Error creating output file: %s\n", filename);
+          return PAMI_ERROR;
+        }
+        else
+        {
+          fclose(of);
+          remove(filename);
+        }
+      }
     }
 
     if(!params || mode != 1) // For now we support only mode = 1
@@ -214,9 +233,6 @@ namespace PAMI{
         _params.geometry_sizes[_params.num_geometry_sizes - 1] = 2;
       }
       _free_geometry_sz = true;
-      _g_verify         = _params.verify;
-      _g_verbose        = _params.verbose;
-      _g_checkpoint     = _params.checkpoint;
     }
 
     if(!_params.num_message_sizes)
@@ -230,6 +246,9 @@ namespace PAMI{
 
       _free_message_sz = true;
     }
+    _g_verify         = _params.verify;
+    _g_verbose        = _params.verbose;
+    _g_checkpoint     = _params.checkpoint;
   }
 
   // check if the directory for tmp output files exists
@@ -382,8 +401,30 @@ namespace PAMI{
     result = PAMI_Geometry_world(client, &world_geometry);
     PAMI_assertf(result == PAMI_SUCCESS, "Failed to get geometry world");
 
-    if((result = check_params(params, filename, mode)) != PAMI_SUCCESS)
-      return result;
+    // Setup bcast on world geometry
+    pami_xfer_t bcast;
+    char buf;
+    pami_endpoint_t root_ep;
+    pami_task_t root_task = (pami_task_t)ROOT;
+    PAMI_Endpoint_create(client, root_task, 0, &root_ep);
+    volatile unsigned bcast_poll_flag = 0;
+    query_geometry_algorithm_aw(client, contexts[0], world_geometry, PAMI_XFER_BROADCAST, &bcast);
+    bcast.cb_done                      = cb_done;
+    bcast.cookie                       = (void*)&bcast_poll_flag;
+    bcast.cmd.xfer_broadcast.buf       = &buf;
+    bcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
+    bcast.cmd.xfer_broadcast.typecount = 1;
+    bcast.cmd.xfer_broadcast.root      = root_ep;
+
+    result = check_params(params, filename, mode);
+    // Send result of param check to all other tasks (only task 0 checks o/p file)
+    if(!_task_id)
+      buf = (char) result;
+
+    blocking_coll(contexts[0], &bcast, &bcast_poll_flag);
+
+    if(buf != PAMI_SUCCESS)
+      return (pami_result_t) buf;
 
     init(params);
     init_tables();
@@ -404,12 +445,10 @@ namespace PAMI{
     MessageSizeMap       *msg_map       = NULL;
     MessageSizeMap        garbCollList;
     size_t                garbCollIndx  = 0;
-    unsigned              algo_ids[PAMI_XFER_COUNT];
+    unsigned              algo_ids[PAMI_XFER_COUNT] = {0};
     AlgoList              currAlgoList  = NULL;
     AlgoList              tempAlgoList  = (AlgoList)malloc(COLLSEL_MAX_ALGO*2);
     size_t byte_thresh = (1*1024*1024);
-
-    memset(algo_ids, 0, sizeof(unsigned) * PAMI_XFER_COUNT);
 
     // tmp output file name
     char   tmp_output_fname[128];
@@ -431,20 +470,7 @@ namespace PAMI{
       barrier.cb_done   = cb_done;
       barrier.cookie    = (void*) & barrier_poll_flag;
 
-      // Setup bcast on world geometry
-      pami_xfer_t bcast;
-      char buf = FILE_CHECK;
-      pami_endpoint_t root_ep;
-      pami_task_t root_task = (pami_task_t)ROOT;
-      PAMI_Endpoint_create(client, root_task, 0, &root_ep);
-      volatile unsigned bcast_poll_flag = 0;
-      query_geometry_algorithm_aw(client, contexts[0], world_geometry, PAMI_XFER_BROADCAST, &bcast);
-      bcast.cb_done                      = cb_done;
-      bcast.cookie                       = (void*)&bcast_poll_flag;
-      bcast.cmd.xfer_broadcast.buf       = &buf;
-      bcast.cmd.xfer_broadcast.type      = PAMI_TYPE_BYTE;
-      bcast.cmd.xfer_broadcast.typecount = 1;
-      bcast.cmd.xfer_broadcast.root      = root_ep;
+      buf = FILE_CHECK;
 
       // Allocate buffers to store algorithms and metadata
       pami_algorithm_t  col_algo[COLLSEL_MAX_ALGO];
@@ -814,7 +840,8 @@ namespace PAMI{
       if(!_task_id)
       {
         PAMI::XMLWriter<>  xml_creator;
-        xml_creator.write_xml(filename, ppn_map, algo_map);
+        if(xml_creator.write_xml(filename, ppn_map, algo_map))
+          return PAMI_ERROR;
 
         // since all the interations passed with no issue
         // remove all the tmp output files
