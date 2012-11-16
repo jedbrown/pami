@@ -461,7 +461,6 @@ namespace PAMI{
     {
       size_t psize, gsize, csize, msize, algo, i, j, flen;
       size_t act_msg_size[COLLSEL_MAX_NUM_MSG_SZ];
-      size_t act_num_msg_size = 0;
       int geometry_id = 1;
       // Setup barrier on world geometry
       pami_xfer_t barrier;
@@ -570,18 +569,20 @@ namespace PAMI{
               // Loop on message size
               size_t msg_sz_num;
               if (coll_xfer_type == PAMI_XFER_BARRIER) {
-                msg_sz_num = 1;
+                act_msg_size[0] = 0;
+                msg_sz_num      = 1;
               } else {
-                msg_sz_num = _params.num_message_sizes;
+                for (i = 0; i < _params.num_message_sizes &&
+                    _params.message_sizes[i] <= msg_thresh; i ++) {
+                  act_msg_size[i] = MIN(_params.message_sizes[i], msg_thresh);
+                }
+                msg_sz_num = i;
               }
+              if(_g_verbose && !_task_id) 
+                printf("Number of message sizes for this collective is %zu\n", 
+                    msg_sz_num);
 
               for(msize = 0; msize < msg_sz_num; msize ++) {
-                if (coll_xfer_type != PAMI_XFER_BARRIER && _params.message_sizes[msize] > msg_thresh) {
-                  continue;
-                }
-
-                act_msg_size[msize] = MIN(_params.message_sizes[msize], msg_thresh);
-
                 if(_g_verbose && !_task_id) 
                 {
                     printf("# Algorithm                           Message Size    Min (usec)        Max (usec)        Avg (usec)\n");
@@ -738,9 +739,9 @@ namespace PAMI{
 
                     if(act_msg_size[msize] <low || act_msg_size[msize] > high)
                     {
-                        if(_g_verbose && !_task_id)
-                          printf("  %s skipped as message size %zu is not in range (%zu-%zu)\n", 
-                              algo_name, act_msg_size[msize], low, high);
+                      if(_g_verbose && !_task_id)
+                        printf("  %s skipped as message size %zu is not in range (%zu-%zu)\n", 
+                            algo_name, act_msg_size[msize], low, high);
                       algo_list[algo].times[0] = DOUBLE_DIG;
                       algo_list[algo].times[1] = DOUBLE_DIG;
                       algo_list[algo].times[2] = DOUBLE_DIG;
@@ -819,11 +820,8 @@ namespace PAMI{
               if(!_task_id)
               {
                  if(currAlgoList != NULL)
-                  (*msg_map)[act_msg_size[msize-1]] = currAlgoList;
+                  (*msg_map)[act_msg_size[msg_sz_num-1]] = currAlgoList;
               }
-              // store the actual number of message sizes
-              act_num_msg_size = msize;
-
               //a bunch of free here
               release_coll(coll, coll_xfer_type);
               // Destroy the sub geometry
