@@ -37,6 +37,13 @@ namespace PAMI
   typedef std::map<unsigned, CollectivesMap> GeometrySizeMap;  // Key is the geometry size 
   typedef std::map<unsigned, GeometrySizeMap> GeometryShapeMap;// Key is the geometry shape (PPN)
 
+  struct CollselQuery
+  {
+    CollectivesMap    *coll_map;
+    pami_algorithm_t **algorithms;
+    pami_metadata_t  **metadata;
+  };
+
   class CollselData
   {
     public:

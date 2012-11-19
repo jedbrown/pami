@@ -25,10 +25,12 @@
 #include "CollselData.h"
 #include "CollselXMLWriter.h"
 #include "CollselXMLParser.h"
+#include "algorithms/geometry/Geometry.h"
 #include <sys/stat.h>
 #include <string>
 #include <dirent.h>
 #include <stdio.h>
+
 using namespace std;
 
 #define DOUBLE_DIG (9.999999999999999e99)
@@ -75,7 +77,18 @@ namespace PAMI{
                              advisor_params_t *params,
                              int               mode);
       pami_result_t load(char* filename);
+
       pami_result_t unload();
+
+      pami_result_t query(pami_geometry_t geometry,
+                          fast_query_t   *query_handle);
+
+      pami_result_t advise(fast_query_t     *query_handle,
+                           pami_xfer_type_t  xfer_type,
+                           pami_xfer_t        *xfer,
+                           advisor_algorithm_t optimal_algorithms[],
+                           size_t              max_algorithms);
+ 
     private:
       pami_result_t  check_params(advisor_params_t *params, char *filename, int mode);
       void init(advisor_params_t *params);
@@ -807,8 +820,8 @@ namespace PAMI{
                   }
 
                   if(strcmp((const char *)currAlgoList, (const char *)tempAlgoList) != 0)
-                  { 
-                    (*msg_map)[act_msg_size[msize-1]] = currAlgoList;                  
+                  {
+                    (*msg_map)[act_msg_size[msize-1]] = currAlgoList;
                     currAlgoList = (AlgoList)malloc(strlen((char*)tempAlgoList) + 1);
                     memset(currAlgoList, 0,  strlen((char*)tempAlgoList) + 1);
                     garbCollList[garbCollIndx++]      = currAlgoList;
@@ -872,6 +885,71 @@ namespace PAMI{
   inline pami_result_t AdvisorTable::unload()
   {
     return PAMI_SUCCESS;
+  }
+
+  inline pami_result_t AdvisorTable::query(pami_geometry_t geo,
+                                           fast_query_t   *query)
+  {
+    pami_result_t ret = PAMI_SUCCESS;
+    PAMI::Geometry::Common *geometry = (PAMI::Geometry::Common*) geo;
+
+    size_t geo_size = geometry->size();
+    // We have just a static ppn entry for now
+    GeometrySizeMap *geo_size_map =
+        _collsel_data.find_nearest_geometry_shape(1);
+
+    CollectivesMap *coll_map =
+        _collsel_data.find_nearest_geometry_size(geo_size, geo_size_map);
+
+    pami_algorithm_t **algorithms;
+    pami_metadata_t  **metadata;
+    algorithms = (pami_algorithm_t **)
+      calloc(PAMI_XFER_COUNT, sizeof(pami_algorithm_t *));
+    metadata = (pami_metadata_t **)
+      calloc(PAMI_XFER_COUNT, sizeof(pami_metadata_t *));
+
+    size_t algo_num[2];
+    pami_xfer_type_t coll;
+    CollectivesMap::iterator c_iter;
+
+    for(c_iter = coll_map->begin(); c_iter != coll_map->end(); ++c_iter)
+    {
+      coll = (pami_xfer_type_t)c_iter->first;
+      geometry->algorithms_num(coll, algo_num);
+
+      algorithms[coll] = (pami_algorithm_t *)
+        malloc((algo_num[0] + algo_num[1]) * sizeof(pami_algorithm_t));
+      metadata[coll] = (pami_metadata_t *)
+        malloc((algo_num[0] + algo_num[1]) * sizeof(pami_metadata_t));
+
+      geometry->algorithms_info(coll,
+                                &algorithms[coll][0],
+                                &metadata[coll][0],
+                                algo_num[0],
+                                &algorithms[coll][algo_num[0]],
+                                &metadata[coll][algo_num[0]],
+                                algo_num[1]);
+
+    }
+
+    CollselQuery *q = new CollselQuery();
+    q->coll_map   = coll_map;
+    q->algorithms = algorithms;
+    q->metadata   = metadata;
+
+    *query = q;
+
+    return ret;
+  }
+
+  pami_result_t AdvisorTable::advise(fast_query_t       *query,
+                                     pami_xfer_type_t    xfer_type,
+                                     pami_xfer_t        *xfer,
+                                     advisor_algorithm_t optimal_algorithms[],
+                                     size_t              max_algorithms)
+  {
+    pami_result_t ret = PAMI_SUCCESS;
+    return ret;
   }
 
 }

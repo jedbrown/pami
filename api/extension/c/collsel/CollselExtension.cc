@@ -90,7 +90,11 @@ pami_result_t CollselExtension::Collsel_query_fn(advisor_table_t *advisor_table,
                                                  pami_geometry_t  geometry,
                                                  fast_query_t    *fast_query)
 {
-  // Todo:  Implement
+  pami_result_t res;
+  AdvisorTable *at = (AdvisorTable*) *advisor_table;
+
+  res = at->query(geometry, fast_query);
+
   return PAMI_SUCCESS;
 }
 

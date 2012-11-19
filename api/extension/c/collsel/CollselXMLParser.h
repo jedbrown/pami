@@ -100,6 +100,28 @@ namespace PAMI
         return ret;
       }
 
+      /** 
+       * Convert the comma separated characters to numeric form.
+       * strtok followed by strtol/atoi is expensive
+       */
+      void to_numeric(unsigned char *nalgo, const char *algo, int algo_sz)
+      {
+        unsigned char val = 0;
+        int i = 0, j = 1;
+        for(; i < algo_sz; ++i)
+        {
+          if(algo[i] == ',')
+          {
+            nalgo[j++] = val;
+            val = 0;
+            continue;
+          }
+          val = 10 * val + algo[i] - '0';
+        }
+        nalgo[j] = val;
+        // Store array size as first element
+        nalgo[0] = j;
+      }
 
       int parse_collective_selection_data(xml_node<Ch> *geometries_node,
                                           CollselData  *data)
@@ -168,18 +190,15 @@ namespace PAMI
                 goto invalid_data;
               }
               tmp_node = tmp_node->next_sibling(); // algorithms
-              // Allocate memory from memory pool & copy value to it
-              char *algo_list = data->mempool_allocate(tmp_node->value_size() + 1);
-              strcpy(algo_list, tmp_node->value());
+              // Allocate memory from pool & copy numeric algo IDs
+              // We might end up allocating a few extra bytes here if id > 10
+              // Allocate an extra byte to store the size (at offset 0) of the array
+              unsigned char *algo_list = (unsigned char *)
+                data->mempool_allocate(((tmp_node->value_size() + 1) / 2) + 1);
+              to_numeric(algo_list, tmp_node->value(), tmp_node->value_size());
 
-              collsel_data[ppn][geo_size][coll_id][size_min] = (unsigned char*) algo_list;
-              collsel_data[ppn][geo_size][coll_id][size_max] = (unsigned char*) algo_list;
-
-              //printf("data[%u][%u][%u][%zu]: = %s\n", ppn, geo_size, coll_id, size_min,
-              //       collsel_data[ppn][geo_size][coll_id][size_min]);
-              //if(size_min != size_max)
-              //  printf("data[%u][%u][%u][%zu]: = %s\n", ppn, geo_size, coll_id, size_max,
-              //       collsel_data[ppn][geo_size][coll_id][size_max]);
+              collsel_data[ppn][geo_size][coll_id][size_min] = algo_list;
+              collsel_data[ppn][geo_size][coll_id][size_max] = algo_list;
             }
           }
         }
