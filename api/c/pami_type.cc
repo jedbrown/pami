@@ -199,10 +199,9 @@ pami_result_t PAMI_Type_serialize (pami_type_t   type,
                                    size_t      * size)
 {
     TypeCode * type_obj = (TypeCode *)type;
-    if (type_obj->IsCompleted()) {
+    if (! type_obj->IsCompleted()) {
         RETURN_ERR_PAMI(PAMI_INVAL, "Serializing an incompleted type.\n");
     }
-
     *address = type_obj->GetCodeAddr();
     *size    = type_obj->GetCodeSize();
     return PAMI_SUCCESS;
@@ -215,6 +214,7 @@ pami_result_t PAMI_Type_deserialize (pami_type_t * type,
     try {
         TypeCode * type_obj = new TypeCode(address, size);
         assert(size == type_obj->GetCodeSize());
+        type_obj->AcquireReference();
         *type = (pami_type_t)type_obj;
     } catch (std::bad_alloc) {
         *type = NULL;
