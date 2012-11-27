@@ -146,7 +146,7 @@ int query_geometry_world(pami_client_t       client,
                                         xfer_type,
                                         num_algorithm);
 
-  if (result != PAMI_SUCCESS || num_algorithm[0]==0)
+  if (result != PAMI_SUCCESS || (num_algorithm[0]==0 && num_algorithm[1]==0))
     {
       fprintf (stderr,
                "Error. Unable to query algorithm, or no algorithms available result = %d\n",
@@ -238,7 +238,7 @@ int query_geometry(pami_client_t       client,
                                         xfer_type,
                                         num_algorithm);
 
-  if (result != PAMI_SUCCESS || num_algorithm[0]==0)
+  if (result != PAMI_SUCCESS || (num_algorithm[0]==0 && num_algorithm[1]==0))
     {
       fprintf (stderr,
                "Error. query, Unable to query algorithm, or no algorithms available result = %d\n",
@@ -442,17 +442,57 @@ metadata_result_t check_metadata(pami_metadata_t md,
       result.check.continuous_recv = !primitive_dt(r_dt);
   }
   if(gVerbose==2)
-    printf("Query Result: unspec=%u range=%u align_rbuf=%u align_sbuf=%u dt_op=%u cgs=%u cgr=%u cts=%u ctr=%u nonlocal=%u\n",
-           result.check.unspecified,
-           result.check.range,
-           result.check.align_send_buffer,
-           result.check.align_recv_buffer,
-           result.check.datatype_op,
-           result.check.contiguous_send,
-           result.check.contiguous_recv,
-           result.check.continuous_send,
-           result.check.continuous_recv,
-           result.check.nonlocal);
+  {
+      printf("Metadata: "
+             "checkrequired %d, "
+             "check_fn      %p, \n"
+   "          rangeminmax   %d, "
+             "range_lo      %zd, "
+             "range_hi      %zd,\n"
+   "          recvminalign  %d, "
+             "sendminalign  %d,\n"
+   "          alldtop       %d,\n"
+   "          asyncflowctl  %d, "
+             "blocking      %d, "
+             "global_order  %d, "
+             "inplace       %d,\n"
+   "          continrflags  %d, "
+             "continsflags  %d, "
+             "contigrflags  %d, "
+             "contigsflags  %d\n"
+   "          oneatatime    %d, "
+             "nonlocal      %d,\n",
+             md.check_correct.values.checkrequired,
+                                  md.check_fn,
+             md.check_correct.values.rangeminmax,
+                                  (ssize_t)md.range_lo,
+                                  (ssize_t)md.range_hi,
+             md.check_correct.values.recvminalign,
+             md.check_correct.values.sendminalign,
+             md.check_correct.values.alldtop,
+             md.check_correct.values.asyncflowctl,
+             md.check_correct.values.blocking,
+             md.check_correct.values.global_order,
+             md.check_correct.values.inplace,
+             md.check_correct.values.continrflags,
+             md.check_correct.values.continsflags,
+             md.check_correct.values.contigrflags,
+             md.check_correct.values.contigsflags,
+             md.check_correct.values.oneatatime,
+             md.check_correct.values.nonlocal
+             );
+      printf("Query Result: unspec=%u range=%u align_rbuf=%u align_sbuf=%u dt_op=%u cgs=%u cgr=%u cts=%u ctr=%u nonlocal=%u\n",
+             result.check.unspecified,
+             result.check.range,
+             result.check.align_send_buffer,
+             result.check.align_recv_buffer,
+             result.check.datatype_op,
+             result.check.contiguous_send,
+             result.check.contiguous_recv,
+             result.check.continuous_send,
+             result.check.continuous_recv,
+             result.check.nonlocal);
+  }
   return result;
 }
 

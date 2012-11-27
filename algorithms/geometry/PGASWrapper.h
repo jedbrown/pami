@@ -137,10 +137,17 @@ namespace PAMI
       virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
         {
           new(mdata) PAMI::Geometry::Metadata(_string);
-          if(strstr(_string,"Short")) /// \todo arbitrary hack for now
+          if(strstr(_string,"Short"))
           {  
             mdata->check_correct.values.rangeminmax = 1;
             mdata->range_hi = 512; 
+          }
+          if(strstr(_string,"Scan") || 
+             strstr(_string,"Alltoallv_int") ||
+             strstr(_string,"Alltoall:")
+             )
+          {  
+            mdata->check_correct.values.inplace = 0;
           }
 #ifdef XLPGAS_PAMI_CAU
 	  if(strstr(_string,"HybridShortAllreduce"))

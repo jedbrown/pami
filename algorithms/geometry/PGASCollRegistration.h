@@ -609,7 +609,7 @@ namespace PAMI
                                     _context,
 				    _context_id);
 #endif
-	    geometry->addCollective(PAMI_XFER_ALLTOALL,
+	    geometry->addCollectiveCheck(PAMI_XFER_ALLTOALL,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoall_reg,
                                     _context,
 				    _context_id);
@@ -619,7 +619,7 @@ namespace PAMI
                                     _context,
 				    _context_id);
 
-	    geometry->addCollective(PAMI_XFER_ALLTOALLV_INT,
+	    geometry->addCollectiveCheck(PAMI_XFER_ALLTOALLV_INT,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_alltoallvint_reg,
                                     _context,
 				    _context_id);
@@ -629,7 +629,7 @@ namespace PAMI
                                     _context,
 				    _context_id);
 
-	    geometry->addCollective(PAMI_XFER_SCAN,
+	    geometry->addCollectiveCheck(PAMI_XFER_SCAN,
 				    (CCMI::Adaptor::CollectiveProtocolFactory*)_scan_reg,
                                     _context,
 				    _context_id);

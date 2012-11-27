@@ -19,7 +19,8 @@
  * \brief Simple Alltoallv test on world geometry with contiguous datatypes
  */
 
-/* see setup_env() for environment variable overrides               */
+/* Use arg -h or see setup_env() for environment variable overrides  */
+
 #define COUNT     (4096)
 #define NITERLAT   100
 
@@ -66,7 +67,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          alltoallv;
 
   /* Process environment variables and setup globals */
-  setup_env();
+  if(argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'h' || argv[1][1] == 'H') ) setup_env_internal(1);
+  else setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
@@ -225,7 +227,9 @@ int main(int argc, char*argv[])
             if (task_id == 0)
               printf("Running Alltoallv: %s\n", dt_array_str[dt]);
 
-            for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
+            for ( i = gMin_byte_count? MAX(1,gMin_byte_count/get_type_size(dt_array[dt])) : 0; /*clumsy, only want 0 if hardcoded to 0, othersize min 1 */
+                  i <= gMax_byte_count/get_type_size(dt_array[dt]); 
+                  i = i ? i*2 : 1 /* handle zero min */)
             {
               size_t dataSent = i * get_type_size(dt_array[dt]);
               int          niter;

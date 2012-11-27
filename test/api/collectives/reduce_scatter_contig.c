@@ -19,7 +19,7 @@
  * \brief Simple reduce_scatter on world geometry with contiguous datatypes
  */
 
-/* see setup_env() for environment variable overrides               */
+/* Use arg -h or see setup_env() for environment variable overrides  */
 #define COUNT      65536
 #define NITERLAT   10
 
@@ -60,7 +60,8 @@ int main(int argc, char*argv[])
 
   size_t *rcounts;
   /* Process environment variables and setup globals */
-  setup_env();
+  if(argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'h' || argv[1][1] == 'H') ) setup_env_internal(1);
+  else setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
@@ -225,6 +226,7 @@ int main(int argc, char*argv[])
               }
 
               /* Do one 'in-place' collective and validate it */
+              if(gTestMpiInPlace && (!query_protocol || (query_protocol && next_md->check_correct.values.inplace)))
               {
                 reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;
                 reduce_scatter.cmd.xfer_reduce_scatter.rcvbuf    = sbuf;
@@ -243,6 +245,7 @@ int main(int argc, char*argv[])
 
               if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
               }
+              else if(gTestMpiInPlace && gVerbose>=2 && (task_id == task_zero)) printf("%s does not support IN PLACE buffering\n", gProtocolName);
 
               /* Iterate (and time) with separate buffers, not in-place */
               reduce_scatter.cmd.xfer_reduce_scatter.sndbuf    = sbuf;

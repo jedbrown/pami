@@ -236,7 +236,7 @@ int pami_init(pami_client_t        * client,          /* in/out:  client      */
         return 1;
       }
   max_contexts = l_configuration.value.intval;
-  *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts;
+  *num_tasks = (*num_tasks<max_contexts)?*num_tasks:max_contexts; /* ???? uninitalized num_tasks being used? and what's the intent? */
 
   l_configuration.name = PAMI_CLIENT_TASK_ID;
   result = PAMI_Client_query(*client, &l_configuration,1);
@@ -324,7 +324,7 @@ unsigned gNumRoots       = -1; /* use num_tasks */
 unsigned gFull_test      = FULL_TEST;
 unsigned gMax_datatype_sz= 32; /* Assumed max datatype size */
 unsigned gMax_byte_count = COUNT;
-unsigned gMin_byte_count = 0;
+unsigned gMin_byte_count = 1;
 unsigned gTestMpiInPlace = 1;
 unsigned gAllowNullSendBuffer = 1;
 unsigned gBuffer_offset  = OFFSET;
@@ -338,31 +338,46 @@ int      gOptimize       = -1; /* default, no de/optimize */
 
 void setup_op_dt(size_t ** validTable,char* sDt, char* sOp);
 
-void setup_env()
+void setup_env_internal(int verbose)
 {
 
-
-  /* \note Test environment variable" TEST_VERBOSE=N     */
+  if(verbose) 
+    printf("\nHelp text on test environment variables. (null) indicates no value set, use the default\n");
+  /* \note Test environment variable TEST_VERBOSE=N     */
   char* sVerbose = getenv("TEST_VERBOSE");
+  if(verbose) 
+    printf("\nTest environment variable TEST_VERBOSE=%s, defaults to %d\n"
+     "     0 - quiet \n"
+     "     1 - turn on some verbose error checking\n"
+     "     2 - turn on metadata query verbose output\n",sVerbose,gVerbose      );
 
   if(sVerbose) gVerbose=atoi(sVerbose); /* set the global defined in coll_util.h */
 
-  /* \note Test environment variable" TEST_PROTOCOL={-}substring.       */
+  /* \note Test environment variable TEST_PROTOCOL={-}substring.       */
   /* substring is used to select, or de-select (with -) test protocols */
+  if(verbose) 
+    printf("\nTest environment variable TEST_PROTOCOL=%s, defaults to %s\n"
+       "     substring is used to select, or de-select (with -) test protocols\n",getenv("TEST_PROTOCOL"),"-X0");
   gSelected = getenv("TEST_PROTOCOL");
 
-  if (!gSelected) gSelected = (char*)"";
+  if (!gSelected) {
+    gSelector = 0 ;
+    gSelected="X0";
+  }
   else if (gSelected[0] == '-')
   {
-    gSelector = 0 ;
     ++gSelected;
   }
 
-  /* \note Test environment variable" TEST_DT=pami datatype string or 'ALL' or 'SHORT' */
+  /* \note Test environment variable TEST_DT=pami datatype string or 'ALL' or 'SHORT' */
   char* sDt = getenv("TEST_DT");
+  if(verbose) 
+    printf("\nTest environment variable TEST_DT=%s -- pami datatype string or 'ALL' or 'SHORT'\n",sDt      );
 
-  /* \note Test environment variable" TEST_OP=pami operation string or 'ALL' or 'SHORT'*/
+  /* \note Test environment variable TEST_OP=pami operation string or 'ALL' or 'SHORT'*/
   char* sOp = getenv("TEST_OP");
+  if(verbose) 
+    printf("\nTest environment variable TEST_OP=%s -- pami operation string or 'ALL' or 'SHORT'\n",sOp      );
 
   /* Override FULL_TEST with 'ALL' or 'SHORT' */
   if (sDt || sOp) gFull_test = 0;
@@ -373,50 +388,81 @@ void setup_env()
     gFull_test = 0;
   }
 
-  /* \note Test environment variable" TEST_NUM_ROOTS=N max roots to test  */
+  /* \note Test environment variable TEST_NUM_ROOTS=N max roots to test  */
   char* sNRoots = getenv("TEST_NUM_ROOTS");
+  if(verbose) 
+    printf("\nTest environment variable TEST_NUM_ROOTS=%s max roots to test, defaults to %d\n",sNRoots,gNumRoots      );
 
   /* Override Number of Roots */
   if (sNRoots) gNumRoots = atoi(sNRoots);
 
-  /* \note Test environment variable" TEST_BYTES=N max byte count     */
-  char* sCount = getenv("TEST_BYTES");
+  char* sCount;
+
+  /* \note Test environment variable TEST_BYTES_MIN=N min byte count     */
+  sCount = getenv("TEST_BYTES_MIN");
+  if(verbose) 
+    printf("\nTest environment variable TEST_BYTES_MIN=%s min byte count, defaults to %d\n", sCount,gMin_byte_count     );
+
+  /* Override min byte COUNT */
+  if (sCount) gMin_byte_count = atoi(sCount);
+
+  /* \note Test environment variable TEST_BYTES/TEST_BYTES_MAX=N max byte count     */
+
+  /* Just arbitrarily make default Max > Min by 8x if they used a large Min, otherwise use hardcoded default */
+  if(gMin_byte_count >= gMax_byte_count) gMax_byte_count = gMin_byte_count*8; 
+
+  sCount = getenv("TEST_BYTES");
+  if(!sCount) sCount = getenv("TEST_BYTES_MAX");
+  if(verbose) 
+    printf("\nTest environment variable TEST_BYTES/TEST_BYTES_MAX=%s max byte count, defaults to %d\n",sCount,gMax_byte_count      );
 
   /* Override max byte COUNT */
   if (sCount) gMax_byte_count = atoi(sCount);
 
-  /* \note Test environment variable" TEST_BYTES_ONLY=N only byte count     */
+  /* \note Test environment variable TEST_BYTES_ONLY=N only byte count     */
   char* sCountOnly = getenv("TEST_BYTES_ONLY");
+  if(verbose) 
+    printf("\nTest environment variable TEST_BYTES_ONLY=%s only byte count, defaults to range %d to %d\n", sCountOnly,gMin_byte_count,gMax_byte_count     );
 
   /* Override byte COUNT with single count */
   if (sCountOnly) gMin_byte_count = gMax_byte_count = atoi(sCountOnly);
 
-  /* \note Test environment variable" TEST_ALLOW_NULL_SEND_BUFFER=0|1 to allow a NULL send buffer on count == 0 */
+  /* \note Test environment variable TEST_ALLOW_NULL_SEND_BUFFER=0|1 to allow a NULL send buffer on count == 0 */
   char* sAllowNullSendBuffer = getenv("TEST_ALLOW_NULL_SEND_BUFFER");
+  if(verbose) 
+    printf("\nTest environment variable TEST_ALLOW_NULL_SEND_BUFFER=%s to allow a NULL send buffer on count == 0, defaults to %d\n",sAllowNullSendBuffer,gAllowNullSendBuffer      );
 
   /* Override flag to allow a null send buffer (on COUNT==0) */
   if (sAllowNullSendBuffer) gAllowNullSendBuffer = atoi(sAllowNullSendBuffer);
 
-  /* \note Test environment variable" TEST_MPI_IN_PLACE=0|1 to test send buffer = receive buffer */
+  /* \note  */
   char* sTestMpiInPlace = getenv("TEST_MPI_IN_PLACE");
+  if(verbose) 
+    printf("\nTest environment variable TEST_MPI_IN_PLACE=%s to test send buffer = receive buffer, defaults to %d\n",sTestMpiInPlace,gTestMpiInPlace);
 
   /* Override flag to test MPI_IN_PLACE */
   if (sTestMpiInPlace) gTestMpiInPlace = atoi(sTestMpiInPlace);
 
-  /* \note Test environment variable" TEST_OFFSET=N buffer offset/alignment*/
+  /* \note Test environment variable TEST_OFFSET=N buffer offset/alignment*/
   char* sOffset = getenv("TEST_OFFSET");
+  if(verbose) 
+    printf("\nTest environment variable TEST_OFFSET=%s buffer offset/alignment, defaults to %d\n",sOffset,gBuffer_offset      );
 
   /* Override OFFSET */
   if (sOffset) gBuffer_offset = atoi(sOffset);
 
-  /* \note Test environment variable" TEST_ITER=N iterations      */
+  /* \note Test environment variable TEST_ITER=N iterations      */
   char* sIter = getenv("TEST_ITER");
+  if(verbose) 
+    printf("\nTest environment variable TEST_ITER=%s iterations, defaults to %d\n",sIter,gNiterlat      );
 
   /* Override NITERLAT */
   if (sIter) gNiterlat = atoi(sIter);
 
-  /* \note Test environment variable" TEST_NUM_CONTEXTS=N, defaults to 1.*/
+  /* \note Test environment variable TEST_NUM_CONTEXTS=N, defaults to 1.*/
   char* snum_contexts = getenv("TEST_NUM_CONTEXTS");
+  if(verbose) 
+    printf("\nTest environment variable TEST_NUM_CONTEXTS=%s, defaults to %zu\n",snum_contexts,gNum_contexts      );
 
   if (snum_contexts) gNum_contexts = atoi(snum_contexts);
 
@@ -424,22 +470,35 @@ void setup_env()
   gValidTable = alloc2DContig(op_count, dt_count);
   setup_op_dt(gValidTable,sDt,sOp);
 
-  /* \note Test environment variable" TEST_PARENTLESS=0 or 1, defaults to 1.
+  /* \note Test environment variable TEST_PARENTLESS=0 or 1, defaults to 1.
      0 - world_geometry is the parent
      1 - parentless                                                      */
   char* sParentless = getenv("TEST_PARENTLESS");
+  if(verbose) 
+    printf("\nTest environment variable TEST_PARENTLESS=%s, defaults to %d\n"
+     "     0 - world_geometry is the parent\n"
+     "     1 - parentless\n",sParentless,gParentless      );
 
   if (sParentless) gParentless = atoi(sParentless);
 
-  /* \note Test environment variable" TEST_OPTIMIZE=-1, 0, 1; defaults to -1.
+  /* \note Test environment variable TEST_OPTIMIZE=-1, 0, 1; defaults to -1.
      -1 = default optimization only
      0 - default, then deoptimize 
      1 - default, deoptimize, optimize                                    */
   char* sOptimize   = getenv("TEST_OPTIMIZE");
+  if(verbose) 
+    printf("\nTest environment variable TEST_OPTIMIZE=%s, defaults to %d\n"
+     "     -1 = default optimization only\n"
+     "     0 - default, then deoptimize \n"
+     "     1 - default, deoptimize, optimize                                    \n",sOptimize,gOptimize      );
 
   if (sOptimize) gOptimize = atoi(sOptimize);
 
 
+}
+void setup_env()
+{
+  setup_env_internal(0);
 }
 
 void setup_op_dt(size_t ** validTable,char* sDt, char* sOp)

@@ -309,6 +309,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.inplace = 0; 
     }
     typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
     typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
@@ -319,6 +320,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.inplace = 0; 
     }
     typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
     typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
@@ -608,6 +610,7 @@ namespace PAMI
     extern inline void Mcomb2DDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCombine2DeviceDput:SHMEM:MU");
+      m->check_correct.values.inplace       = 0;
 #ifdef PAMI_ENABLE_NEW_SHMEM
       m->check_correct.values.alldtop       = 0;
       m->check_correct.values.sendminalign  = 1;
@@ -844,6 +847,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.inplace = 0; 
     }
 
     extern inline void get_rect_allgv_colors (PAMI::Topology             * t,
@@ -904,9 +908,17 @@ namespace PAMI
     PAMI::Geometry::COORDINATE_TOPOLOGY_INDEX,
     true, true> RectangleDputAllgatherV;
 
+    extern inline void rectangle_dput_allgatherv_metadata(pami_metadata_t *m)
+    {
+      new(m) PAMI::Geometry::Metadata("X0:RectangleDput:SHMEM:MU");
+      m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.contigsflags = 1;
+      m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.inplace = 0; 
+    }
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT
     < RectangleDputAllgatherV,
-    rectangle_dput_allgather_metadata,
+    rectangle_dput_allgatherv_metadata,
     CCMI::ConnectionManager::ColorMapConnMgr,
     PAMI_XFER_ALLGATHERV_INT >
     RectangleDputAllgatherVFactory;
@@ -1175,7 +1187,7 @@ namespace PAMI
             _mu_rectangle_dput_broadcast_factory = new (_mu_rectangle_dput_broadcast_factory_storage) MURectangleDputBroadcastFactory(_context,_context_id,mapidtogeometry,&_color_connmgr, _axial_mu_dput_ni);
 
             _rectangle_dput_allgather_factory = new (_rectangle_dput_allgather_factory_storage) RectangleDputAllgatherFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
-	    _mu_rectangle_dput_allreduce_factory = new (_mu_rectangle_dput_allreduce_factory_storage) RectangleDputAllreduceFactory(_context, _context_id, mapidtogeometry, &_torus_connmgr, _axial_mu_dput_ni);
+            _mu_rectangle_dput_allreduce_factory = new (_mu_rectangle_dput_allreduce_factory_storage) RectangleDputAllreduceFactory(_context, _context_id, mapidtogeometry, &_torus_connmgr, _axial_mu_dput_ni);
 
             _rectangle_dput_allgatherv_factory = new (_rectangle_dput_allgatherv_factory_storage) RectangleDputAllgatherVFactory(_context,_context_id,mapidtogeometry,&_color_map_connmgr, _axial_mu_dput_ni);
           }
@@ -1397,9 +1409,9 @@ namespace PAMI
 
             if (local_sub_topology->size() < 32) {
 	      if(_rectangle_dput_allgather_factory)
-		geometry->addCollectiveCheck(PAMI_XFER_ALLGATHER,  _rectangle_dput_allgather_factory, _context, _context_id);
+          geometry->addCollectiveCheck(PAMI_XFER_ALLGATHER,  _rectangle_dput_allgather_factory, _context, _context_id);
 	      if (_rectangle_dput_allgatherv_factory)
-		geometry->addCollective(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
+          geometry->addCollectiveCheck(PAMI_XFER_ALLGATHERV_INT,  _rectangle_dput_allgatherv_factory, _context, _context_id);
 	    }
 
 	    if (_mu_rectangle_dput_allreduce_factory)

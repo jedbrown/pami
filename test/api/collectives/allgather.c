@@ -19,7 +19,7 @@
  * \brief Simple Allgather test on world geometry (only gathers bytes)
  */
 
-/* see setup_env() for environment variable overrides               */
+/* Use arg -h or see setup_env() for environment variable overrides  */
 #define COUNT     (524288)
 
 #include "../pami_util.h"
@@ -56,7 +56,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          allgather;
 
   /* Process environment variables and setup globals */
-  setup_env();
+  if(argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'h' || argv[1][1] == 'H') ) setup_env_internal(1);
+  else setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);

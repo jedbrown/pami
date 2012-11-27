@@ -1897,16 +1897,19 @@ namespace CCMI
         extern inline void pairwise_alltoall_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
+          m->check_correct.values.inplace = 0; 
         }
 
         extern inline void pairwise_alltoallv_int_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
+          m->check_correct.values.inplace = 0; 
         }
 
         extern inline void pairwise_alltoallv_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Pairwise:P2P:P2P");
+          m->check_correct.values.inplace = 0; 
         }
 
         typedef CCMI::Adaptor::Alltoallv::AsyncAlltoallvT
@@ -1953,6 +1956,7 @@ namespace CCMI
       extern inline void getAlltoallMetaData(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
+        m->check_correct.values.inplace = 0; 
       }
       typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
       typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
@@ -1963,6 +1967,8 @@ namespace CCMI
       extern inline void getAlltoallvMetaData(pami_metadata_t *m)
       {
         new(m) PAMI::Geometry::Metadata("I0:M2MComposite:P2P:P2P");
+        m->check_correct.values.inplace = 0; 
+        m->check_correct.values.asyncflowctl = 1;
       }
       typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
       typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;

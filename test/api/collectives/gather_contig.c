@@ -19,7 +19,8 @@
    \brief Simple gather test on world geometry with contiguous datatypes
 */
 
-/* see setup_env() for environment variable overrides               */
+/* Use arg -h or see setup_env() for environment variable overrides  */
+
 #define COUNT     (524288)
 
 #include "../pami_util.h"
@@ -58,7 +59,8 @@ int main(int argc, char*argv[])
   pami_xfer_t          gather;
 
   /* Process environment variables and setup globals */
-  setup_env();
+  if(argc > 1 && argv[1][0] == '-' && (argv[1][1] == 'h' || argv[1][1] == 'H') ) setup_env_internal(1);
+  else setup_env();
 
   assert(gNum_contexts > 0);
   context = (pami_context_t*)malloc(sizeof(pami_context_t) * gNum_contexts);
@@ -189,7 +191,9 @@ int main(int argc, char*argv[])
           if (task_id == 0)
             printf("Running gather: %s\n", dt_array_str[dt]);
 
-          for (i = MAX(1,gMin_byte_count/get_type_size(dt_array[dt])); i <= gMax_byte_count/get_type_size(dt_array[dt]); i *= 2)
+          for ( i = gMin_byte_count? MAX(1,gMin_byte_count/get_type_size(dt_array[dt])) : 0; /*clumsy, only want 0 if hardcoded to 0, othersize min 1 */
+                i <= gMax_byte_count/get_type_size(dt_array[dt]); 
+                i = i ? i*2 : 1 /* handle zero min */)
           {
             size_t dataSent = i * get_type_size(dt_array[dt]);
             int          niter;
@@ -229,6 +233,7 @@ int main(int argc, char*argv[])
               if (result.bitmask) continue;
             }
             /* Do one 'in-place' collective and validate it */
+            if(gTestMpiInPlace && (!query_protocol || (query_protocol && next_md->check_correct.values.inplace)))
             {
               root_zero = (root_zero + num_tasks - 1) % num_tasks;
               pami_endpoint_t root_ep;
@@ -262,6 +267,7 @@ int main(int argc, char*argv[])
                 if (rc_check) fprintf(stderr, "%s FAILED IN PLACE validation on %s\n", gProtocolName, dt_array_str[dt]);
               }
             }
+            else if(gTestMpiInPlace && gVerbose>=2 && (task_id == 0)) printf("%s does not support IN PLACE buffering\n", gProtocolName);
 
             /* Iterate (and time) with separate buffers, not in-place */
             gather.cmd.xfer_gather.rcvbuf     = rbuf;
