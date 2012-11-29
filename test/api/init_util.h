@@ -362,7 +362,8 @@ void setup_env_internal(int verbose)
 
   if (!gSelected) {
     gSelector = 0 ;
-    gSelected="X0";
+    gSelected = (char*) malloc(3);
+    strcpy(gSelected,"X0");
   }
   else if (gSelected[0] == '-')
   {
