@@ -137,6 +137,8 @@ namespace PAMI
       virtual void metadata(pami_metadata_t *mdata, pami_geometry_t geometry = PAMI_GEOMETRY_NULL)
         {
           new(mdata) PAMI::Geometry::Metadata(_string);
+          mdata->check_correct.values.blocking = 1; /* PGAS *may* block.  It blocks if a collective
+                                                       is already in progress */
           if(strstr(_string,"Short"))
           {  
             mdata->check_correct.values.rangeminmax = 1;
