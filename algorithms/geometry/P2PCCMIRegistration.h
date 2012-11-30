@@ -1167,8 +1167,8 @@ namespace PAMI
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite Composite;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory   Factory;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT       OAT;
-	      new ((void*)_binomial_allreduce_factory) Factory(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT::cb_async_OAT_receiveHead);
-	      _binomial_allreduce_factory->setAsync();
+              new ((void*)_binomial_allreduce_factory) Factory(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT::cb_async_OAT_receiveHead);
+              _binomial_allreduce_factory->setAsync();
 	    }
 
             // ----------------------------------------------------
@@ -1177,8 +1177,8 @@ namespace PAMI
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite4 Composite4;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory4   Factory4;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT4       OAT4;
-	      new ((void*)_binomial4_allreduce_factory) Factory4(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT4::cb_async_OAT_receiveHead);
-	      _binomial4_allreduce_factory->setAsync();
+              new ((void*)_binomial4_allreduce_factory) Factory4(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT4::cb_async_OAT_receiveHead);
+              _binomial4_allreduce_factory->setAsync();
 	    }
 
 
@@ -1188,8 +1188,8 @@ namespace PAMI
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Composite8 Composite8;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::Factory8   Factory8;
               typedef CCMI::Adaptor::P2PAllreduce::Binomial::OAT8       OAT8;
-	      new ((void*)_binomial8_allreduce_factory) Factory8(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT8::cb_async_OAT_receiveHead);
-	      _binomial8_allreduce_factory->setAsync();
+              new ((void*)_binomial8_allreduce_factory) Factory8(_context,_context_id,mapidtogeometry,&_rbconnmgr, ni, OAT8::cb_async_OAT_receiveHead);
+              _binomial8_allreduce_factory->setAsync();
 	    }
 	      
             // ----------------------------------------------------

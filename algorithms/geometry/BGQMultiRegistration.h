@@ -310,6 +310,7 @@ namespace PAMI
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
       m->check_correct.values.inplace = 0; 
+      m->check_correct.values.global_order = 8 ; /* ordered - single threaded */
     }
     typedef CCMI::Adaptor::All2AllProtocol All2AllProtocol;
     typedef CCMI::Adaptor::All2AllFactoryT <All2AllProtocol, getAlltoallMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllFactory;
@@ -321,6 +322,7 @@ namespace PAMI
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
       m->check_correct.values.inplace = 0; 
+      m->check_correct.values.global_order = 8 ; /* ordered - single threaded */
     }
     typedef CCMI::Adaptor::All2AllvProtocolLong All2AllProtocolv;
     typedef CCMI::Adaptor::All2AllvFactoryT <All2AllProtocolv, getAlltoallvMetaData, CCMI::ConnectionManager::CommSeqConnMgr> All2AllvFactory;
@@ -382,6 +384,7 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiSync:-:GI");
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 4 ; /* ordered for GI/single threaded */
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -397,6 +400,7 @@ namespace PAMI
     extern inline void MURectangleMsyncMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:RectangleMultiSync:-:MU");
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -428,12 +432,14 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCastDput:-:MU");
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     extern inline void MUMcastShmemCollectiveDputMetaData(pami_metadata_t *m)
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCastDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < 
@@ -468,6 +474,7 @@ namespace PAMI
       m->check_correct.values.alldtop   = 0;
       m->check_fn                       = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUGlobalDputNI>,
@@ -492,6 +499,7 @@ namespace PAMI
       m->check_fn                           = MU::op_dt_metadata_function;
       m->check_perf.values.hw_accel         = 1;
 #endif
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::AllSidedCollectiveProtocolFactoryT < CCMI::Adaptor::Allreduce::MultiCombineComposite<true, MUShmemGlobalDputNI>,
@@ -535,6 +543,7 @@ namespace PAMI
       // Apparently MU dput actually uses GI for msync
       new(m) PAMI::Geometry::Metadata("I0:MultiSync2Device:SHMEM:GI");
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 4 ; /* ordered for GI/single threaded */
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -551,6 +560,7 @@ namespace PAMI
     {
       // Apparently MU dput actually uses GI for msync
       new(m) PAMI::Geometry::Metadata("I0:RectangleMultiSync2Device:SHMEM:MU");
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::Barrier::BarrierFactoryAllSidedT
@@ -580,6 +590,7 @@ namespace PAMI
     {
       new(m) PAMI::Geometry::Metadata("I0:MultiCast2DeviceDput:SHMEM:MU");
       m->check_perf.values.hw_accel     = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
     typedef CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceFactoryT < CCMI::Adaptor::Broadcast::MultiCastComposite2DeviceAS<PAMI_GEOMETRY_CLASS>,
     Mcast2DDputMetaData, CCMI::ConnectionManager::SimpleConnMgr > MultiCast2DeviceDputFactory;
@@ -804,6 +815,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     extern inline void mu_rectangle_dput_broadcast_metadata(pami_metadata_t *m)
@@ -812,6 +824,7 @@ namespace PAMI
       m->check_perf.values.hw_accel     = 1;
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     typedef CCMI::Adaptor::Broadcast::BcastMultiColorCompositeT
@@ -848,6 +861,7 @@ namespace PAMI
       m->check_correct.values.contigsflags = 1;
       m->check_correct.values.contigrflags = 1;
       m->check_correct.values.inplace = 0; 
+      m->check_correct.values.global_order = 2 ; /* ordered for MUI/single threaded */
     }
 
     extern inline void get_rect_allgv_colors (PAMI::Topology             * t,
