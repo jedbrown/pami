@@ -1047,33 +1047,35 @@ namespace CCMI
         extern inline void binomial_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("I0:Binomial:P2P:P2P");
+          m->check_correct.values.oneatatime = 1; /* OAT is oneatatime */
         }
 
         typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
-	  < CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr, true>,
-	  CCMI::Schedule::TopoMultinomial,
-	  CCMI::ConnectionManager::RankBasedConnMgr > Composite;	
+          < CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr, true>,
+          CCMI::Schedule::TopoMultinomial,
+          CCMI::ConnectionManager::RankBasedConnMgr > Composite;	
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-	  < Composite,
+          < Composite,
           binomial_allreduce_metadata,
           CCMI::ConnectionManager::RankBasedConnMgr,
           PAMI_XFER_ALLREDUCE >
-	  Factory;
+          Factory;
         typedef CCMI::Adaptor::Allreduce::OAT<Composite, Factory> OAT;
 
         extern inline void binomial4_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix4:P2P:P2P");
+          m->check_correct.values.oneatatime = 1; /* OAT is oneatatime */
         }
 
         typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
-	< CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+          < CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
           CCMI::Schedule::TopoMultinomial4,
           CCMI::ConnectionManager::RankBasedConnMgr > Composite4;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
-	< Composite4,
+          < Composite4,
           binomial4_allreduce_metadata,
           CCMI::ConnectionManager::RankBasedConnMgr,
           PAMI_XFER_ALLREDUCE >
@@ -1083,11 +1085,12 @@ namespace CCMI
         extern inline void binomial8_allreduce_metadata(pami_metadata_t *m)
         {
           new(m) PAMI::Geometry::Metadata("X0:MultinomialRadix8:P2P:P2P");
+          m->check_correct.values.oneatatime = 1; /* OAT is oneatatime */
         }
 
         typedef CCMI::Adaptor::Allreduce::AsyncOATCompositeT
-	< CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
-	  CCMI::Schedule::TopoMultinomial8,
+          < CCMI::Executor::AllreduceBaseExec<CCMI::ConnectionManager::RankBasedConnMgr>,
+          CCMI::Schedule::TopoMultinomial8,
           CCMI::ConnectionManager::RankBasedConnMgr> Composite8;
 
         typedef CCMI::Adaptor::Allreduce::ProtocolFactoryT
