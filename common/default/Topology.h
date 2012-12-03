@@ -1717,7 +1717,9 @@ namespace PAMI
         tb_t  *tb;
         pami_result_t rc;
         PAMI_assert(s != 0);
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&epl, 0, s * sizeof(*epl));
+        size_t num_nodes = s <= mapping->numActiveNodes()? s : mapping->numActiveNodes();
+        size_t sz_to_malloc =  num_nodes * sizeof(*epl); /* guess max size of 1 rank per node if possible */
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&epl, 0, sz_to_malloc);
         PAMI_assertf(rc == PAMI_SUCCESS, "temp eplist[%zd] alloc failed", s);
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&tb, 0, s * sizeof(*tb));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed (endpoints)", s);
@@ -1771,9 +1773,13 @@ namespace PAMI
           // could be significant at 96K nodes (x 64 ranks per node x ncontexts x 8 bytes)
           epl_free = epl;
           rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&epl, 0, k * sizeof(*epl));
-          PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd eplist[%zd] alloc failed", k);
-          memcpy(epl, epl_free, k*sizeof(*epl));
-          PAMI::Memory::MemoryManager::heap_mm->free(epl_free);
+          //PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd eplist[%zd] alloc failed", k);
+          if(rc==PAMI_SUCCESS)
+          {
+            memcpy(epl, epl_free, k*sizeof(*epl));
+            PAMI::Memory::MemoryManager::heap_mm->free(epl_free);
+          }
+          else epl = epl_free; /* just use the big one if we couldn't malloc the smaller one */
           _new->__type = PAMI_EPLIST_TOPOLOGY;
           _new->topo_ranklist = epl;
           _new->__size = k;
@@ -1796,7 +1802,9 @@ namespace PAMI
         pami_task_t *rl, *rl_free;
         tb_t *tb;
         pami_result_t rc;
-        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&rl, 0, s * sizeof(*rl));
+        size_t num_nodes = s <= mapping->numActiveNodes()? s : mapping->numActiveNodes();
+        size_t sz_to_malloc =  num_nodes * sizeof(*rl); /* guess max size of 1 rank per node if possible */
+        rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&rl, 0, sz_to_malloc);
         PAMI_assertf(rc == PAMI_SUCCESS, "temp ranklist[%zd] alloc failed", s);
         rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&tb, 0, s * sizeof(*tb));
         PAMI_assertf(rc == PAMI_SUCCESS, "temp tb-list[%zd] alloc failed", s);
@@ -1855,9 +1863,13 @@ namespace PAMI
           // could be significant at 96K nodes (x 64 ranks per node x 8 bytes)
           rl_free = rl;
           rc = PAMI::Memory::MemoryManager::heap_mm->memalign((void **)&rl, 0, k * sizeof(*rl));
-          PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd ranklist[%zd] alloc failed", k);
-          memcpy(rl, rl_free, k*sizeof(*rl));
-          PAMI::Memory::MemoryManager::heap_mm->free(rl_free);
+          //PAMI_assertf(rc == PAMI_SUCCESS, "realloc'd ranklist[%zd] alloc failed", k);
+          if(rc==PAMI_SUCCESS)
+          {
+            memcpy(rl, rl_free, k*sizeof(*rl));
+            PAMI::Memory::MemoryManager::heap_mm->free(rl_free);
+          }
+          else rl = rl_free; /* just use the big one if we couldn't malloc the smaller one */
           _new->__type = PAMI_LIST_TOPOLOGY;
           _new->topo_ranklist = rl;
           _new->__size = k;
