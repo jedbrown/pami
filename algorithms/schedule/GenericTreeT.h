@@ -439,7 +439,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (src_eps, nsrc, PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
       }
 
@@ -456,7 +457,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (dst_eps, ndst,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
       }
 
@@ -478,7 +480,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (src_eps, ntotal_src, PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
@@ -508,7 +511,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (dst_eps, ntotal_dst,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
@@ -556,7 +560,8 @@ namespace CCMI
       TRACE_FN_ENTER();
       TRACE_FORMAT( "<%p>GenericTreeSchedule(unsigned myrank, PAMI::Topology *topology): myrank %u, nranks %zu", this, myrank, topology->size());
 
-      DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+      DO_DEBUG(unsigned i = 0;)
+      DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
       TRACE_FN_EXIT();
     }
 
@@ -835,7 +840,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (src_eps, nsrc,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
 
         TRACE_FN_EXIT();
       }
@@ -851,7 +857,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (dst_eps, ndst,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
       }
 
@@ -872,7 +879,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (src_eps, ntotal_src,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
@@ -902,7 +910,8 @@ namespace CCMI
 
         //Convert to a list topology
         new (topology) PAMI::Topology (dst_eps, ntotal_dst,PAMI::tag_eplist());
-        DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+        DO_DEBUG(unsigned i = 0;)
+        DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
         TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
@@ -946,7 +955,8 @@ namespace CCMI
       TRACE_FN_ENTER();
       TRACE_FORMAT("<%p>Flat specialization: GenericTreeSchedule(unsigned myrank, PAMI::Topology *topology): myrank %u, nranks %zu", this, myrank, topology->size());
 
-      DO_DEBUG(for (unsigned i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
+      DO_DEBUG(unsigned i = 0;)
+      DO_DEBUG(for (i = 0; ((i < topology->size()) && (i < 32)); ++i) TRACE_FORMAT("<%p> topology[%u] = %u", this, i, topology->index2Endpoint(i)););
       TRACE_FN_EXIT();
     };
 

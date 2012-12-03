@@ -151,6 +151,7 @@ inline MPIBcastDev & MPIBcastDev::Factory::getDevice_impl(MPIBcastDev *devs, siz
             // reset the _status to initialized after __setThreads
             _pendingStatus = PAMI::Device::Done; //setStatus(PAMI::Device::Done);
           }
+          DO_DEBUG(unsigned j = 0;)
           DO_DEBUG(for(unsigned j=0; j<_dst->size(); ++j) fprintf(stderr,"<%p>MPIBcastMsg _dst[%u]=%zu, size %zu\n",this,j,(size_t)_dst->index2Rank(j),_dst->size()));
         }
         else // I must be a dst_participant

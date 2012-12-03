@@ -126,7 +126,7 @@ namespace PAMI
                     pami_task_t    nranks,
                     pami_task_t   *ranks,
                     GeometryMap   *geometry_map,
-                    size_t         context_offset,
+                    size_t         context_offset, /* may be PAMI_ALL_CONTEXTS */
                     size_t         ncontexts):
       Geometry<Common>(parent,
                        mapping,
@@ -148,7 +148,7 @@ namespace PAMI
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p>",this);
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_ranks, nranks);
         buildSpecialTopologies();
@@ -249,7 +249,7 @@ namespace PAMI
       _cb_result(PAMI_EAGAIN)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p>", this);
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, PAMI::tag_eplist());
 
@@ -266,35 +266,35 @@ namespace PAMI
           }
 
 #if DO_TRACE_DEBUG
-        TRACE_FORMAT( "LOCAL_TOPOLOGY_INDEX size %zu, found lowest context %zu",topo_size, _ctxt_offset);
-        TRACE_FORMAT( "EP DEFAULT Topology sz=%zu:", _topos[DEFAULT_TOPOLOGY_INDEX].size());
+        TRACE_FORMAT("<%p>LOCAL_TOPOLOGY_INDEX size %zu, found lowest context %zu", this,topo_size, _ctxt_offset);
+        TRACE_FORMAT("<%p>EP DEFAULT Topology sz=%zu:", this,_topos[DEFAULT_TOPOLOGY_INDEX].size());
         for(size_t i=0; i< _topos[DEFAULT_TOPOLOGY_INDEX].size(); i++)
         {
           pami_endpoint_t ep    = _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(i);
           pami_task_t     task;
           size_t          offset;
           PAMI_ENDPOINT_INFO(ep, task, offset);
-          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+          TRACE_FORMAT("<%p>   --->(ep=%d task=%d offset=%ld)", this,ep, task, offset);
         }
 
-        TRACE_FORMAT( "EP LOCAL Topology sz=%zu", _topos[LOCAL_TOPOLOGY_INDEX].size());
+        TRACE_FORMAT("<%p>EP LOCAL Topology sz=%zu", this,_topos[LOCAL_TOPOLOGY_INDEX].size());
         for(size_t i=0; i< _topos[LOCAL_TOPOLOGY_INDEX].size(); i++)
         {
           pami_endpoint_t ep    = _topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(i);
           pami_task_t     task;
           size_t          offset;
           PAMI_ENDPOINT_INFO(ep, task, offset);
-          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+          TRACE_FORMAT("<%p>   --->(ep=%d task=%d offset=%ld)", this,ep, task, offset);
         }
 
-        TRACE_FORMAT( "EP MASTER Topology: sz=%zu", _topos[MASTER_TOPOLOGY_INDEX].size());
+        TRACE_FORMAT("<%p>EP MASTER Topology: sz=%zu", this,_topos[MASTER_TOPOLOGY_INDEX].size());
         for(size_t i=0; i< _topos[MASTER_TOPOLOGY_INDEX].size(); i++)
         {
           pami_endpoint_t ep    = _topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(i);
           pami_task_t     task;
           size_t          offset;
           PAMI_ENDPOINT_INFO(ep, task, offset);
-          TRACE_FORMAT( "   --->(ep=%d task=%d offset=%ld)", ep, task, offset);
+          TRACE_FORMAT("<%p>   --->(ep=%d task=%d offset=%ld)", this,ep, task, offset);
         }
 #endif
 
@@ -365,7 +365,7 @@ namespace PAMI
                      int                    numranges,
                      pami_geometry_range_t  rangelist[],
                      GeometryMap           *geometry_map,
-                     size_t                 context_offset,
+                     size_t                 context_offset,/* may be PAMI_ALL_CONTEXTS */
                      size_t                 ncontexts):
       Geometry<Common>(parent,
                        mapping,
@@ -387,7 +387,7 @@ namespace PAMI
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p> numranges %d, context_offset %zu, ncontexts %zu", this, numranges, context_offset, ncontexts);
         pami_result_t rc;
         if (numranges == 1)
         {
@@ -497,7 +497,7 @@ namespace PAMI
                      unsigned        comm,
                      PAMI::Topology *topology,
                      GeometryMap    *geometry_map,
-                     size_t          context_offset,
+                     size_t          context_offset,/* may be PAMI_ALL_CONTEXTS */
                      size_t          ncontexts):
       Geometry<Common>(parent,
                        mapping,
@@ -517,7 +517,7 @@ namespace PAMI
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p>", this);
 
         _topos[DEFAULT_TOPOLOGY_INDEX] = *topology;
 
@@ -599,7 +599,7 @@ namespace PAMI
                      PAMI::Topology        *coord,
                      PAMI::Topology        *local,
                      GeometryMap           *geometry_map,
-                     size_t                 context_offset,
+                     size_t                 context_offset,/* may be PAMI_ALL_CONTEXTS */
                      size_t                 ncontexts):
       Geometry<Common>(parent,
                        mapping,
@@ -621,7 +621,7 @@ namespace PAMI
       _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p>", this);
         pami_result_t rc;
         if (numranges == 1)
         {
@@ -746,7 +746,7 @@ namespace PAMI
       void                             buildSpecialTopologies(PAMI::Topology* coord=NULL, PAMI::Topology* local=NULL)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("Default type %X, coord %p, local %p",_topos[DEFAULT_TOPOLOGY_INDEX].type(),coord,local);
+        TRACE_FORMAT("<%p>Default type %X, coord %p, local %p",this,_topos[DEFAULT_TOPOLOGY_INDEX].type(),coord,local);
         // build local and global topos
         /* for efficiancy/BGQ-torus reasons, we might want to build master/local topologies from a coordinate
            topology and not from the input/default topology... determine which to use */
@@ -765,7 +765,7 @@ namespace PAMI
             {
               // Attempt to create a coordinate topo (result may be EMPTY)
               _topos[COORDINATE_TOPOLOGY_INDEX].convertTopology(PAMI_COORD_TOPOLOGY);
-              TRACE_FORMAT("Default type %X, Coord type %X",_topos[DEFAULT_TOPOLOGY_INDEX].type(),_topos[COORDINATE_TOPOLOGY_INDEX].type());
+              TRACE_FORMAT("<%p>Default type %X, Coord type %X",this,_topos[DEFAULT_TOPOLOGY_INDEX].type(),_topos[COORDINATE_TOPOLOGY_INDEX].type());
 
               // Was it successful?
               if(_topos[COORDINATE_TOPOLOGY_INDEX].type() == PAMI_COORD_TOPOLOGY)
@@ -782,7 +782,7 @@ namespace PAMI
           new(&_topos[COORDINATE_TOPOLOGY_INDEX]) PAMI::Topology(); // Initialize to an empty topology
 
         /* Use whatever topology we picked above as the basis for Nth masters and local */
-        TRACE_FORMAT("Base index for Nth master and local %u",BASE_INDEX);
+        TRACE_FORMAT("<%p>Base index for Nth master and local %u",this,BASE_INDEX);
         _topos[BASE_INDEX].subTopologyNthGlobal(&_topos[MASTER_TOPOLOGY_INDEX], 0);
 
         /* Copy or create the local topo */
@@ -793,10 +793,11 @@ namespace PAMI
         _topos[MASTER_TOPOLOGY_INDEX].subTopologyLocalToMe(&_topos[LOCAL_MASTER_TOPOLOGY_INDEX]);
 
 #if DO_TRACE_DEBUG
-        for (unsigned j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j)    TRACE_FORMAT( "   DEFAULT_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(j),    _topos[DEFAULT_TOPOLOGY_INDEX].size());
-        for (unsigned j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j)     TRACE_FORMAT( "    MASTER_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j),     _topos[MASTER_TOPOLOGY_INDEX].size());
-        for (unsigned j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j)      TRACE_FORMAT( "     LOCAL_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(j),      _topos[LOCAL_TOPOLOGY_INDEX].size());
-        for (unsigned j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_FORMAT( "COORDINATE_TOPOLOGY[%u]=%zu, size %zu", j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size());
+        unsigned j;
+        for (j = 0; j < _topos[DEFAULT_TOPOLOGY_INDEX].size(); ++j)    TRACE_FORMAT("<%p>   DEFAULT_TOPOLOGY[%u]=%zu, size %zu",this, j, (size_t)_topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(j),    _topos[DEFAULT_TOPOLOGY_INDEX].size());
+        for (j = 0; j < _topos[MASTER_TOPOLOGY_INDEX].size(); ++j)     TRACE_FORMAT("<%p>    MASTER_TOPOLOGY[%u]=%zu, size %zu",this, j, (size_t)_topos[MASTER_TOPOLOGY_INDEX].index2Endpoint(j),     _topos[MASTER_TOPOLOGY_INDEX].size());
+        for (j = 0; j < _topos[LOCAL_TOPOLOGY_INDEX].size(); ++j)      TRACE_FORMAT("<%p>     LOCAL_TOPOLOGY[%u]=%zu, size %zu",this, j, (size_t)_topos[LOCAL_TOPOLOGY_INDEX].index2Endpoint(j),      _topos[LOCAL_TOPOLOGY_INDEX].size());
+        for (j = 0; j < _topos[COORDINATE_TOPOLOGY_INDEX].size(); ++j) TRACE_FORMAT("<%p>COORDINATE_TOPOLOGY[%u]=%zu, size %zu",this, j, (size_t)_topos[COORDINATE_TOPOLOGY_INDEX].index2Endpoint(j), _topos[COORDINATE_TOPOLOGY_INDEX].size());
 #endif
         // If we already have a rank list, set the special topology, otherwise
         // leave it EMPTY unless needed because it will require a new rank list allocation
@@ -955,7 +956,7 @@ namespace PAMI
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
         void * value = _kvcstore[key][context_id];
-        TRACE_FORMAT( "<%p>(k=%d, val=%p, ctxt=%zu)",this, key, value,context_id);
+        TRACE_FORMAT("<%p>(k=%d, val=%p, ctxt=%zu)",this, key, value,context_id);
         TRACE_FN_EXIT();
         return value;
       }
@@ -965,7 +966,7 @@ namespace PAMI
         TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
-        TRACE_FORMAT( "<%p>(k=%d, v=%p,ctxt=%zu)", this, key, value,context_id);
+        TRACE_FORMAT("<%p>(k=%d, v=%p,ctxt=%zu)", this, key, value,context_id);
         _kvcstore[key][context_id] = value;
         TRACE_FN_EXIT();
       }
@@ -986,8 +987,8 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          TRACE_FORMAT("%s",m.name);
-          TRACE_FORMAT("num algorithms %zu",_algoTable[colltype].size());
+          TRACE_FORMAT("<%p>%s",this,m.name);
+          TRACE_FORMAT("<%p>num algorithms %zu",this,_algoTable[colltype].size());
         }
 #endif
         //PAMI_assert_debug(_algoTable[colltype][hash].count(0) > 0); // There must be a context 0 entry.
@@ -1016,8 +1017,8 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          TRACE_FORMAT("%s",m.name);
-          TRACE_FORMAT("num algorithms %zu",_algoTable[colltype].size());
+          TRACE_FORMAT("<%p>%s",this,m.name);
+          TRACE_FORMAT("<%p>num algorithms %zu",this,_algoTable[colltype].size());
         }
 #endif
         TRACE_FN_EXIT();
@@ -1040,8 +1041,8 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          TRACE_FORMAT("%s",m.name);
-          TRACE_FORMAT("num algorithms %zu",_algoTableCheck[colltype].size());
+          TRACE_FORMAT("<%p>%s",this,m.name);
+          TRACE_FORMAT("<%p>num algorithms %zu",this,_algoTableCheck[colltype].size());
         }
 #endif
         TRACE_FN_EXIT();
@@ -1064,8 +1065,8 @@ namespace PAMI
         {
           pami_metadata_t m;
           factory->metadata(&m);
-          TRACE_FORMAT("%s",m.name);
-          TRACE_FORMAT("num algorithms %zu",_algoTableCheck[colltype].size());
+          TRACE_FORMAT("<%p>%s",this,m.name);
+          TRACE_FORMAT("<%p>num algorithms %zu",this,_algoTableCheck[colltype].size());
         }
 #endif
         //PAMI_assert_debug(_algoTableCheck[colltype][hash].count(0) > 0);  // There must be a context 0 entry.
@@ -1076,8 +1077,11 @@ namespace PAMI
       pami_result_t                    algorithms_num_impl(pami_xfer_type_t  colltype,
                                                            size_t             *lengths)
       {
+        TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>colltype %u, lengths %p",this,colltype, lengths);
         lengths[0] = _algoTable[colltype].size();
         lengths[1] = _algoTableCheck[colltype].size();
+        TRACE_FN_EXIT();
         return PAMI_SUCCESS;
       }
 
@@ -1139,7 +1143,7 @@ namespace PAMI
               {
                 AlgorithmT *tmp_a = &((*cm)[_ctxt_offset]);
                 tmp_a->metadata(&mdata0[i]);
-                TRACE_FORMAT("sorted algorithms_info() %zu out of %zu/%zu %s",i,al->size(),num0,mdata0[i].name);
+                TRACE_FORMAT("<%p>sorted algorithms_info() %zu out of %zu/%zu %s",this,i,al->size(),num0,mdata0[i].name);
               }
           }
         }
@@ -1158,7 +1162,7 @@ namespace PAMI
               {
                 AlgorithmT *tmp_a = &((*cm)[_ctxt_offset]);
                 tmp_a->metadata(&mdata1[i]);
-                TRACE_FORMAT("sorted algorithms_info(check) %zu out of %zu/%zu %s",i,al->size(),num1,mdata1[i].name);
+                TRACE_FORMAT("<%p>sorted algorithms_info(check) %zu out of %zu/%zu %s",this,i,al->size(),num1,mdata1[i].name);
               }
           }
         }
@@ -1204,7 +1208,7 @@ namespace PAMI
       {
         TRACE_FN_ENTER();
         (void)context;
-        TRACE_FORMAT( "<%p>", this);
+        TRACE_FORMAT("<%p> cb_done %p, cookie %p, ctxt_id %zu, context %p", this, cb_done, cookie, ctxt_id, context);
         PAMI_assert (_ue_barrier[ctxt_id]._factory != NULL);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
@@ -1227,7 +1231,7 @@ namespace PAMI
         {
           _ue_barrier[ctxt_id]._factory  = f;
           _ue_barrier[ctxt_id]._geometry = this;
-          TRACE_FORMAT( "<%p>(ctxt_id=%zu) ue_barrier() %p, %p/%p, %p",
+          TRACE_FORMAT("<%p>(ctxt_id=%zu) ue_barrier() %p, %p/%p, %p",
                         this,ctxt_id,
                         &_ue_barrier[ctxt_id],
                         f,

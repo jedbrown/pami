@@ -261,7 +261,9 @@ namespace PAMI
           pami_send_immediate_t * parameters = immediate;
 
 
-          TRACE_FORMAT( "<%p> length %zd, payload %p  data[%.2u..%.2u]",this,(size_t)parameters->data.iov_len, parameters->data.iov_base, *(char*)parameters->data.iov_base,*(char*)((char*)parameters->data.iov_base+parameters->data.iov_len-1));
+          TRACE_FORMAT( "<%p> length %zd, payload %p ",this,
+                        (size_t)parameters->data.iov_len, 
+                        parameters->data.iov_base);
 
           result = this->immediate (parameters);
           TRACE_FORMAT( "<%p> result %u", this, result);
@@ -533,11 +535,11 @@ namespace PAMI
               }
               for(size_t i = 0; i < size; i++)
                 state->userEvents.local_fn(context, state->userEvents.cookie, result);
+              TRACE_FN_EXIT();
               return result;
             }
             sendpwqHdr_t *sendpwqHdr;
 
-            TRACE_FN_ENTER();
             TRACE_FORMAT( "<%p> state %p, context %p, parameters %p, pwq %p, ndest %zu",this, state, context, parameters, pwq, state->dst_participants.size());
             TRACE_FORMAT( "<%p> length %zd/%zd, payload %p  data[%.2u..%.2u]",this, length,state->totalSndln, payload, *(char*)payload,*(char*)((char*)payload+length-1));
             parameters->send.data.iov_base = payload;
@@ -648,7 +650,6 @@ namespace PAMI
 
             while((bytesAvail = pwq->bytesAvailableToConsume()))
             {
-              TRACE_FN_ENTER();
               if((tmpbuf_cursor + bytesAvail) <=  tmpbuf_size)
               {
                 memcpy(tmpbuf + tmpbuf_cursor, pwq->bufferToConsume(), bytesAvail);
@@ -718,12 +719,12 @@ namespace PAMI
           state->pthis = this;
 
           /// \todo Pass in a generic/work device so we can directly post
-          TRACE_FN_EXIT();
           if(!state->work_posted)
           {
             state->work_posted = 1;
             PAMI_Context_post (context,(pami_work_t*)&state->work[(state->work_counter++)%2], sendPWQ_work_function, (void *) state);
           }
+          TRACE_FN_EXIT();
           return result;//SSS: returning PAMI_EAGAIN here will guarantee I remain on generic device queue if I am already on it
 //        circular header dependencies if I try to use Context
 //          PAMI::Context * ctx = (PAMI::Context *) context;

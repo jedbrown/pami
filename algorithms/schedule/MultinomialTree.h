@@ -443,7 +443,8 @@ MultinomialTreeT(unsigned        myendpoint,
 {
   TRACE_SCHEDULE((stderr,  "<%p>MultinomialTreeT(unsigned myendpoint, PAMI::Topology *topology, unsigned c): _map(myendpoint, topology) myendpoint %u, index %zu, nranks %zu, c %u\n", this, myendpoint, topology->endpoint2Index(myendpoint), topology->size(), c));
 
-  DO_DEBUG(for (unsigned i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Endpoint(i)););
+  DO_DEBUG(unsigned i = 0;)
+  DO_DEBUG(for (i = 0; i < topology->size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, topology->index2Endpoint(i)););
 
   initBinoSched();
 }
@@ -464,7 +465,8 @@ MultinomialTreeT(unsigned       myendpoint,
 {
   TRACE_SCHEDULE((stderr,  "<%p> MultinomialTreeT(unsigned myendpoint, size_t *ranks, unsigned nranks): _topology(ranks, nranks), _map() myendpoint %u, nranks %u\n", this, myendpoint, nranks));
 
-  DO_DEBUG(for (unsigned i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
+  DO_DEBUG(unsigned i = 0;)
+  DO_DEBUG(for (i = 0; i < _topology.size(); ++i) fprintf(stderr, "<%p> topology[%u] = %u\n", this, i, _topology.index2Rank(i)););
 
   CCMI_assert (_topology.type() == PAMI_LIST_TOPOLOGY);
 

@@ -323,8 +323,9 @@ namespace CCMI{namespace Adaptor{namespace Barrier{
         PAMI::Topology  *t_local     = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_TOPOLOGY_INDEX);
 	//        PAMI::Topology  *t_local_master = (PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::LOCAL_MASTER_TOPOLOGY_INDEX);
 
-        DO_DEBUG(for (unsigned j = 0; j < t_master->size(); ++j) TRACE_FORMAT("DEBUG t_master[%2.2u]=%#X, size %zu", j, t_master->index2Endpoint(j), t_master->size()));
-        DO_DEBUG(for (unsigned j = 0; j < t_local->size(); ++j) TRACE_FORMAT("DEBUG t_local[%2.2u]=%zu, size %zu", j, (size_t)t_local->index2Endpoint(j), t_local->size()));
+        DO_DEBUG(unsigned j = 0;)
+        DO_DEBUG(for (j = 0; j < t_master->size(); ++j) TRACE_FORMAT("DEBUG t_master[%2.2u]=%#X, size %zu", j, t_master->index2Endpoint(j), t_master->size()));
+        DO_DEBUG(for (j = 0; j < t_local->size(); ++j) TRACE_FORMAT("DEBUG t_local[%2.2u]=%zu, size %zu", j, (size_t)t_local->index2Endpoint(j), t_local->size()));
 //        DO_DEBUG(for (unsigned j = 0; j < t_local_master->size(); ++j) TRACE_FORMAT("DEBUG t_local_master[%2.2u]=%zu, size %zu", j, (size_t)t_local_master->index2Endpoint(j), t_local_master->size()));
 
         _cb_done                     = fn;

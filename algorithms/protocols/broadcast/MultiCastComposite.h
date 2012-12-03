@@ -201,11 +201,12 @@ namespace CCMI
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
           _all.subtractTopology(&_destinations,  &_root_topo);
 
-          DO_DEBUG(for (unsigned j = 0; j < _root_topo.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root_topo.index2Endpoint(j), _root_topo.size()));
+          DO_DEBUG(unsigned j = 0;)
+          DO_DEBUG(for ( j = 0; j < _root_topo.size(); ++j) fprintf(stderr, "root[%u]=%zu, size %zu\n", j, (size_t)_root_topo.index2Endpoint(j), _root_topo.size()));
 
-          DO_DEBUG(for (unsigned j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Endpoint(j), _destinations.size()));
+          DO_DEBUG(for ( j = 0; j < _destinations.size(); ++j) fprintf(stderr, "destinations[%u]=%zu, size %zu\n", j, (size_t)_destinations.index2Endpoint(j), _destinations.size()));
 
-          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
+          DO_DEBUG(for ( j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
 
           if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {
@@ -779,11 +780,12 @@ namespace CCMI
           TRACE_FORMAT( "MultiCastComposite2Device:  In Composite Constructor, setting up PWQ's %p %p, bytes=%zd buf=%p",
                          &_pwq0, &_pwq1, bytes, cmd->cmd.xfer_broadcast.buf);
 
-          DO_DEBUG(for (unsigned j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Endpoint(j), numMasters));
+          DO_DEBUG(unsigned j = 0;)
+          DO_DEBUG(for ( j = 0; j < numMasters; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localMasterTopo[%u]=%zu, size %zu\n", t_master, j, (size_t)t_master->index2Endpoint(j), numMasters));
 
-          DO_DEBUG(for (unsigned j = 0; j < numLocal; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localTopo[%u]=%zu, size %zu\n", t_local, j, (size_t)t_local->index2Endpoint(j), numLocal));
+          DO_DEBUG(for ( j = 0; j < numLocal; ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>localTopo[%u]=%zu, size %zu\n", t_local, j, (size_t)t_local->index2Endpoint(j), numLocal));
 
-          DO_DEBUG(for (unsigned j = 0; j < t_my_master->size(); ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>myMasterTopo[%u]=%zu, size %zu\n", t_my_master, j, (size_t)t_my_master->index2Endpoint(j), t_my_master->size()));
+          DO_DEBUG(for ( j = 0; j < t_my_master->size(); ++j) fprintf(stderr, "MultiCastComposite2Device() <%p>myMasterTopo[%u]=%zu, size %zu\n", t_my_master, j, (size_t)t_my_master->index2Endpoint(j), t_my_master->size()));
 
           if (bytes == 0)
           {
@@ -1424,7 +1426,8 @@ namespace CCMI
 
           _all = *(PAMI::Topology*)_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX);
 
-          DO_DEBUG(for (unsigned j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
+          DO_DEBUG(unsigned j = 0;)
+          DO_DEBUG(for (j = 0; j < _all.size(); ++j) fprintf(stderr, "all[%u]=%zu, size %zu\n", j, (size_t)_all.index2Endpoint(j), _all.size()));
 
           if (cmd->cmd.xfer_broadcast.root == mInterface->endpoint())
           {

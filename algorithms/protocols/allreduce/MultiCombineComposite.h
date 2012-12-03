@@ -112,7 +112,8 @@ namespace CCMI
             DO_DEBUG(PAMI::Topology all);
             DO_DEBUG(all = *(PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX));
 
-            DO_DEBUG(for (unsigned j = 0; j < all.size(); ++j) TRACE_FORMAT("all[%u]=%zu, size %zu", j, (size_t)all.index2Endpoint(j), all.size()));
+            DO_DEBUG(unsigned j = 0;)
+            DO_DEBUG(for (j = 0; j < all.size(); ++j) TRACE_FORMAT("all[%u]=%zu, size %zu", j, (size_t)all.index2Endpoint(j), all.size()));
 
             pami_multicombine_t minfo;
             minfo.cb_done.function     = fn;
@@ -1027,8 +1028,8 @@ namespace CCMI
           static void dumpDbuf(double* dbuf, size_t count)
           {
             TRACE_FORMAT("dbuf=%p, size %zu", dbuf, count);
-
-            for (size_t i = 0; i < count; i++)
+            size_t i;
+            for (i = 0; i < count; i++)
               TRACE_FORMAT("dbuf[%zu]=%f", i, dbuf[i]);
           }
 
@@ -1089,11 +1090,12 @@ namespace CCMI
                           cmd->cmd.xfer_allreduce.stypecount, cmd->cmd.xfer_allreduce.rtypecount,
                           (unsigned long)op, (unsigned long)dt);
 
-            DO_DEBUG(for (unsigned j = 0; j < _topology_l->size(); ++j) TRACE_FORMAT("_topology_l[%u]=%zu, size %zu", j, (size_t)_topology_l->index2Endpoint(j), _topology_l->size()));
+            DO_DEBUG(unsigned j = 0;)
+            DO_DEBUG(for ( j = 0; j < _topology_l->size(); ++j) TRACE_FORMAT("_topology_l[%u]=%zu, size %zu", j, (size_t)_topology_l->index2Endpoint(j), _topology_l->size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _topology_g->size(); ++j) TRACE_FORMAT("_topology_g[%u]=%zu, size %zu", j, (size_t)_topology_g->index2Endpoint(j), _topology_g->size()));
+            DO_DEBUG(for ( j = 0; j < _topology_g->size(); ++j) TRACE_FORMAT("_topology_g[%u]=%zu, size %zu", j, (size_t)_topology_g->index2Endpoint(j), _topology_g->size()));
 
-            DO_DEBUG(for (unsigned j = 0; j < _topology_lm.size(); ++j) TRACE_FORMAT("_topology_lm[%u]=%zu, size %zu", j, (size_t)_topology_lm.index2Rank(j), _topology_lm.size()));
+            DO_DEBUG(for ( j = 0; j < _topology_lm.size(); ++j) TRACE_FORMAT("_topology_lm[%u]=%zu, size %zu", j, (size_t)_topology_lm.index2Rank(j), _topology_lm.size()));
 
             PAMI_assert(_topology_lm.index2Endpoint(0) != (unsigned) - 1); // no local master?
 
