@@ -1883,37 +1883,50 @@ namespace PAMI
       TRACE_FORMAT("<%p>id %zu, registration %p, phase %d",this, _contextid, geometry, phase);
 
       // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-      if(_pgas_shmem_registration && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
+      if(_pgas_shmem_registration 
+	 && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()
+         && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+	 )
         _pgas_shmem_registration->analyze(_contextid, geometry, phase);
 
       // Can always use MU if it's available
-      if(phase == 0 && _pgas_mu_registration) _pgas_mu_registration->analyze(_contextid, geometry, phase);
+      if(phase == 0 && _pgas_mu_registration 
+	 && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+	 )
+        _pgas_mu_registration->analyze(_contextid, geometry, phase);
 
       // Can always use composite if it's available
-      if(_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, geometry, phase);
+      if(_pgas_composite_registration 
+	 && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+	 )
+        _pgas_composite_registration->analyze(_contextid, geometry, phase);
 
-      if(_ccmi_registration_shmem)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+      if(_ccmi_registration_shmem)
       {
-        geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_shmem->analyze(_contextid, geometry, phase);
       }
 
-      if(_ccmi_registration_mu)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+      if(_ccmi_registration_mu)
       {
-        geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_mu->analyze(_contextid, geometry, phase);
       }
 
-      if(_ccmi_registration)// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+      if(_ccmi_registration)
       {
-        geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(_contextid, geometry, phase);
       }
 
       if(_ccmi_registration_muam)
       {
-        if (context_id != PAMI_ALL_CONTEXTS)
-          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
+        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+          if (context_id != PAMI_ALL_CONTEXTS)
+            geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_muam->analyze(_contextid, geometry, phase);
       }
 
@@ -1922,8 +1935,10 @@ namespace PAMI
         _ccmi_registration_mudput->analyze(_contextid, geometry, phase);
       }
 
-      if(_multi_registration && (context_id != PAMI_ALL_CONTEXTS))// && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
+      if(_multi_registration && (context_id != PAMI_ALL_CONTEXTS))
+      {  
         _multi_registration->analyze(_contextid, geometry, phase);
+      }
 
       TRACE_FN_EXIT();
       return PAMI_SUCCESS;

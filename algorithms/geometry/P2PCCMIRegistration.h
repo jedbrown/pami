@@ -241,7 +241,8 @@ namespace PAMI
                                    PAMI::Geometry::CKEY_UEBARRIERCOMPOSITE1,
                                    (void*)_onetask_barrier_factory);
                 }
-
+                geometry->resetDefaultBarrier(context_id);
+                ueResult = geometry->setDefaultBarrier(_onetask_barrier_factory,context_id);
 
                 geometry->setCleanupCallback(CCMI::Adaptor::P2POneTask::OneTaskBarrierFactory::cleanup_done_fn, _onetask_barrier_composite);
               }

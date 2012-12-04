@@ -216,6 +216,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
+	  resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }

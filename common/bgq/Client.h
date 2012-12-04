@@ -1263,23 +1263,39 @@ namespace PAMI
                        pami_attribute_name_t optimize)
     {
       TRACE_FN_ENTER();
-      //Assume algorithm 0 always works
+      // Assume no optimize needed
+      pami_event_function done_fn = _geom_newopt_finish;
+
       pami_algorithm_t  alg   = PAMI_ALGORITHM_NULL;
       pami_metadata_t   mdata;
       memset(&mdata, 0, sizeof(mdata));
-      new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
-                                    NULL,
-                                    NULL,
-                                    0,
-                                    &alg, /* making an assumption here about short working now */
-                                    &mdata,
-                                    1);
-      TRACE_FORMAT("<%p> algorithm %s", this, mdata.name);
+      if(new_geometry->size() == 1)
+      {  
+        new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                      &alg, /* making an assumption here about OneTask collectives */
+                                      &mdata,
+                                      1,
+                                      NULL,
+                                      NULL,
+                                      0);
+      }
+      else
+      {  
+        new_geometry->algorithms_info(PAMI_XFER_ALLREDUCE,
+                                      NULL,
+                                      NULL,
+                                      0,
+                                      &alg, /* making an assumption here about short working now */
+                                      &mdata,
+                                      1);
+        // > 1 size can be optimized
+        if(optimize == PAMI_GEOMETRY_OPTIMIZE)
+          done_fn = _geom_newopt_start;
+      }
+
+      TRACE_FORMAT("<%p> geometry %p, algorithm %s", this,new_geometry, mdata.name);
       Geometry::Algorithm<BGQGeometry> *ar_algo = &(*((std::map<size_t,Geometry::Algorithm<BGQGeometry> > *)alg))[context_id];
 
-      pami_event_function done_fn = _geom_newopt_finish;
-      if(optimize == PAMI_GEOMETRY_OPTIMIZE)
-        done_fn = _geom_newopt_start;
 
       Geometry::GeometryOptimizer<BGQGeometry> *go = NULL;
       int rc  = 0;
@@ -1298,7 +1314,7 @@ namespace PAMI
 //      }
       _contexts[context_id].registerWithOptimizer(go);
 
-      TRACE_FORMAT("<%p:%zu> context %p  %s", this, _clientid, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" ");
+      TRACE_FORMAT("<%p:%zu>bargeom->size() %zu, new_geometry->size() %zu, context_id %zu, context %p  %s", this, _clientid,bargeom? bargeom->size():(size_t)-1,new_geometry?new_geometry->size():(size_t)-1, context_id, context, optimize == PAMI_GEOMETRY_OPTIMIZE? "Optimized":" ");
 
       if(bargeom)
         if(bargeom->size() == 1)

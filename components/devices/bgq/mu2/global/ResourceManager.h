@@ -1160,20 +1160,20 @@ namespace PAMI
           }
 #endif // TRACE_CLASSROUTES
           // Now, must perform an "allreduce(&mask, 1, PAMI_LONGLONG, PAMI_AND)"
-          pami_algorithm_t algo = 0;
+          pami_algorithm_t algo0 = PAMI_ALGORITHM_NULL;
+          pami_algorithm_t algo1 = PAMI_ALGORITHM_NULL;
           PAMI_Geometry_algorithms_query(crck->geom, PAMI_XFER_ALLREDUCE,
-                                         NULL, NULL, 0, 
-                                         &algo, NULL, 1); /* making an assumption here about short working */
-          if(!algo)
+                                         &algo0, NULL, 1,
+                                         &algo1, NULL, 1); 
+          if(algo0==PAMI_ALGORITHM_NULL && algo1==PAMI_ALGORITHM_NULL)
           {
-            fprintf(stderr, "PAMI_Geometry_algorithms_query() "
-                    "failed\n");
+            fprintf(stderr, "PAMI_Geometry_algorithms_query() failed\n");
             cr_allreduce_done(ctx, cookie, PAMI_ERROR);
             return;
           }
           crck->xfer.cb_done = cr_allreduce_done;
           crck->xfer.cookie = crck;
-          crck->xfer.algorithm = algo;
+          crck->xfer.algorithm = algo1==PAMI_ALGORITHM_NULL? algo0:algo1;
           // because of circular dependencies, can't dereference the context here,
           // so we must use the C API. Would be best to directly setup MU Coll
           // descriptor and inject, but this is currently on the new geom which
