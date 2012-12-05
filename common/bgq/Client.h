@@ -1263,6 +1263,7 @@ namespace PAMI
                        pami_attribute_name_t optimize)
     {
       TRACE_FN_ENTER();
+      PAMI_assertf(context_id == 0,"Only optimize context 0\n");
       // Assume no optimize needed
       pami_event_function done_fn = _geom_newopt_finish;
 

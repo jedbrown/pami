@@ -145,7 +145,8 @@ namespace PAMI
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN),
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
-      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
+      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset),
+      _ctxt_arr_sz(context_offset==PAMI_ALL_CONTEXTS?ncontexts:context_offset+1)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>",this);
@@ -170,45 +171,40 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t ctxt_arr_sz = context_offset + 1;
-        size_t start_off   = context_offset;
-        if (_allcontexts) {
-            ctxt_arr_sz = ncontexts;
-            start_off   = 0;
-        }
-
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_ue_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_ue_barrier));
         (void)rc; //unused warnings in assert case
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barier");
 
         rc = __global.heap_mm->memalign((void **)&_default_barrier,
                                         0,
-                                        ctxt_arr_sz*sizeof(*_default_barrier));
+                                        _ctxt_arr_sz*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
         rc = __global.heap_mm->memalign((void **)&_dispatch,
                                         0,
-                                        ctxt_arr_sz*sizeof(DispatchMap));
+                                        _ctxt_arr_sz*sizeof(DispatchMap));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
 
 
 
-        for(size_t n=start_off; n<ctxt_arr_sz; n++)
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
+        for(size_t n=_ctxt_offset; n<_ctxt_arr_sz; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
@@ -216,7 +212,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
-	  resetDefaultBarrier_impl(n);
+          resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }
@@ -247,14 +243,16 @@ namespace PAMI
       _endpoints(eps),
       _geometry_map(geometry_map),
       _checkpointed(false),
-      _cb_result(PAMI_EAGAIN)
+      _cb_result(PAMI_EAGAIN),
+      _allcontexts(true),
+      _ctxt_offset(MAX_CONTEXTS), // will be reset to lowest context found
+      _ctxt_arr_sz(MAX_CONTEXTS)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", this);
         // this creates the topology including all subtopologies
         new(&_topos[DEFAULT_TOPOLOGY_INDEX]) PAMI::Topology(_endpoints, neps, PAMI::tag_eplist());
 
-        _ctxt_offset = MAX_CONTEXTS;
         buildSpecialTopologies();
         size_t topo_size =  _topos[LOCAL_TOPOLOGY_INDEX].size();
         for(unsigned i=0; i < topo_size; i++)
@@ -304,7 +302,7 @@ namespace PAMI
         // Initialize remaining members
         (*_geometry_map)[_commid] = this;
 
-        for(size_t n=0; n<MAX_CONTEXTS; n++)
+        for(size_t n=0; n<_ctxt_arr_sz; n++)
         {
           _allreduce[n][0] = _allreduce[n][1] = NULL;
           _allreduce_async_mode[n]      = 1;
@@ -317,37 +315,39 @@ namespace PAMI
         };
 
         _kvcstore = allocKVS(NUM_CKEYS,MAX_CONTEXTS);
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, _ctxt_arr_sz, _ctxt_offset);
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      MAX_CONTEXTS*sizeof(*_ue_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_ue_barrier));
         (void)rc; //unused warnings in assert case
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
 
         rc = __global.heap_mm->memalign((void **)&_default_barrier,
                                         0,
-                                        MAX_CONTEXTS*sizeof(*_default_barrier));
+                                        _ctxt_arr_sz*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        MAX_CONTEXTS*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        MAX_CONTEXTS*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
         rc = __global.heap_mm->memalign((void **)&_dispatch,
                                         0,
-                                        MAX_CONTEXTS*sizeof(DispatchMap));
+                                        _ctxt_arr_sz*sizeof(DispatchMap));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
 
 
-        for(size_t n=0; n<MAX_CONTEXTS; n++)
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, _ctxt_arr_sz, _ctxt_offset);
+        for(size_t n=0; n<_ctxt_arr_sz; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
@@ -355,6 +355,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
+          resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }
@@ -385,7 +386,8 @@ namespace PAMI
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN),
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
-      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
+      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset),
+      _ctxt_arr_sz(context_offset==PAMI_ALL_CONTEXTS?ncontexts:context_offset+1)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p> numranges %d, context_offset %zu, ncontexts %zu", this, numranges, context_offset, ncontexts);
@@ -444,43 +446,37 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t ctxt_arr_sz = context_offset+1;
-        size_t start_off   = context_offset;
-        if (_allcontexts) {
-            ctxt_arr_sz = ncontexts;
-            start_off   = 0;
-        }
         rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_ue_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_ue_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
 
         rc               = __global.heap_mm->memalign((void **)&_default_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_default_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
-
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
         rc = __global.heap_mm->memalign((void **)&_dispatch,
                                         0,
-                                        ctxt_arr_sz*sizeof(DispatchMap));
+                                        _ctxt_arr_sz*sizeof(DispatchMap));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
 
 
-        for(size_t n=start_off; n<ctxt_arr_sz; n++)
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
+        for(size_t n=_ctxt_offset; n<_ctxt_arr_sz; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
@@ -488,6 +484,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
+          resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }
@@ -515,7 +512,8 @@ namespace PAMI
       _geometry_map(geometry_map),
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN),
-      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
+      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset),
+      _ctxt_arr_sz(context_offset==PAMI_ALL_CONTEXTS?ncontexts:context_offset+1)
       {
         TRACE_FN_ENTER();
         TRACE_FORMAT("<%p>", this);
@@ -546,39 +544,39 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t start_off   = (PAMI_ALL_CONTEXTS == context_offset)? 0 : context_offset;
-        size_t ctxt_arr_sz = (PAMI_ALL_CONTEXTS == context_offset)?ncontexts:context_offset+1;
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
         pami_result_t rc = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_ue_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_ue_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
         (void)rc; //to avoid unused warnings in non-assert
 
         rc = __global.heap_mm->memalign((void **)&_default_barrier,
                                         0,
-                                        ctxt_arr_sz*sizeof(*_default_barrier));
+                                        _ctxt_arr_sz*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
         rc = __global.heap_mm->memalign((void **)&_dispatch,
                                         0,
-                                        ctxt_arr_sz*sizeof(DispatchMap));
+                                        _ctxt_arr_sz*sizeof(DispatchMap));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
 
 
-        for(size_t n=start_off; n<ctxt_arr_sz; n++)
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
+        for(size_t n=_ctxt_offset; n<_ctxt_arr_sz; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
@@ -586,6 +584,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
+          resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }
@@ -619,10 +618,11 @@ namespace PAMI
       _checkpointed(false),
       _cb_result(PAMI_EAGAIN),
       _allcontexts(context_offset==PAMI_ALL_CONTEXTS),
-      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset)
+      _ctxt_offset(context_offset==PAMI_ALL_CONTEXTS?0:context_offset),
+      _ctxt_arr_sz(context_offset==PAMI_ALL_CONTEXTS?ncontexts:context_offset+1)
       {
         TRACE_FN_ENTER();
-        TRACE_FORMAT("<%p>", this);
+        TRACE_FORMAT("<%p> numranges %d, context_offset %zu, ncontexts %zu", this, numranges, context_offset, ncontexts);
         pami_result_t rc;
         if (numranges == 1)
         {
@@ -678,43 +678,38 @@ namespace PAMI
 
         _kvcstore = allocKVS(NUM_CKEYS,ncontexts);
 
-        size_t ctxt_arr_sz = context_offset+1;
-        size_t start_off = context_offset;
-        if (_allcontexts) {
-            ctxt_arr_sz = ncontexts;
-            start_off = 0;
-        }
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
         rc               = __global.heap_mm->memalign((void **)&_ue_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_ue_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_ue_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _ue_barrier");
 
         rc               = __global.heap_mm->memalign((void **)&_default_barrier,
                                                       0,
-                                                      ctxt_arr_sz*sizeof(*_default_barrier));
+                                                      _ctxt_arr_sz*sizeof(*_default_barrier));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _default_barrier");
-
 
         // Allocate per context UE queues
         rc = __global.heap_mm->memalign((void **)&_ue,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context Posted queues
         rc = __global.heap_mm->memalign((void **)&_post,
                                         0,
-                                        ctxt_arr_sz*sizeof(MatchQueue<>));
+                                        _ctxt_arr_sz*sizeof(MatchQueue<>));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _temp_topo");
 
         // Allocate per context active message dispatch information
         rc = __global.heap_mm->memalign((void **)&_dispatch,
                                         0,
-                                        ctxt_arr_sz*sizeof(DispatchMap));
+                                        _ctxt_arr_sz*sizeof(DispatchMap));
         PAMI_assertf(rc == PAMI_SUCCESS, "Failed to alloc _dispatch");
 
 
-        for(size_t n=start_off; n<ctxt_arr_sz; n++)
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, context_offset %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, context_offset, _ctxt_offset, _ctxt_arr_sz, _ctxt_offset);
+        for(size_t n=_ctxt_offset; n<_ctxt_arr_sz; n++)
         {
           new(&_ue_barrier[n]) AlgorithmT(NULL,NULL);
           new(&_default_barrier[n]) AlgorithmT(NULL,NULL);
@@ -722,6 +717,7 @@ namespace PAMI
           new(&_post[n]) MatchQueue<>();
           new(&_dispatch[n]) DispatchMap();
           resetUEBarrier_impl(n);
+          resetDefaultBarrier_impl(n);
         }
         TRACE_FN_EXIT();
       }
@@ -846,6 +842,7 @@ namespace PAMI
       inline void                      freeAllocations_impl()
       {
         TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p>%d: _allcontexts %d, _ctxt_offset %zu\n",this,__LINE__,_allcontexts, _ctxt_offset);
         int sz = _cleanupFcns.size();
         for(int i=0; i<sz; i++)
         {
@@ -858,10 +855,12 @@ namespace PAMI
 
         _ranks = NULL;
         _ranks_malloc = false;
+
         __global.heap_mm->free(_ue_barrier);
         __global.heap_mm->free(_default_barrier);
         __global.heap_mm->free(_ue);
         __global.heap_mm->free(_post);
+
         freeKVS(_kvcstore, NUM_CKEYS);
 
         (*_geometry_map)[_commid] = NULL;
@@ -869,13 +868,15 @@ namespace PAMI
         TRACE_FN_EXIT();
         return;
       }
-      inline MatchQueue<>             &asyncCollectivePostQ_impl(size_t context_id)
+      inline MatchQueue<>             &asyncCollectivePostQ_impl(size_t ctxt_id)
       {
-        return _post[context_id];
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
+        return _post[ctxt_id];
       }
-      inline MatchQueue<>             &asyncCollectiveUnexpQ_impl(size_t context_id)
+      inline MatchQueue<>             &asyncCollectiveUnexpQ_impl(size_t ctxt_id)
       {
-        return _ue[context_id];
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
+        return _ue[ctxt_id];
       }
 
       inline COMPOSITE_TYPE            getAllreduceComposite_impl(size_t   context_id,
@@ -934,16 +935,18 @@ namespace PAMI
         return _topos[DEFAULT_TOPOLOGY_INDEX].index2Endpoint(ordinal);
       }
 
-      inline void  setDispatch_impl(size_t context_id, size_t key, DispatchInfo *value)
+      inline void  setDispatch_impl(size_t ctxt_id, size_t key, DispatchInfo *value)
       {
-        _dispatch[context_id][key] = *value;
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
+        _dispatch[ctxt_id][key] = *value;
       }
 
-      inline DispatchInfo  * getDispatch_impl(size_t context_id, size_t key)
+      inline DispatchInfo  * getDispatch_impl(size_t ctxt_id, size_t key)
       {
-        DispatchMap::iterator iter = _dispatch[context_id].find(key);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
+        DispatchMap::iterator iter = _dispatch[ctxt_id].find(key);
 
-        if(unlikely(iter == _dispatch[context_id].end()))
+        if(unlikely(iter == _dispatch[ctxt_id].end()))
         {
           return(DispatchInfo *)NULL;
         }
@@ -956,8 +959,11 @@ namespace PAMI
         TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
-        void * value = _kvcstore[key][context_id];
-        TRACE_FORMAT("<%p>(k=%d, val=%p, ctxt=%zu)",this, key, value,context_id);
+        /* kvcstore only allocated enough cols for actual number of contexts used from starting context (_ctxt_offset) to max context (_ctxt_arr_sz) or all contexts */
+        PAMI_assertf(((context_id >= _ctxt_offset) && (context_id < _ctxt_arr_sz)),"Out of bounds context_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",context_id,_ctxt_offset, _ctxt_arr_sz);
+        size_t ctxt_id = _allcontexts? context_id: context_id - _ctxt_offset; 
+        void * value = _kvcstore[key][ctxt_id];
+        TRACE_FORMAT("<%p>(k=%d, val=%p, ctxt=%zu)",this, key, value,ctxt_id);
         TRACE_FN_EXIT();
         return value;
       }
@@ -967,8 +973,11 @@ namespace PAMI
         TRACE_FN_ENTER();
         PAMI_assert(key < NUM_CKEYS);
         PAMI_assert(context_id != -1UL);
-        TRACE_FORMAT("<%p>(k=%d, v=%p,ctxt=%zu)", this, key, value,context_id);
-        _kvcstore[key][context_id] = value;
+        /* kvcstore only allocated enough cols for actual number of contexts used from starting context (_ctxt_offset) to max context (_ctxt_arr_sz) or all contexts */
+        PAMI_assertf(((context_id >= _ctxt_offset) && (context_id < _ctxt_arr_sz)),"Out of bounds context_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",context_id,_ctxt_offset, _ctxt_arr_sz);
+        size_t ctxt_id = _allcontexts? context_id: context_id - _ctxt_offset; 
+        TRACE_FORMAT("<%p>(k=%d, v=%p,ctxt=%zu)", this, key, value,ctxt_id);
+        _kvcstore[key][ctxt_id] = value;
         TRACE_FN_EXIT();
       }
 
@@ -1178,6 +1187,7 @@ namespace PAMI
       {
         (void)context;
         PAMI_assert (_default_barrier[ctxt_id]._factory != NULL);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie  = cookie;
@@ -1186,6 +1196,8 @@ namespace PAMI
 
       void resetDefaultBarrier_impl(size_t ctxt_id)
       {
+        TRACE_FORMAT("<%p> id %zu, factory %p, geometry %p",this,ctxt_id,_default_barrier[ctxt_id]._factory,_default_barrier[ctxt_id]._geometry);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         _default_barrier[ctxt_id]._factory  = (Factory*)NULL;
         _default_barrier[ctxt_id]._geometry = (Common*)NULL;
       }
@@ -1193,10 +1205,13 @@ namespace PAMI
       pami_result_t setDefaultBarrier_impl(Factory *f,
                                            size_t   ctxt_id)
       {
+        TRACE_FORMAT("<%p> id %zu, factory %p, geometry %p",this,ctxt_id,_default_barrier[ctxt_id]._factory,_default_barrier[ctxt_id]._geometry);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         if(_default_barrier[ctxt_id]._factory == (Factory*)NULL)
         {
           _default_barrier[ctxt_id]._factory  = f;
           _default_barrier[ctxt_id]._geometry = this;
+          TRACE_FORMAT("<%p> id %zu, factory %p, geometry %p",this,ctxt_id,_default_barrier[ctxt_id]._factory,_default_barrier[ctxt_id]._geometry);
           return PAMI_SUCCESS;
         }
         return PAMI_EAGAIN;  // can't set again unless you reset first.
@@ -1211,6 +1226,7 @@ namespace PAMI
         (void)context;
         TRACE_FORMAT("<%p> cb_done %p, cookie %p, ctxt_id %zu, context %p", this, cb_done, cookie, ctxt_id, context);
         PAMI_assert (_ue_barrier[ctxt_id]._factory != NULL);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         pami_xfer_t cmd;
         cmd.cb_done = cb_done;
         cmd.cookie = cookie;
@@ -1220,6 +1236,8 @@ namespace PAMI
 
       void resetUEBarrier_impl(size_t ctxt_id)
       {
+        TRACE_FORMAT("<%p> ctxt_id %zu factory %p, geometry %p",this, ctxt_id, _ue_barrier[ctxt_id]._factory,_ue_barrier[ctxt_id]._geometry);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         _ue_barrier[ctxt_id]._factory  = (Factory*)NULL;
         _ue_barrier[ctxt_id]._geometry = (Common*)NULL;
       }
@@ -1228,6 +1246,8 @@ namespace PAMI
                                       size_t   ctxt_id)
       {
         TRACE_FN_ENTER();
+        TRACE_FORMAT("<%p> ctxt_id %zu factory %p, geometry %p",this, ctxt_id, _ue_barrier[ctxt_id]._factory,_ue_barrier[ctxt_id]._geometry);
+        PAMI_assertf(((ctxt_id >= _ctxt_offset) && (ctxt_id < _ctxt_arr_sz)),"Out of bounds ctxt_id %zu, _ctxt_offset %zu, _ctxt_arr_sz %zu\n",ctxt_id,_ctxt_offset, _ctxt_arr_sz);
         if(_ue_barrier[ctxt_id]._factory == (Factory*)NULL)
         {
           _ue_barrier[ctxt_id]._factory  = f;
@@ -1370,6 +1390,7 @@ namespace PAMI
       pami_result_t          _cb_result;
       bool                   _allcontexts;
       size_t                 _ctxt_offset;
+      size_t                 _ctxt_arr_sz;
       GeomCompCtr            _comp;
       CleanupFunctions       _cleanupFcns;
       CleanupDatas           _cleanupDatas;

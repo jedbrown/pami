@@ -42,7 +42,9 @@ public:
                         T_Geometry     *geometry):
   _factory(factory),
     _geometry(geometry)
-  {}
+  {
+    //fprintf(stderr,"Algorthm() %p, factory %p, geometry %p\n",this,factory,geometry);
+  }
   inline void metadata(pami_metadata_t   *mdata)
   {
     _factory->metadata(mdata, _geometry);

@@ -234,6 +234,7 @@ namespace PAMI
                                         _context,
                                         _context_id);
 
+                geometry->resetUEBarrier(context_id);
                 pami_result_t ueResult = geometry->setUEBarrier(_onetask_barrier_factory,context_id);
                 if(ueResult == PAMI_SUCCESS) /// \todo multi-context support
                 {
@@ -392,6 +393,7 @@ namespace PAMI
                                         _context,
                                         _context_id);
 
+                geometry->resetUEBarrier(context_id);
                 pami_result_t ueResult = geometry->setUEBarrier(_binomial_barrier_factory, context_id);
                 if(ueResult == PAMI_SUCCESS)
                 {

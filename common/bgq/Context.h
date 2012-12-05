@@ -1356,34 +1356,31 @@ namespace PAMI
         // Can always use composite if it's available
         if(_pgas_composite_registration) _pgas_composite_registration->analyze(_contextid, _world_geometry, 0);
   
+        /* Order matters a little here.  The last one to set the UE barrier wins.   */
+
+        if(_ccmi_registration_mudput)
+        {
+          _ccmi_registration_mudput->analyze(_contextid, _world_geometry, 0);
+        }
+
         if(_ccmi_registration_shmem)
         {
-          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_shmem->analyze(_contextid, _world_geometry, 0);
         }
   
         if(_ccmi_registration_mu)
         {
-          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_mu->analyze(_contextid, _world_geometry, 0);
         }
   
         if(_ccmi_registration)
         {
-          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration->analyze(_contextid, _world_geometry, 0);
         }
   
         if(_ccmi_registration_muam)
         {
-          _world_geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
           _ccmi_registration_muam->analyze(_contextid, _world_geometry, 0);
-        }
-  
-        if(_ccmi_registration_mudput)
-        {
-          //printf("Analyze mu dput on comm world\n");
-          _ccmi_registration_mudput->analyze(_contextid, _world_geometry, 0);
         }
   
         if(_multi_registration) // && (((PAMI::Topology*)_world_geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1))
@@ -1880,59 +1877,52 @@ namespace PAMI
                                  int phase = 0)
     {
       TRACE_FN_ENTER();
-      TRACE_FORMAT("<%p>id %zu, registration %p, phase %d",this, _contextid, geometry, phase);
+      TRACE_FORMAT("<%p>analyze id %zu, registration %p, phase %d, size %zu",this, _contextid, geometry, phase,
+                   ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size());
 
-      // Can only use shmem pgas if the geometry is all local tasks, so check the topology
-      if(_pgas_shmem_registration 
-	 && ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal()
-         && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-	 )
-        _pgas_shmem_registration->analyze(_contextid, geometry, phase);
+      /* We choose not to enable pgas on 1 task geommetries.  CCMI has OneTask protocols */
+      if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
+      {
+  
+        // Can only use shmem pgas if the geometry is all local tasks, so check the topology
+        if(_pgas_shmem_registration && 
+           ((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->isLocal())
+          _pgas_shmem_registration->analyze(_contextid, geometry, phase);
+  
+        // Can always use MU if it's available
+        if(phase == 0 && _pgas_mu_registration)
+          _pgas_mu_registration->analyze(_contextid, geometry, phase);
+  
+        // Can always use composite if it's available
+        if(_pgas_composite_registration)
+          _pgas_composite_registration->analyze(_contextid, geometry, phase);
+      }
 
-      // Can always use MU if it's available
-      if(phase == 0 && _pgas_mu_registration 
-	 && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-	 )
-        _pgas_mu_registration->analyze(_contextid, geometry, phase);
+      /* Order matters a little here.  The last one to set the UE barrier wins.   */
 
-      // Can always use composite if it's available
-      if(_pgas_composite_registration 
-	 && (((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-	 )
-        _pgas_composite_registration->analyze(_contextid, geometry, phase);
+      if(_ccmi_registration_mudput && (context_id != PAMI_ALL_CONTEXTS)) 
+      {
+        _ccmi_registration_mudput->analyze(_contextid, geometry, phase);
+      }
 
       if(_ccmi_registration_shmem)
       {
-        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_shmem->analyze(_contextid, geometry, phase);
       }
 
       if(_ccmi_registration_mu)
       {
-        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_mu->analyze(_contextid, geometry, phase);
       }
 
       if(_ccmi_registration)
       {
-        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-          geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration->analyze(_contextid, geometry, phase);
       }
 
-      if(_ccmi_registration_muam)
+      if(_ccmi_registration_muam && (context_id != PAMI_ALL_CONTEXTS))
       {
-        if(((PAMI::Topology*)geometry->getTopology(PAMI::Geometry::DEFAULT_TOPOLOGY_INDEX))->size() != 1)
-          if (context_id != PAMI_ALL_CONTEXTS)
-            geometry->resetUEBarrier(_contextid); // Reset so ccmi will select the UE barrier
         _ccmi_registration_muam->analyze(_contextid, geometry, phase);
-      }
-
-      if(_ccmi_registration_mudput)
-      {
-        _ccmi_registration_mudput->analyze(_contextid, geometry, phase);
       }
 
       if(_multi_registration && (context_id != PAMI_ALL_CONTEXTS))
